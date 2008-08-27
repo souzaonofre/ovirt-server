@@ -150,7 +150,7 @@ class HardwareController < PoolController
     attr_list << :id if params[:checkboxes]
     attr_list << :hostname
     attr_list << [:hardware_pool, :name] if include_pool
-    attr_list += [:uuid, :hypervisor_type, :num_cpus, :cpu_speed, :arch, :memory_in_mb, :status_str, :id]
+    attr_list += [:uuid, :hypervisor_type, :num_cpus, :cpu_speed, :arch, :memory_in_mb, :status_str, :load_average]
     json_list(hosts, attr_list, [:all], find_opts)
   end
 

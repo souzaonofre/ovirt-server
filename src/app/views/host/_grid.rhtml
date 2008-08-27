@@ -54,7 +54,11 @@
     }
     function <%= table_id %>_load_widget(celDiv)
     {
-        load_widget(celDiv, "host");
+      var loadAvg = getAverage($(celDiv).html());
+      var loadCss = (loadAvg >50) ? "load_graph_high" : "load_graph_low";
+        $(celDiv).html('<div title="' + loadAvg + '% Load" \n\
+            class="load_graph ' + loadCss + '" \n\
+            style="width: ' + loadAvg + '%;"></div>');
     };
 
 </script>

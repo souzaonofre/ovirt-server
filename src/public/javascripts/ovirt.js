@@ -28,6 +28,13 @@ function validate_selected(selected_array, name)
   }
 }
 
+function getAverage(val) {
+    if (isNaN(val)) return 0;
+    //FIXME: currently using a magic number of 5 which should be replaced
+    //with comething more meaningful.
+    return (val/5 < 1) ? ((val/5) * 100) : 100;
+}
+
 function add_hosts(url)
 {
     hosts= get_selected_checkboxes("addhosts_grid_form");

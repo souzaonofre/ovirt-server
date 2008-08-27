@@ -253,7 +253,13 @@
 
 /* load graphs in flexigrid */
 .load_graph {
+  padding: 0px !important;
+  height: 10px;
+  border:#F5AFA8 solid 1px;
 }
+
+.load_graph_low {background: url(../images/chart_horiz_blue.png) repeat-x;}
+.load_graph_high {background: url(../images/chart_horiz_orange.png) repeat-x;}
 
 /*************************
  *   details pane style  *

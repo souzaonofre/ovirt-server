@@ -469,7 +469,7 @@ div.colCopy {
 .flexigrid div.bDiv td
 	{
 	border-bottom: 1px solid #fff;
-	vertical-align: top;
+	/*vertical-align: top;*/
 	white-space: nowrap;
 	}
 

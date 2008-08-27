@@ -35,7 +35,12 @@
 	} 
     function <%= table_id %>_load_widget(celDiv)
     {
-        load_widget(celDiv, "resource");
+      //FIXME: there is no real data save for vmpool load, so stub out for now
+      var loadAvg = getAverage(2.3);
+      var loadCss = (loadAvg >50) ? "load_graph_high" : "load_graph_low";
+        $(celDiv).html('<div title="' + loadAvg + '% Load" \n\
+            class="load_graph ' + loadCss + '" \n\
+            style="width: ' + loadAvg + '%;"></div>');
     };
 
 </script>
