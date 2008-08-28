@@ -45,14 +45,17 @@ class HostBrowser
 
     def initialize(session)
         @session = session
-        @log_prefix = "[#{session.peeraddr[3]}] "
         @keytab_dir = '/usr/share/ipa/html/'
+    end
+
+    def prefix(session)
+      "#{Time.now.strftime('%b %d %H:%M:%S')} #{session.peeraddr[3]} "
     end
 
     # Ensures the conversation starts properly.
     #
     def begin_conversation
-        puts "#{@log_prefix} Begin conversation" unless defined?(TESTING)
+        puts "#{prefix(@session)} Begin conversation" unless defined?(TESTING)
         @session.write("HELLO?\n")
 
         response = @session.readline.chomp
@@ -62,10 +65,10 @@ class HostBrowser
     # Retrieves the mode request from the remote system.
     #
     def get_mode
-        puts "#{@log_prefix} Determining the runtime mode." unless defined?(TESTING)
+        puts "#{prefix(@session)} Determining the runtime mode." unless defined?(TESTING)
         @session.write("MODE?\n")
         response = @session.readline.chomp
-        puts "#{@log_prefix} MODE=#{response}" unless defined?(TESTING)
+        puts "#{prefix(@session)} MODE=#{response}" unless defined?(TESTING)
 
         response
     end
@@ -73,7 +76,7 @@ class HostBrowser
     # Requests node information from the remote system.
     #
     def get_remote_info
-        puts "#{@log_prefix} Begin remote info collection" unless defined?(TESTING)
+        puts "#{prefix(@session)} Begin remote info collection" unless defined?(TESTING)
         result = Hash.new
         result['HOSTNAME'] = @session.peeraddr[2]
         result['IPADDR']   = @session.peeraddr[3]
@@ -114,7 +117,7 @@ class HostBrowser
 
                 key, value = info.split("=")
 
-                puts "#{@log_prefix} ::Received - #{key}:#{value}" unless defined?(TESTING)
+                puts "#{prefix(@session)} ::Received - #{key}:#{value}" unless defined?(TESTING)
                 result[key] = value
 
                 @session.write("ACK #{key}\n")
@@ -142,7 +145,7 @@ class HostBrowser
 
             key, value = info.split("=")
 
-            puts "#{@log_prefix} ::Received - #{key}:#{value}" unless defined?(TESTING)
+            puts "#{prefix(@session)} ::Received - #{key}:#{value}" unless defined?(TESTING)
             result[key] = value
 
             @session.write("ACK #{key}\n")
@@ -171,7 +174,7 @@ class HostBrowser
 
             key, value = info.split("=")
 
-            puts "#{@log_prefix} ::Received - #{key}:#{value}" unless defined?(TESTING)
+            puts "#{prefix(@session)} ::Received - #{key}:#{value}" unless defined?(TESTING)
             result[key] = value
 
             @session.write("ACK #{key}\n")
@@ -331,7 +334,7 @@ class HostBrowser
     # Ends the conversation, notifying the user of the key version number.
     #
     def end_conversation
-        puts "#{@log_prefix} Ending conversation" unless defined?(TESTING)
+        puts "#{prefix(@session)} Ending conversation" unless defined?(TESTING)
 
         @session.write("BYE\n");
     end
