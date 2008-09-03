@@ -81,13 +81,22 @@ module SymetrieCom
         # Returns the single root for the class (or just the first root, if there are several).
         # Deprecation note: the original acts_as_nested_set allowed roots to have parent_id = 0,
         # so we currently do the same. This silliness will not be tolerated in future versions, however.
-        def root
-          acts_as_nested_set_options[:class].find(:first, :conditions => "(#{acts_as_nested_set_options[:parent_column]} IS NULL OR #{acts_as_nested_set_options[:parent_column]} = 0)")
+        def root(find_opts={})
+          roots_internal(:first, find_opts)
         end
         
         # Returns the roots and/or virtual roots of all trees. See the explanation of virtual roots in the README.
-        def roots
-          acts_as_nested_set_options[:class].find(:all, :conditions => "(#{acts_as_nested_set_options[:parent_column]} IS NULL OR #{acts_as_nested_set_options[:parent_column]} = 0)", :order => "#{acts_as_nested_set_options[:left_column]}")
+        def roots(find_opts={})
+          roots_internal(:all, find_opts)
+        end
+        def roots_internal(all_or_one, find_opts={})
+          conditions = "(#{acts_as_nested_set_options[:parent_column]} IS NULL"
+          conditions += " OR #{acts_as_nested_set_options[:parent_column]} = 0)"
+          order_col = "#{acts_as_nested_set_options[:left_column]}"
+          opts = merge_incoming_opts({:conditions => conditions,
+                                      :order => order_col},
+                                     find_opts)
+          acts_as_nested_set_options[:class].find(all_or_one, opts)
         end
         
         # Checks the left/right indexes of all records, 
@@ -127,6 +136,14 @@ module SymetrieCom
           return "1 != 1" if items.empty? # PostgreSQL didn't like '0', and SQLite3 didn't like 'FALSE'
           items.map! {|e| "(#{acts_as_nested_set_options[:left_column]} BETWEEN #{e[acts_as_nested_set_options[:left_column]]} AND #{e[acts_as_nested_set_options[:right_column]]})" }
           "(#{items.join(' OR ')})"
+        end
+
+        # accept incoming opts to allow filtering of results.
+        # So far only tested in limited use cases encountered in oVirt devel.
+        def merge_incoming_opts(set_opts, incoming_opts)
+          new_conditions = incoming_opts.delete(:conditions)
+          set_opts[:conditions] = "(#{set_opts[:conditions]}) AND (#{new_conditions})" if new_conditions
+          set_opts.merge(incoming_opts)
         end
         
       end
@@ -255,7 +272,7 @@ module SymetrieCom
           elsif new_record? || self[right_col_name] - self[left_col_name] == 1
             return [self]
           end
-          opts = merge_incoming_opts({:conditions => "#{scope_condition} #{exclude_str} AND (#{left_col_name} BETWEEN #{self[left_col_name]} AND #{self[right_col_name]})", 
+          opts = base_set_class.merge_incoming_opts({:conditions => "#{scope_condition} #{exclude_str} AND (#{left_col_name} BETWEEN #{self[left_col_name]} AND #{self[right_col_name]})",
                                        :order => left_col_name},
                                      find_opts)
           base_set_class.find(:all, opts)
@@ -270,7 +287,7 @@ module SymetrieCom
         
         # Returns this record's immediate children.
         def children(find_opts={})
-          opts = merge_incoming_opts({:conditions => "#{scope_condition} AND #{parent_col_name} = #{self.id}", 
+          opts = base_set_class.merge_incoming_opts({:conditions => "#{scope_condition} AND #{parent_col_name} = #{self.id}",
                                       :order => left_col_name},
                                      find_opts)
           base_set_class.find(:all, opts)
@@ -583,14 +600,6 @@ module SymetrieCom
           # Quote strings appropriately for SQL statements.
           def quote_value(value, column = nil) #:nodoc:
             self.class.connection.quote(value, column)
-          end
-
-          # accept incoming opts to allow filtering of results.
-          # So far only tested in limited use cases encountered in oVirt devel.
-          def merge_incoming_opts(set_opts, incoming_opts)
-            new_conditions = incoming_opts.delete(:conditions)
-            set_opts[:conditions] = "(#{set_opts[:conditions]}) AND (#{new_conditions})" if new_conditions
-            set_opts.merge(incoming_opts)
           end
 
       end

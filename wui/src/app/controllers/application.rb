@@ -29,8 +29,7 @@ class ApplicationController < ActionController::Base
   before_filter :pre_new, :only => [:new]
   before_filter :pre_create, :only => [:create]
   before_filter :pre_edit, :only => [:edit, :update, :destroy]
-  before_filter :pre_show, :only => [:show, :show_vms, :show_users, 
-                                     :show_hosts, :show_storage]
+  before_filter :pre_show, :only => [:show]
   before_filter :authorize_admin, :only => [:new, :create, :edit, :update, :destroy]
   before_filter :is_logged_in
 

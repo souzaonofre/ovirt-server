@@ -40,6 +40,9 @@ class Host < ActiveRecord::Base
     end
   end
 
+  has_many :smart_pool_tags, :as => :tagged, :dependent => :destroy
+  has_many :smart_pools, :through => :smart_pool_tags
+
   acts_as_xapian :texts => [ :hostname, :uuid, :hypervisor_type, :arch ],
                  :values => [ [ :created_at, 0, "created_at", :date ],
                               [ :updated_at, 1, "updated_at", :date ] ],

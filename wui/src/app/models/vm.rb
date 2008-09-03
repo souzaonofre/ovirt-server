@@ -28,6 +28,10 @@ class Vm < ActiveRecord::Base
     end
   end
   has_and_belongs_to_many :storage_volumes
+
+  has_many :smart_pool_tags, :as => :tagged, :dependent => :destroy
+  has_many :smart_pools, :through => :smart_pool_tags
+
   validates_presence_of :uuid, :description, :num_vcpus_allocated,
                         :memory_allocated_in_mb, :memory_allocated, :vnic_mac_addr
 

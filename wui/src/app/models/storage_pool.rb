@@ -30,6 +30,9 @@ class StoragePool < ActiveRecord::Base
     end
   end
 
+  has_many :smart_pool_tags, :as => :tagged, :dependent => :destroy
+  has_many :smart_pools, :through => :smart_pool_tags
+
   validates_presence_of :ip_addr, :hardware_pool_id
 
   acts_as_xapian :texts => [ :ip_addr, :target, :export_path, :type ],

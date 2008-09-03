@@ -18,7 +18,7 @@
     storage = get_selected_storage()
     if (validate_selected(storage, "storage pool")) {
       $.post('<%= url_for :controller => "hardware", :action => "move_storage", :id => @pool %>',
-             { resource_ids: storage.toString(), target_pool_id: <%= Pool.root.id %> },
+             { resource_ids: storage.toString(), target_pool_id: <%= HardwarePool.get_default_pool.id %> },
               function(data,status){
                 $tabs.tabs("load",$tabs.data('selected.tabs'));
 		if (data.alert) {

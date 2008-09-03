@@ -15,7 +15,7 @@
     <li id="nav_access"> <%= link_to "User Access", {:action => 'show_users', :id => @pool.id, :nolayout => :true}, :title => "content area" %></li>
     <li id="nav_tasks">  <%= link_to "Tasks", {:action => 'show_tasks', :id => @pool.id, :nolayout => :true}, :title => "content area" %></li>
   </ul>
-<% elsif controller.controller_name == "resources" and @vm_resource_pool != nil %>
+<% elsif controller.controller_name == "resources" and @pool != nil %>
   <script>
     $(document).ready(function(){
       $tabs = $("#resources_nav_tabs").tabs({
@@ -25,10 +25,10 @@
     });
   </script>
   <ul id="resources_nav_tabs" class="ui-tabs-nav">
-    <li id="nav_summary" class="ui-tabs-selected"><%= link_to "Summary", {:action => 'show', :id => @vm_resource_pool.id, :nolayout => :true}, :title => "content area" %></li>
-    <li id="nav_vmpool"> <%= link_to "Virtual Machines", {:action => 'show_vms', :id => @vm_resource_pool.id, :nolayout => :true}, :title => "content area" %></li>
-    <li id="nav_access"> <%= link_to "User Access", {:action => 'show_users', :id => @vm_resource_pool.id, :nolayout => :true}, :title => "content area" %></li>
-    <li id="nav_tasks">  <%= link_to "Tasks", {:action => 'show_tasks', :id => @vm_resource_pool.id, :nolayout => :true}, :title => "content area" %></li>
+    <li id="nav_summary" class="ui-tabs-selected"><%= link_to "Summary", {:action => 'show', :id => @pool.id, :nolayout => :true}, :title => "content area" %></li>
+    <li id="nav_vmpool"> <%= link_to "Virtual Machines", {:action => 'show_vms', :id => @pool.id, :nolayout => :true}, :title => "content area" %></li>
+    <li id="nav_access"> <%= link_to "User Access", {:action => 'show_users', :id => @pool.id, :nolayout => :true}, :title => "content area" %></li>
+    <li id="nav_tasks">  <%= link_to "Tasks", {:action => 'show_tasks', :id => @pool.id, :nolayout => :true}, :title => "content area" %></li>
   </ul>
 <% elsif controller.controller_name == "search"  %>
   <ul id="resources_nav_tabs" class="ui-tabs-nav">

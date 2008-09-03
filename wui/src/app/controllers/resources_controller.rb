@@ -17,14 +17,12 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
-class ResourcesController < ApplicationController
+class ResourcesController < PoolController
   def index
     list
     render :action => 'list'
   end
 
-  before_filter :pre_json, :only => [:vms_json, :users_json,
-                                     :show_tasks, :tasks]
   before_filter :pre_vm_actions, :only => [:vm_actions]
 
   # GETs should be safe (see http://www.w3.org/2001/tag/doc/whenToUseGet.html)
@@ -49,17 +47,7 @@ class ResourcesController < ApplicationController
                       ["Resume", VmTask::ACTION_RESUME_VM],
                       ["Save", VmTask::ACTION_SAVE_VM],
                       ["Restore", VmTask::ACTION_RESTORE_VM]]
-    if params[:ajax]
-      render :layout => 'tabs-and-content'
-    end
-    if params[:nolayout]
-      render :layout => false
-    end
-  end
-
-  def quick_summary
-    pre_show
-    render :layout => 'selection'    
+    super
   end
 
   # resource's vms list page
@@ -73,81 +61,36 @@ class ResourcesController < ApplicationController
     show
   end
 
-  # resource's users list page
-  def show_users    
-    @roles = Permission::ROLES.keys
-    show
-  end
-
-  def show_tasks
-    @task_states = [["Queued", Task::STATE_QUEUED],
-                    ["Running", Task::STATE_RUNNING],
-                    ["Paused", Task::STATE_PAUSED],
-                    ["Finished", Task::STATE_FINISHED],
-                    ["Failed", Task::STATE_FAILED],
-                    ["Canceled", Task::STATE_CANCELED, "break"],
-                    ["Show All", ""]]
-    params[:page]=1
-    params[:sortname]="tasks.created_at"
-    params[:sortorder]="desc"
-    @tasks = tasks_internal
-    show
-  end
-
-  def tasks
-    render :json => tasks_internal.to_json
-  end
-
   def tasks_internal
+    @task_type = ""
     @task_state = params[:task_state]
-    @task_state ||=Task::STATE_QUEUED
-    conditions = {}
-    conditions[:state] = @task_state unless @task_state.empty?
-    find_opts = {:include => [:storage_pool, :host, :vm]}
-    find_opts[:conditions] = conditions unless conditions.empty?
-    attr_list = []
-    attr_list << :id if params[:checkboxes]
-    attr_list += [:type_label, :task_obj, :action, :state, :user, :created_at, :args, :message]
-    json_hash(@vm_resource_pool.tasks, attr_list, [:all], find_opts)
+    super
   end
 
   def vms_json
-    json_list(@vm_resource_pool.vms, 
+    json_list(@pool.vms,
               [:id, :description, :uuid, :num_vcpus_allocated, :memory_allocated_in_mb, :vnic_mac_addr, :state, :id])
-  end
-
-  def users_json
-    json_list(@vm_resource_pool.permissions, 
-              [:grid_id, :uid, :user_role, :source])
-  end
-
-  def new
-    render :layout => 'popup'    
   end
 
   def create
     begin
-      @vm_resource_pool.create_with_parent(@parent)
+      @pool.create_with_parent(@parent)
       render :json => { :object => "vm_resource_pool", :success => true, 
                         :alert => "Virtual Machine Pool was successfully created." }
     rescue
       render :json => { :object => "vm_resource_pool", :success => false, 
-                        :errors => @vm_resource_pool.errors.localize_error_messages.to_a}
+                        :errors => @pool.errors.localize_error_messages.to_a}
     end    
-  end
-
-  def edit
-    render :layout => 'popup'    
   end
 
   def update
     begin
-      @vm_resource_pool.update_attributes!(params[:vm_resource_pool])
+      @pool.update_attributes!(params[:vm_resource_pool])
       render :json => { :object => "vm_resource_pool", :success => true, 
                         :alert => "Virtual Machine Pool was successfully modified." }
     rescue
       render :json => { :object => "vm_resource_pool", :success => false, 
-                        :errors => @vm_resource_pool.errors.localize_error_messages.to_a}
+                        :errors => @pool.errors.localize_error_messages.to_a}
     end
   end
 
@@ -174,7 +117,7 @@ class ResourcesController < ApplicationController
   end
 
   def destroy
-    if @vm_resource_pool.destroy
+    if @pool.destroy
       alert="Virtual Machine Pool was successfully deleted."
       success=true
     else
@@ -192,7 +135,7 @@ class ResourcesController < ApplicationController
     @success_list = []
     @failure_list = []
     begin
-      @vm_resource_pool.transaction do 
+      @pool.transaction do
         @vms.each do |vm|
           if vm.queue_action(@user, @action)
             @success_list << vm
@@ -212,45 +155,30 @@ class ResourcesController < ApplicationController
 
   protected
   def pre_new
-    @vm_resource_pool = VmResourcePool.new
-    @parent = Pool.find(params[:parent_id])
-    @perm_obj = @parent
-    @redir_controller = @perm_obj.get_controller
-    @current_pool_id=@parent.id
+    @pool = VmResourcePool.new
+    super
   end
   def pre_create
-    @vm_resource_pool = VmResourcePool.new(params[:vm_resource_pool])
-    @parent = Pool.find(params[:parent_id])
-    @perm_obj = @parent
-    @redir_controller = @perm_obj.get_controller
-    @current_pool_id=@parent.id
-  end
-  def pre_show
-    @vm_resource_pool = VmResourcePool.find(params[:id])
-    @perm_obj = @vm_resource_pool
-    @current_pool_id=@vm_resource_pool.id
-    set_perms(@perm_obj)
-    @is_hwpool_admin = @vm_resource_pool.parent.can_modify(@user)
-    unless @can_view
-      flash[:notice] = 'You do not have permission to view this VM Resource Pool: redirecting to top level'
-      redirect_to :action => 'dashboard'
-    end
+    @pool = VmResourcePool.new(params[:vm_resource_pool])
+    super
   end
   def pre_edit
-    @vm_resource_pool = VmResourcePool.find(params[:id])
-    @parent = @vm_resource_pool.parent
-    @perm_obj = @vm_resource_pool.parent
-    @redir_obj = @vm_resource_pool
-    @current_pool_id=@vm_resource_pool.id
+    @pool = VmResourcePool.find(params[:id])
+    @parent = @pool.parent
+    @perm_obj = @pool.parent
+    @redir_obj = @pool
+    @current_pool_id=@pool.id
   end
-  def pre_json
-    pre_show
+  def pre_show
+    @pool = VmResourcePool.find(params[:id])
+    @is_hwpool_admin = @pool.parent.can_modify(@user)
+    super
   end
   def pre_vm_actions
-    @vm_resource_pool = VmResourcePool.find(params[:id])
-    @parent = @vm_resource_pool.parent
-    @perm_obj = @vm_resource_pool
-    @redir_obj = @vm_resource_pool
+    @pool = VmResourcePool.find(params[:id])
+    @parent = @pool.parent
+    @perm_obj = @pool
+    @redir_obj = @pool
     authorize_user
   end
 

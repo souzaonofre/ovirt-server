@@ -27,7 +27,7 @@
     hosts = get_selected_hosts()
     if (validate_selected(hosts, "host")) {
       $.post('<%= url_for :controller => "hardware", :action => "move_hosts", :id => @pool %>',
-             { resource_ids: hosts.toString(), target_pool_id: <%= Pool.root.id %> },
+             { resource_ids: hosts.toString(), target_pool_id: <%= HardwarePool.get_default_pool.id %> },
               function(data,status){
                 $tabs.tabs("load",$tabs.data('selected.tabs'));
 		if (data.alert) {

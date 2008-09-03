@@ -1,6 +1,6 @@
 <div id="toolbar_nav">
 <ul>
-    <li><a href="<%= url_for :controller => 'vm', :action => 'new', :vm_resource_pool_id => @vm_resource_pool %>" rel="facebox[.bolder]"><%= image_tag "icon_addhost.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Add Virtual Machine</a></li>
+    <li><a href="<%= url_for :controller => 'vm', :action => 'new', :vm_resource_pool_id => @pool %>" rel="facebox[.bolder]"><%= image_tag "icon_addhost.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Add Virtual Machine</a></li>
     <li>
        <%= image_tag "icon_move.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Actions &nbsp;&nbsp;&nbsp;<%= image_tag "icon_toolbar_arrow.gif", :style => "vertical-align:middle;" %>
        <ul>
@@ -28,7 +28,7 @@
   {
     vms = get_selected_vms()
     if (validate_selected(vms, "vm")) {
-      $.post('<%= url_for :controller => "vm", :action => "delete", :id => @vm_resource_pool %>',
+      $.post('<%= url_for :controller => "vm", :action => "delete", :id => @pool %>',
              { vm_ids: vms.toString() },
               function(data,status){
                 $tabs.tabs("load",$tabs.data('selected.tabs'));
@@ -47,7 +47,7 @@
     if (validate_selected(vms, "vm")) {
       jQuery.facebox('<div id="vm_action_results">');
       $('#vm_action_results').load('<%= url_for :controller => "resources", 
-             :action => "vm_actions", :id => @vm_resource_pool %>',
+             :action => "vm_actions", :id => @pool %>',
              { vm_ids: vms.toString(), vm_action: action });
     }
   }
@@ -66,10 +66,10 @@
 </script>
 
 <div class="panel_header"></div>
-<% if @vm_resource_pool.vms.size != 0 %>
+<% if @pool.vms.size != 0 %>
   <div class="data_section">
        <%= render :partial => "/vm/grid", :locals => { :table_id => "vms_grid",
-                                                       :pool => @vm_resource_pool,
+                                                       :pool => @pool,
                                                        :on_select => "vms_select",
                                                        :on_deselect => "load_widget_deselect",
                                                        :on_hover => "load_widget_hover",
@@ -88,7 +88,7 @@
        <div class="no-grid-items-text">
             No vms found in this pool. <br/><br/>
             <%= image_tag "icon_addhost.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;
-            <a href="<%= url_for :controller => 'vm', :action => 'new', :vm_resource_pool_id => @vm_resource_pool %>" rel="facebox[.bolder]">Add first virtual machine to resource pool</a></li>
+            <a href="<%= url_for :controller => 'vm', :action => 'new', :vm_resource_pool_id => @pool %>" rel="facebox[.bolder]">Add first virtual machine to resource pool</a></li>
        </div>
     </div>
   </div>

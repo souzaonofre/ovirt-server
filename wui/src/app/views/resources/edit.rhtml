@@ -7,7 +7,7 @@
 
 <form method="POST" action="<%= url_for :action => 'update' %>" id="vm_pool_form" >
 <div class="dialog_form">
-  <%= hidden_field_tag 'id', @vm_resource_pool.id %>
+  <%= hidden_field_tag 'id', @pool.id %>
   <%= render :partial => 'form' %>
 </div>
 <%= popup_footer("$('#vm_pool_form').submit()", "Edit Virtual Machine Pool") %>
@@ -26,7 +26,7 @@ $(function() {
             refresh_summary('vmpool_selection', 
                             '<%= url_for :controller => "resources", 
                                          :action => "quick_summary" %>',
-                            <%= @vm_resource_pool.id %>)
+                            <%= @pool.id %>)
           }
         }
     };

@@ -18,7 +18,7 @@
 # also available at http://www.gnu.org/copyleft/gpl.html.
 #
 
-class HardwareController < ApplicationController
+class HardwareController < PoolController
 
   XML_OPTS  = {
     :include => [ :storage_pools, :hosts, :quota ]
@@ -31,10 +31,8 @@ class HardwareController < ApplicationController
   verify :method => [:post, :delete], :only => :destroy,
          :redirect_to => { :action => :list }
 
-  before_filter :pre_json, :only => [:vm_pools_json, :users_json, 
-                                     :storage_volumes_json, :show_tasks, :tasks]
-  before_filter :pre_modify, :only => [:add_hosts, :move_hosts, 
-                                       :add_storage, :move_storage, 
+  before_filter :pre_modify, :only => [:add_hosts, :move_hosts,
+                                       :add_storage, :move_storage,
                                        :create_storage, :delete_storage]
 
   def index
@@ -60,27 +58,6 @@ class HardwareController < ApplicationController
     end
   end
 
-  def show
-    set_perms(@perm_obj)
-    unless @can_view
-      flash[:notice] = 'You do not have permission to view this hardware pool: redirecting to top level'
-      respond_to do |format|
-        format.html { redirect_to :controller => "dashboard" }
-        format.xml { head :forbidden }
-      end
-      return
-    end
-    respond_to do |format|
-      format.html {
-        render :layout => 'tabs-and-content' if params[:ajax]
-        render :layout => false if params[:nolayout]
-      }
-      format.xml {
-        render :xml => @pool.to_xml(XML_OPTS)
-      }
-    end
-  end
-  
   def json_view_tree
     json_tree_internal(Permission::PRIV_VIEW, false)
   end
@@ -121,11 +98,6 @@ class HardwareController < ApplicationController
     show
   end
 
-  def show_users    
-    @roles = Permission::ROLES.keys
-    show
-  end
-
   def show_hosts    
     @hardware_pools = HardwarePool.find :all
     show
@@ -145,53 +117,23 @@ class HardwareController < ApplicationController
                    ["Host Task", "HostTask"],
                    ["Storage Task", "StorageTask", "break"],
                    ["Show All", ""]]
-    @task_states = [["Queued", Task::STATE_QUEUED],
-                    ["Running", Task::STATE_RUNNING],
-                    ["Paused", Task::STATE_PAUSED],
-                    ["Finished", Task::STATE_FINISHED],
-                    ["Failed", Task::STATE_FAILED],
-                    ["Canceled", Task::STATE_CANCELED, "break"],
-                    ["Show All", ""]]
-    params[:page]=1
-    params[:sortname]="tasks.created_at"
-    params[:sortorder]="desc"
-    @tasks = tasks_internal
-    show
-  end
-
-  def tasks
-    render :json => tasks_internal.to_json
+    super
   end
 
   def tasks_internal
     @task_type = params[:task_type]
     @task_type ||=""
-    @task_state = params[:task_state]
-    @task_state ||=Task::STATE_QUEUED
-    conditions = {}
-    conditions[:type] = @task_type unless @task_type.empty?
-    conditions[:state] = @task_state unless @task_state.empty?
-    find_opts = {:include => [:storage_pool, :host, :vm]}
-    find_opts[:conditions] = conditions unless conditions.empty?
-    attr_list = []
-    attr_list << :id if params[:checkboxes]
-    attr_list += [:type_label, :task_obj, :action, :state, :user, :created_at, :args, :message]
-    json_hash(@pool.tasks, attr_list, [:all], find_opts)
-  end
-
-  def quick_summary
-    pre_show
-    render :layout => 'selection'    
+    super
   end
 
   def hosts_json
     if params[:exclude_host]
-      pre_json
+      pre_show
       hosts = @pool.hosts
       find_opts = {:conditions => ["id != ?", params[:exclude_host]]}
       include_pool = false
     elsif params[:id]
-      pre_json
+      pre_show
       hosts = @pool.hosts
       find_opts = {}
       include_pool = false
@@ -219,14 +161,9 @@ class HardwareController < ApplicationController
               {:finder => 'call_finder', :conditions => ["type = 'VmResourcePool'"]})
   end
 
-  def users_json
-    json_list(@pool.permissions, 
-              [:grid_id, :uid, :user_role, :source])
-  end
-
   def storage_pools_json
     if params[:id]
-      pre_json
+      pre_show
       storage_pools = @pool.storage_pools
       find_opts = {}
       include_pool = false
@@ -258,7 +195,7 @@ class HardwareController < ApplicationController
   def new
     @resource_type = params[:resource_type]
     @resource_ids = params[:resource_ids]
-    render :layout => 'popup'    
+    super
   end
 
   def create
@@ -291,10 +228,6 @@ class HardwareController < ApplicationController
           :status => :unprocessable_entity }
       end
     end
-  end
-
-  def edit
-    render :layout => 'popup'    
   end
 
   def update
@@ -455,28 +388,23 @@ class HardwareController < ApplicationController
                                       :alert => alert } }
       format.xml { head status }
     end
-  end
+   end
 
-  private
+  protected
   #filter methods
   def pre_new
     @pool = HardwarePool.new
-    @parent = Pool.find(params[:parent_id])
-    @perm_obj = @parent
-    @current_pool_id=@parent.id
+    super
   end
   def pre_create
     # FIXME: REST and browsers send params differently. Should be fixed
     # in the views
     if params[:pool]
       @pool = HardwarePool.new(params[:pool])
-      @parent = Pool.find(params[:parent_id])
     else
       @pool = HardwarePool.new(params[:hardware_pool])
-      @parent = Pool.find(params[:hardware_pool][:parent_id])
     end
-    @perm_obj = @parent
-    @current_pool_id=@parent.id
+    super
   end
   def pre_edit
     @pool = HardwarePool.find(params[:id])
@@ -486,18 +414,7 @@ class HardwareController < ApplicationController
   end
   def pre_show
     @pool = HardwarePool.find(params[:id])
-    @perm_obj = @pool
-    @current_pool_id=@pool.id
-    set_perms(@perm_obj)
-    unless @can_view
-      flash[:notice] = 'You do not have permission to view this Hardware Pool: redirecting to top level'
-      # FIXME: figure out the return type and render appropriately
-      redirect_to :action => 'list'
-      return
-    end
-  end
-  def pre_json
-    pre_show
+    super
   end
   def pre_modify
     pre_edit

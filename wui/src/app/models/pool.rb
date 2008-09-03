@@ -42,12 +42,15 @@ class Pool < ActiveRecord::Base
     end
   end
 
+  has_many :smart_pool_tags, :as => :tagged, :dependent => :destroy
+  has_many :smart_pools, :through => :smart_pool_tags
 
   # used to allow parent traversal before obj is saved to the db 
   # (needed for view code 'create' form)
   attr_accessor :tmp_parent
 
   validates_presence_of :name
+  validates_uniqueness_of :name, :scope => :parent_id
 
   # overloading this method such that we can use permissions.admins to get all the admins for an object
   has_many :permissions, :dependent => :destroy, :order => "id ASC" do
@@ -123,6 +126,11 @@ class Pool < ActiveRecord::Base
   end
   def self_and_like_siblings
     self_and_siblings.select {|pool| pool[:type] == self.class.name}
+  end
+
+  def named_child(child_name)
+    matches = children(:conditions=>"name='#{child_name}'")
+    matches ? matches[0] : nil
   end
 
   def can_view(user)
@@ -250,6 +258,19 @@ class Pool < ActiveRecord::Base
 
   def search_users
     permissions.collect {|perm| perm.uid}
+  end
+
+  def self.find_by_path(path)
+    segs = path.split("/")
+    unless segs.shift.empty?
+      raise "Path must be absolute, but is #{path}"
+    end
+    default_pool = DirectoryPool.get_directory_root
+    if segs.shift == default_pool.name
+      segs.inject(default_pool) do |pool, seg|
+        pool.children.find { |p| p.name == seg } if pool
+      end
+    end
   end
 
   protected

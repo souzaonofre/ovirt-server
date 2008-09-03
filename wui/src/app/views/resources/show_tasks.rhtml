@@ -24,7 +24,7 @@
   function apply_task_state_filter(task_state)
   {
     $tabs.tabs("url", $tabs.data("selected.tabs"),
-               "<%= url_for :action => 'show_tasks', :id => @vm_resource_pool.id,
+               "<%= url_for :action => 'show_tasks', :id => @pool.id,
                            :nolayout => :true %>" +
               "&task_state=" + task_state);
     $tabs.tabs("load", $tabs.data("selected.tabs"));
@@ -37,7 +37,7 @@
       <%= render :partial => "/task/grid", :locals => { :table_id => "vm_tasks_grid",
                                                         :task_type => nil,
                                                         :task_state => @task_state,
-                                                        :pool => @vm_resource_pool,
+                                                        :pool => @pool,
                                                         :checkboxes => false,
                                                         :on_select => "vm_tasks_grid_select" } %>
    </div>

@@ -19,6 +19,8 @@
 
 class HardwarePool < Pool
 
+  DEFAULT_POOL_NAME = "default"
+
   has_many :tasks, :dependent => :nullify
   def all_storage_volumes
     StorageVolume.find(:all, :include => {:storage_pool => :hardware_pool}, :conditions => "pools.id = #{id}")
@@ -34,7 +36,8 @@ class HardwarePool < Pool
 
   # note: doesn't currently join w/ permissions
   def self.get_default_pool
-    self.root
+    hw_root = DirectoryPool.get_hardware_root
+    hw_root ? hw_root.named_child(DEFAULT_POOL_NAME) : nil
   end
 
   def create_with_resources(parent, resource_type= nil, resource_ids=[])
@@ -96,19 +99,6 @@ class HardwarePool < Pool
     total = total_resources
     labels = RESOURCE_LABELS
     return {:total => total, :labels => labels}
-  end
-
-  def self.find_by_path(path)
-    segs = path.split("/")
-    unless segs.shift.empty?
-      raise "Path must be absolute, but is #{path}"
-    end
-    default_pool = get_default_pool
-    if segs.shift == default_pool.name
-      segs.inject(default_pool) do |pool, seg|
-        pool.sub_hardware_pools.find { |p| p.name == seg } if pool
-      end
-    end
   end
 
 end
