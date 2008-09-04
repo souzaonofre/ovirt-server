@@ -20,7 +20,7 @@ require 'active_record_env'
 require 'krb5_auth'
 include Krb5Auth
 
-ENV['KRB5CCNAME'] = '/usr/share/ovirt-wui/ovirt-cc'
+ENV['KRB5CCNAME'] = '/usr/share/ovirt-server/ovirt-cc'
 
 def get_credentials
   krb5 = Krb5.new
@@ -45,7 +45,7 @@ def get_credentials
 
   if renew
     begin
-      krb5.get_init_creds_keytab('libvirt/' + Socket::gethostname + '@' + default_realm, '/usr/share/ovirt-wui/ovirt.keytab')
+      krb5.get_init_creds_keytab('libvirt/' + Socket::gethostname + '@' + default_realm, '/usr/share/ovirt-server/ovirt.keytab')
       krb5.cache(ENV['KRB5CCNAME'])
     rescue
       # well, if we run into an error here, there's not much we can do.  Just

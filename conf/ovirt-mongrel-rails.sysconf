@@ -1,14 +1,14 @@
-# root directory of the oVirt WUI Rails application
-#OVIRT_DIR=/usr/share/ovirt-wui
+# root directory of the oVirt Server Rails application
+#OVIRT_DIR=/usr/share/ovirt-server
 
 # location of the logfile
-#MONGREL_LOG=/var/log/ovirt-wui/mongrel.log
+#MONGREL_LOG=/var/log/ovirt-server/mongrel.log
 
 # location of the lockfile
-#MONGREL_LOCKFILE=/var/lock/subsys/ovirt-wui
+#MONGREL_LOCKFILE=/var/lock/subsys/ovirt-server
 
 # location of the file containing running process ID
-#MONGREL_PID=/var/run/ovirt-wui/mongrel.pid
+#MONGREL_PID=/var/run/ovirt-server/mongrel.pid
 
 # user and group under which Rails application runs
 #USER=ovirt

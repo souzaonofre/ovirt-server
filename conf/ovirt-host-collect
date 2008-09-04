@@ -12,7 +12,7 @@
 
 export RAILS_ENV="${RAILS_ENV:-production}"
 
-DAEMON=/usr/share/ovirt-wui/host-collect/host-collect.rb
+DAEMON=/usr/share/ovirt-server/host-collect/host-collect.rb
 
 . /etc/init.d/functions
 

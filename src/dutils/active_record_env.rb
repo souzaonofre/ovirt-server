@@ -33,7 +33,7 @@ require 'action_controller'
 require 'action_view'
 require 'erb'
 
-OVIRT_DIR = "/usr/share/ovirt-wui"
+OVIRT_DIR = "/usr/share/ovirt-server"
 
 require "#{OVIRT_DIR}/vendor/plugins/betternestedset/init.rb"
 require "#{OVIRT_DIR}/vendor/plugins/acts_as_xapian/lib/acts_as_xapian"

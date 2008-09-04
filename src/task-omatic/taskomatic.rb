@@ -26,7 +26,7 @@ require 'optparse'
 require 'daemons'
 include Daemonize
 
-$logfile = '/var/log/ovirt-wui/taskomatic.log'
+$logfile = '/var/log/ovirt-server/taskomatic.log'
 
 do_daemon = true
 sleeptime = 5

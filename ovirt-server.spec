@@ -1,8 +1,8 @@
 %define pbuild %{_builddir}/%{name}-%{version}
 %define app_root %{_datadir}/%{name}
 
-Summary: oVirt front end WUI
-Name: ovirt-wui
+Summary: oVirt Server Suite
+Name: ovirt-server
 Source1: version
 Version: %(echo `awk '{ print $1 }' %{SOURCE1}`)
 Release: %(echo `awk '{ print $2 }' %{SOURCE1}`)%{?dist}
@@ -39,14 +39,14 @@ BuildRequires: ruby-devel
 BuildRequires: ruby-gettext-package
 BuildRequires: rubygem(rake) >= 0.7
 BuildRequires: avahi-devel
-Provides: ovirt-wui
+Provides: ovirt-server
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 URL: http://ovirt.org/
 
 %description
 
-The webapp for oVirt.
+The Server Suite for oVirt.
 
 %prep
 %setup -q
@@ -102,7 +102,7 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/host-status.log
 %{__rm} -f %{buildroot}%{app_root}/task-omatic/.gitignore
 
 %{__cp} -a %{pbuild}/scripts/ovirt-add-host %{buildroot}%{_bindir}
-%{__cp} -a %{pbuild}/scripts/ovirt-wui-install %{buildroot}%{_sbindir}
+%{__cp} -a %{pbuild}/scripts/ovirt-server-install %{buildroot}%{_sbindir}
 %{__cp} -a %{pbuild}/scripts/ovirt-reindex-search %{buildroot}%{_sbindir}
 %{__cp} -a %{pbuild}/scripts/ovirt-update-search %{buildroot}%{_sbindir}
 %{__rm} -rf %{buildroot}%{app_root}/tmp 
@@ -129,12 +129,12 @@ fi \
 %{nil}
 
 #removes obsolete services if present
-if [ -e %{_initrddir}/ovirt-wui ] ; then
-  /sbin/service ovirt-wui stop > /dev/null 2>&1
+if [ -e %{_initrddir}/ovirt-server ] ; then
+  /sbin/service ovirt-server stop > /dev/null 2>&1
   /sbin/service ovirt-host-keyadd stop > /dev/null 2>&1
-  /sbin/chkconfig --del ovirt-wui
+  /sbin/chkconfig --del ovirt-server
   /sbin/chkconfig --del ovirt-host-keyadd
-  %{__rm} %{_initrddir}/ovirt-wui
+  %{__rm} %{_initrddir}/ovirt-server
   %{__rm} %{_initrddir}/ovirt-host-keyadd
 fi
 
@@ -163,7 +163,7 @@ fi
 
 %files
 %defattr(-,root,root,0755)
-%{_sbindir}/ovirt-wui-install
+%{_sbindir}/ovirt-server-install
 %{_sbindir}/ovirt-reindex-search
 %{_sbindir}/ovirt-update-search
 %{_bindir}/ovirt-add-host

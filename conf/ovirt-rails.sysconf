@@ -3,4 +3,4 @@
 #RAILS_ENV=production
 
 #sets the path of the cobbler.yml file for cobbler access
-#COBBLER_YML=/usr/share/ovirt-wui/config/cobbler.yml
+#COBBLER_YML=/usr/share/ovirt-server/config/cobbler.yml

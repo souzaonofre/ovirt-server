@@ -12,7 +12,7 @@
 
 export RAILS_ENV="${RAILS_ENV:-production}"
 
-DAEMON=/usr/share/ovirt-wui/host-browser/host-browser.rb
+DAEMON=/usr/share/ovirt-server/host-browser/host-browser.rb
 
 . /etc/init.d/functions
 

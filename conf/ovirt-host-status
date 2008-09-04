@@ -12,7 +12,7 @@
 
 export RAILS_ENV="${RAILS_ENV:-production}"
 
-DAEMON=/usr/share/ovirt-wui/host-status/host-status.rb
+DAEMON=/usr/share/ovirt-server/host-status/host-status.rb
 
 . /etc/init.d/functions
 

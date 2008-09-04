@@ -26,7 +26,7 @@ require 'optparse'
 require 'daemons'
 include Daemonize
 
-$logfile = '/var/log/ovirt-wui/host-status.log'
+$logfile = '/var/log/ovirt-server/host-status.log'
 
 do_daemon = true
 sleeptime = 20

@@ -1,5 +1,5 @@
 # Release/version-related Makefile variables and rules.
-# This Makefile snippet is included by both ../wui/Makefile and
+# This Makefile snippet is included by both Makefile and
 # ../ovirt-host-creator/Makefile.  It expects the including Makefile
 # to define the "pkg_name" variable, as well as a file named "version"
 # in the current directory.

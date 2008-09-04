@@ -13,10 +13,10 @@
 [ -r /etc/sysconfig/ovirt-mongrel-rails ] && . /etc/sysconfig/ovirt-mongrel-rails
 
 RAILS_ENV="${RAILS_ENV:-production}"
-OVIRT_DIR="${OVIRT_DIR:-/usr/share/ovirt-wui}"
-MONGREL_LOG="${MONGREL_LOG:-/var/log/ovirt-wui/mongrel.log}"
-MONGREL_PID="${MONGREL_PID:-/var/run/ovirt-wui/mongrel.pid}"
-MONGREL_LOCKFILE="${MONGREL_LOCKFILE:-/var/lock/subsys/ovirt-wui}"
+OVIRT_DIR="${OVIRT_DIR:-/usr/share/ovirt-server}"
+MONGREL_LOG="${MONGREL_LOG:-/var/log/ovirt-server/mongrel.log}"
+MONGREL_PID="${MONGREL_PID:-/var/run/ovirt-server/mongrel.pid}"
+MONGREL_LOCKFILE="${MONGREL_LOCKFILE:-/var/lock/subsys/ovirt-server}"
 USER="${USER:-ovirt}"
 GROUP="${GROUP:-ovirt}"
 PREFIX="${PREFIX:-/ovirt}"

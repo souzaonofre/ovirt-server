@@ -1,11 +1,11 @@
-pkg_name = ovirt-wui
+pkg_name = ovirt-server
 
 all: rpms
 include ../common/release.mk
 
 clean:
 	rm -f ovirt*.gz ovirt*.rpm
-	rm -rf ovirt-wui-* dist build
+	rm -rf ovirt-server-* dist build
 
 distclean: clean
 	rm -rf rpm-build
@@ -25,6 +25,6 @@ tar: clean
 
 # convience method to simulate make install, not for production use
 install: rpms
-	rpm -Uvh rpm-build/ovirt-wui-$(VERSION)-$(RELEASE)$(DIST).$(ARCH).rpm --force
+	rpm -Uvh rpm-build/ovirt-server-$(VERSION)-$(RELEASE)$(DIST).$(ARCH).rpm --force
 
 .PHONY: all clean genlangs tar install

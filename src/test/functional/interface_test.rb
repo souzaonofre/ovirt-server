@@ -26,7 +26,7 @@ if File.exists? File.dirname(__FILE__) + '/../selenium.rb'
      def setup
         @config = YAML::load(File.open("#{RAILS_ROOT}/config/selenium.yml"))
         @site_url = "http://"+
-                    @config["ovirt_wui_server"]["address"] + "/ovirt/"
+                    @config["ovirt_server"]["address"] + "/ovirt/"
 
         @browser = Selenium::SeleniumDriver.new(
                         @config["selenium_server"]["address"],

@@ -33,10 +33,10 @@ include Daemonize
 
 include Socket::Constants
 
-$logfile = '/var/log/ovirt-wui/host-browser.log'
+$logfile = '/var/log/ovirt-server/host-browser.log'
 
 # +HostBrowser+ communicates with the a managed node. It retrieves specific information
-# about the node and then updates the list of active nodes for the WUI.
+# about the node and then updates the list of active nodes for the Server.
 #
 class HostBrowser
     attr_accessor :logfile
