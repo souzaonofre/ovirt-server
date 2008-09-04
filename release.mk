@@ -1,8 +1,6 @@
 # Release/version-related Makefile variables and rules.
-# This Makefile snippet is included by both Makefile and
-# ../ovirt-host-creator/Makefile.  It expects the including Makefile
-# to define the "pkg_name" variable, as well as a file named "version"
-# in the current directory.
+# It expects the including Makefile to define the "pkg_name" 
+# variable, as well as a file named "version" in the current directory.
 
 ARCH		:= $(shell uname -i)
 VERSION		:= $(shell awk '{ print $$1 }' version)
@@ -17,6 +15,8 @@ DIST		= $$(rpm --eval '%{dist}')
 
 SPEC_FILE	= $(pkg_name).spec
 
+OVIRT_CACHE_DIR	?= $(HOME)/ovirt-cache
+
 NV		= $(pkg_name)-$(VERSION)
 RPM_FLAGS	= \
   --define "_topdir	%(pwd)/rpm-build" \
@@ -25,7 +25,8 @@ RPM_FLAGS	= \
   --define "_srcrpmdir	%{_topdir}" \
   --define '_rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm' \
   --define "_specdir	%{_topdir}" \
-  --define "_sourcedir	%{_topdir}"
+  --define "_sourcedir	%{_topdir}" \
+  --define "ovirt_cache_dir $(OVIRT_CACHE_DIR)"
 
 bumpgit:
 	echo "$(VERSION) $(GITRELEASE)" > version
@@ -42,6 +43,14 @@ setversion:
 new-rpms: bumprelease rpms
 
 rpms: tar
+	echo $(RPM_FLAGS)
+	exit
 	rpmbuild $(RPM_FLAGS) -ba $(SPEC_FILE)
 
-.PHONY: rpms new-rpms setversion bumprelease bumpversion bumpgit
+publish: rpms
+	rm -f $(OVIRT_CACHE_DIR)/yum/ovirt/$(pkg_name)*
+	mkdir -p $(OVIRT_CACHE_DIR)/yum/ovirt
+	cp -a rpm-build/$(pkg_name)*.rpm $(OVIRT_CACHE_DIR)/yum/ovirt
+	createrepo $(OVIRT_CACHE_DIR)/yum/ovirt
+
+.PHONY: rpms new-rpms publish setversion bumprelease bumpversion bumpgit
