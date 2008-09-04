@@ -1,7 +1,7 @@
 pkg_name = ovirt-server
 
 all: rpms
-include ../common/release.mk
+include release.mk
 
 clean:
 	rm -f ovirt*.gz ovirt*.rpm
@@ -27,4 +27,4 @@ tar: clean
 install: rpms
 	rpm -Uvh rpm-build/ovirt-server-$(VERSION)-$(RELEASE)$(DIST).$(ARCH).rpm --force
 
-.PHONY: all clean genlangs tar install
+.PHONY: all clean distclean genlangs tar install
