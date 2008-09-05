@@ -56,7 +56,7 @@ class VmControllerTest < Test::Unit::TestCase
   def test_create
     num_vms = Vm.count
 
-    post :create, :vm_resource_pool_name => 'foobar', :hardware_pool_id => 1, :vm => { :uuid => 'f43b298c-1e65-46fa-965f-0f6fb9ffaa10', :description =>     'descript', :num_vcpus_allocated => 4, :memory_allocated => 262144, :vnic_mac_addr => 'AA:BB:CC:DD:EE:FF' }
+    post :create, :vm_resource_pool_name => 'foobar', :hardware_pool_id => 1, :vm => { :uuid => 'f43b298c-1e65-46fa-965f-0f6fb9ffaa10', :description =>     'descript', :num_vcpus_allocated => 4, :memory_allocated => 262144, :vnic_mac_addr => 'AA:BB:CC:DD:EE:FF', :boot_device => 'network' }
 
     assert_response :success
 

@@ -35,7 +35,7 @@ if File.exists? File.dirname(__FILE__) + '/../selenium.rb'
                         @site_url,
 		          15000)
         @browser.start
-        @browser.set_speed(1500) # ms delay between operations
+        #@browser.set_speed(1500) # ms delay between operations
         @browser.open(@site_url)
      end
 
@@ -114,12 +114,14 @@ if File.exists? File.dirname(__FILE__) + '/../selenium.rb'
              "selenium.isElementPresent(\"//div[@id='vm_action_results']/div[3]/div/div[2]/a\")",
               10000)
         @browser.click "//div[@id='vm_action_results']/div[3]/div/div[2]/a"
+        sleep 5 # give vm time to start
         @browser.click "//div[@id='side']/ul/li/ul/li[1]/span/a"
         @browser.wait_for_condition(
-             "selenium.isElementPresent(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\")",
+             "selenium.isElementPresent(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") && " +
+             "selenium.getText(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") == \"running\"",
               20000)
-        assert_equal("running",
-          @browser.get_text("//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div"))
+        #assert_equal("running",
+          #@browser.get_text("//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div"))
 
         # stop / destroy vm
         @browser.click "//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[1]/div/input"
@@ -128,12 +130,14 @@ if File.exists? File.dirname(__FILE__) + '/../selenium.rb'
              "selenium.isElementPresent(\"//div[@id='vm_action_results']/div[3]/div/div[2]/a\")",
               10000)
         @browser.click "//div[@id='vm_action_results']/div[3]/div/div[2]/a"
+        sleep 5 # give vm time to stop
         @browser.click "//div[@id='side']/ul/li/ul/li[1]/span/a"
         @browser.wait_for_condition(
-             "selenium.isElementPresent(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\")",
+             "selenium.isElementPresent(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") && " +
+             "selenium.getText(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") == \"stopped\"",
               20000)
-        assert_equal("stopped",
-          @browser.get_text("//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div"))
+        #assert_equal("stopped",
+          #@browser.get_text("//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div"))
 
      end
 

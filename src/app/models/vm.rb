@@ -33,7 +33,8 @@ class Vm < ActiveRecord::Base
   has_many :smart_pools, :through => :smart_pool_tags
 
   validates_presence_of :uuid, :description, :num_vcpus_allocated,
-                        :memory_allocated_in_mb, :memory_allocated, :vnic_mac_addr
+                        :boot_device, :memory_allocated_in_mb,
+                        :memory_allocated, :vnic_mac_addr
 
   acts_as_xapian :texts => [ :uuid, :description, :vnic_mac_addr, :state ],
                  :terms => [ [ :search_users, 'U', "search_users" ] ]
