@@ -170,7 +170,7 @@ class HostBrowser
 
             break if info == "ENDNIC"
 
-            raise Exception.new("ERRINFO! Excepted key=value : #{info}\n") unless info =~ /[\w]+[\s]*=[\w]/
+            raise Exception.new("ERRINFO! Excepted key=value : #{info}\n") unless info =~ /[\w]+[\s]*=[\w]*/
 
             key, value = info.split("=")
 
@@ -275,6 +275,17 @@ class HostBrowser
                 # the received data to avoid creating a dupe later
                 if detail['MAC'] == nic.mac
                     nic_info.delete(detail)
+
+                    updated_nic = Nic.find_by_id(nic.id)
+
+                    updated_nic.bandwidth = detail['BANDWIDTH']
+                    updated_nic.ip_addr   = detail['IP_ADDRESS']
+                    updated_nic.netmask   = detail['NETMASK']
+                    updated_nic.broadcast = detail['BROADCAST']
+
+                    updated_nic.save!
+                    found=true
+                    nic_info.delete detail
                 end
             end
 
@@ -292,7 +303,10 @@ class HostBrowser
             detail = Nic.new(
                 'mac'        => nic['MAC'],
                 'bandwidth'  => nic['BANDWIDTH'],
-                'usage_type' => 1)
+                'usage_type' => 1,
+                'ip_addr'    => nic['IP_ADDRESS'],
+                'netmask'    => nic['NETMASK'],
+                'broadcast'  => nic['BROADCAST'])
 
             host.nics << detail
         end
