@@ -8,7 +8,8 @@
 <%= hidden_field_tag 'hardware_pool_id', @hardware_pool.id if @hardware_pool %>
 
     <%= text_field_with_label "Name:", "vm", "description", {:style=>"width:250px;"}  %>
-    <%= select_with_label "Operating System:", 'vm', 'provisioning_and_boot_settings', @provisioning_options, :style=>"width:250px;"  if create %>
+    <%= select_with_label "Operating System:", 'vm', 'provisioning_and_boot_settings', @provisioning_options, :style=>"width:250px;" %>
+    <% if controller.action_name == "edit" %><b style="color: #FF0000">*Warning* Editing provision could overwrite vm</b><% end %>
     <div class="clear_row" style="height:15px;"></div>
 
     <div class="form_heading">Resources</div>
@@ -50,7 +51,8 @@
     <div class="clear_row"></div>
     <div class="clear_row"></div>
 
-   <%= check_box_tag_with_label "Start VM Now? (pending current resource availability)", "start_now", nil if create%>
+   <%= check_box_tag_with_label "Start VM Now? (pending current resource availability)", "start_now", nil if create or @vm.state == Vm::STATE_STOPPED %>
+   <%= check_box_tag_with_label "Restart VM Now? (pending current resource availability)", "restart_now", nil if @vm.state == Vm::STATE_RUNNING %>
 
 <!--[eoform:vm]-->
 <script type="text/javascript">

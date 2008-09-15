@@ -96,6 +96,28 @@ class VmController < ApplicationController
       end
       params[:vm][:needs_restart] = 1 if needs_restart
       @vm.update_attributes!(params[:vm])
+      _setup_vm_provision(params)
+
+      if (params[:start_now] and @vm.get_action_list.include?(VmTask::ACTION_START_VM) )
+        @task = VmTask.new({ :user    => @user,
+                             :vm_id   => @vm.id,
+                             :action  => VmTask::ACTION_START_VM,
+                             :state   => Task::STATE_QUEUED})
+        @task.save!
+      elsif ( params[:restart_now] and @vm.get_action_list.include?(VmTask::ACTION_SHUTDOWN_VM) )
+        @task = VmTask.new({ :user    => @user,
+                             :vm_id   => @vm.id,
+                             :action  => VmTask::ACTION_SHUTDOWN_VM,
+                             :state   => Task::STATE_QUEUED})
+        @task.save!
+        @task = VmTask.new({ :user    => @user,
+                             :vm_id   => @vm.id,
+                             :action  => VmTask::ACTION_START_VM,
+                             :state   => Task::STATE_QUEUED})
+        @task.save!
+      end
+
+
       render :json => { :object => "vm", :success => true, 
                         :alert => 'Vm was successfully updated.'  }
     rescue
@@ -193,6 +215,44 @@ class VmController < ApplicationController
   end
 
   protected
+  def _setup_provisioning_options
+    @provisioning_options = [[Vm::PXE_OPTION_LABEL, Vm::PXE_OPTION_VALUE],
+                             [Vm::HD_OPTION_LABEL, Vm::HD_OPTION_VALUE]]
+    # FIXME add cobbler images too
+    begin
+      @provisioning_options += Cobbler::Profile.find.collect do |profile|
+        [profile.name + Vm::COBBLER_PROFILE_SUFFIX, profile.name]
+
+    end
+    rescue
+      #if cobbler doesn't respond/is misconfigured/etc just don't add profiles
+    end
+  end
+
+  # FIXME: move this to an edit_vm task in taskomatic
+  def _setup_vm_provision(params)
+    # spaces are invalid in the cobbler name
+    name = params[:vm][:description].gsub(" ", "-")
+    provision = params[:vm][:provisioning_and_boot_settings]
+    unless provision == Vm::PXE_OPTION_VALUE or
+           provision == Vm::HD_OPTION_VALUE
+      found = false
+      Cobbler::System.find.each{ |system|
+        if system.name == name
+          system.profile = provision
+          system.save
+          found = true
+        end
+      }
+      unless found
+        system = Cobbler::System.create("name" => name,
+                                        "profile" => provision)
+        # do we need to set any of the other system attributes?
+        system.save
+      end
+    end
+  end
+
   def pre_new
     # if no vm_resource_pool is passed in, find (or auto-create) it based on hardware_pool_id
     unless params[:vm_resource_pool_id]
@@ -229,18 +289,7 @@ class VmController < ApplicationController
     @perm_obj = @vm.vm_resource_pool
     @redir_controller = 'resources'
     @current_pool_id=@perm_obj.id
-    @provisioning_options = [[Vm::PXE_OPTION_LABEL, Vm::PXE_OPTION_VALUE],
-                             [Vm::HD_OPTION_LABEL, Vm::HD_OPTION_VALUE]]
-    # FIXME add cobbler images too
-    begin
-      @provisioning_options += Cobbler::Profile.find.collect do |profile|
-        [profile.name + Vm::COBBLER_PROFILE_SUFFIX,
-         Vm::COBBLER_PREFIX + Vm::PROVISIONING_DELIMITER +
-         Vm::PROFILE_PREFIX + Vm::PROVISIONING_DELIMITER + profile.name]
-      end
-    rescue
-      #if cobbler doesn't respond/is misconfigured/etc just don't add profiles
-    end
+    _setup_provisioning_options
   end
   def pre_create
     params[:vm][:state] = Vm::STATE_PENDING
@@ -267,6 +316,7 @@ class VmController < ApplicationController
     @perm_obj = @vm.vm_resource_pool
     @redir_obj = @vm
     @current_pool_id=@perm_obj.id
+    _setup_provisioning_options
   end
   def pre_vm_action
     pre_edit
