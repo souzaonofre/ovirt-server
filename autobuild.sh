@@ -27,6 +27,8 @@ test -f Makefile && make -k distclean || :
 
 make tar
 
+version=$(awk '{print $1}' version)
+
 if [ -f /usr/bin/rpmbuild ]; then
   if [ -n "$AUTOBUILD_COUNTER" ]; then
     EXTRA_RELEASE=".auto$AUTOBUILD_COUNTER"
@@ -37,7 +39,7 @@ if [ -f /usr/bin/rpmbuild ]; then
   # manually copy files over until we have an autotools
   #  generated tarball to base rpmbuild on
   cp version $AUTOBUILD_PACKAGE_ROOT/rpm/SOURCES/
-  cp rpm-build/ovirt-server-0.92.tar.gz $AUTOBUILD_PACKAGE_ROOT/rpm/SOURCES/
+  cp rpm-build/ovirt-server-$version.tar.gz $AUTOBUILD_PACKAGE_ROOT/rpm/SOURCES/
 
   rpmbuild --nodeps --define "extra_release $EXTRA_RELEASE" -ba --clean ovirt-server.spec
 fi

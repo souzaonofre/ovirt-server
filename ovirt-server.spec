@@ -5,7 +5,7 @@ Summary: oVirt Server Suite
 Name: ovirt-server
 Source1: version
 Version: %(echo `awk '{ print $1 }' %{SOURCE1}`)
-Release: %(echo `awk '{ print $2 }' %{SOURCE1}`)%{?dist}
+Release: %(echo `awk '{ print $2 }' %{SOURCE1}`)%{?dist}%{?extra_release}
 Source0: %{name}-%{version}.tar.gz
 #Entire source code is GPL except for vendor/plugins/will_paginate and 
 #vendor/plugins/betternestedset, which are MIT, and
