@@ -21,8 +21,16 @@ function load(settings, params, child, container) {
                             settings.link_to=settings.hardware_url 
                             settings.span_class="folder";
                             settings.current_class = settings.current + "_folder";
-                        } else {
+                        } else if (this.type=="VmResourcePool") {
                             settings.link_to=settings.resource_url;
+                            settings.span_class="file";
+                            settings.current_class = settings.current + "_file";
+                        } else if (this.type=="SmartPool") {
+                            settings.link_to=settings.smart_url;
+                            settings.span_class="file";
+                            settings.current_class = settings.current + "_file";
+                        } else {
+                            settings.link_to="";
                             settings.span_class="file";
                             settings.current_class = settings.current + "_file";
                         }   
@@ -64,7 +72,7 @@ function load(settings, params, child, container) {
 			}
 		} 
                 $(container).find('li').remove();
-                createNode.call(response, child);                
+                $.each(response, createNode, [child]);
                 $(container).ovirt_treeview({add: child});
                 for (var i = 0; i < selectedNodes.length; i++){
                   $('#test-tree li#' + selectedNodes[i] +' > div').click();

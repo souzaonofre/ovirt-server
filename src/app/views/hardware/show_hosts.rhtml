@@ -14,17 +14,17 @@
 <script type="text/javascript">
   function get_selected_hosts()
   {
-    return get_selected_checkboxes("hosts_grid_form")
+    return get_selected_checkboxes("hosts_grid_form");
   }
   function validate_for_move()
   {
     if (validate_selected(get_selected_hosts(), 'host')) {
-      $('#move_link_hidden').click()
+      $('#move_link_hidden').click();
     }
   }
   function remove_hosts()
   {
-    hosts = get_selected_hosts()
+    var hosts = get_selected_hosts();
     if (validate_selected(hosts, "host")) {
       $.post('<%= url_for :controller => "hardware", :action => "move_hosts", :id => @pool %>',
              { resource_ids: hosts.toString(), target_pool_id: <%= HardwarePool.get_default_pool.id %> },
@@ -34,22 +34,22 @@
 		  $.jGrowl(data.alert);
                 }
 		if (hosts.indexOf($('#hosts_selection_id').html()) != -1){
-		  empty_summary('hosts_selection', 'Host')
-		}   
+		  empty_summary('hosts_selection', 'Host');
+		}
 
                }, 'json');
     }
   }
   function hosts_select(selected_rows)
   {
-    var selected_ids = new Array() 
-    for(i=0; i<selected_rows.length; i++) { 
+    var selected_ids = new Array();
+    for(i=0; i<selected_rows.length; i++) {
       load_widget_select(selected_rows[i]);
       selected_ids[i] = selected_rows[i].id;
     }
     if (selected_ids.length == 1)
     {
-      $('#hosts_selection').load('<%= url_for :controller => "host", :action => "show", :id => nil %>/' + parseInt(selected_ids[0].substring(3)))
+      $('#hosts_selection').load('<%= url_for :controller => "host", :action => "show", :id => nil %>/' + parseInt(selected_ids[0].substring(3)));
     }
   }
 </script>
@@ -63,7 +63,7 @@
                                                         :exclude_host => nil,
                                                         :show_pool => false,
                                                         :checkboxes => true,
-                                                        :on_select => "hosts_select", 
+                                                        :on_select => "hosts_select",
                                                         :on_deselect => "load_widget_deselect",
                                                         :on_hover => "load_widget_hover",
                                                         :on_unhover => "load_widget_unhover",
@@ -79,7 +79,7 @@
    <div class="data_section">
        <div class="no-grid-items">
           <%= image_tag 'no-grid-items.png', :style => 'float: left;' %>
-          
+
           <div class="no-grid-items-text">
             No hosts found in this pool. <br/><br/>
             <%= image_tag "icon_addhost.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;

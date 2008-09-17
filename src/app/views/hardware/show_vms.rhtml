@@ -11,7 +11,7 @@
   }
   function delete_vm_pools()
   {
-    vm_pools = get_selected_vm_pools()
+    var vm_pools = get_selected_vm_pools();
     if (validate_selected(vm_pools, "vm_pool")) {
       $.post('<%= url_for :controller => "resources", :action => "delete", :id => @pool %>',
              { vm_pool_ids: vm_pools.toString() },

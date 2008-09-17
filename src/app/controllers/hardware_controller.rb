@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -19,10 +19,6 @@
 #
 
 class HardwareController < PoolController
-
-  XML_OPTS  = {
-    :include => [ :storage_pools, :hosts, :quota ]
-  }
 
   EQ_ATTRIBUTES = [ :name, :parent_id ]
 
@@ -59,12 +55,12 @@ class HardwareController < PoolController
   end
 
   def json_view_tree
-    json_tree_internal(Permission::PRIV_VIEW, false)
+    json_tree_internal(Permission::PRIV_VIEW, :select_hardware_and_vm_pools)
   end
   def json_move_tree
-    json_tree_internal(Permission::PRIV_MODIFY, true)
+    json_tree_internal(Permission::PRIV_MODIFY, :select_hardware_pools)
   end
-  def json_tree_internal(privilege, filter_vm_pools)
+  def json_tree_internal(privilege, filter_method)
     id = params[:id]
     if id
       @pool = Pool.find(id)
@@ -77,11 +73,9 @@ class HardwareController < PoolController
     end
     if @pool
       pools = @pool.children
-      pools = Pool.select_hardware_pools(pools) if filter_vm_pools
       open_list = []
     else
       pools = Pool.list_for_user(get_login_user,Permission::PRIV_VIEW)
-      pools = Pool.select_hardware_pools(pools) if filter_vm_pools
       current_id = params[:current_id]
       if current_id
         current_pool = Pool.find(current_id)
@@ -90,26 +84,26 @@ class HardwareController < PoolController
         open_list = []
       end
     end
+    pools = Pool.send(filter_method, pools)
 
-    render :json => Pool.nav_json(pools, open_list, filter_vm_pools)
+    render :json => Pool.nav_json(pools, open_list,
+                                  (filter_method==:select_hardware_pools))
   end
 
   def show_vms
     show
   end
 
-  def show_hosts    
-    @hardware_pools = HardwarePool.find :all
+  def show_hosts
     show
   end
-  
+
   def show_graphs
     show
   end
 
   def show_storage
     show
-    @hardware_pools = HardwarePool.find :all
   end
 
   def show_tasks
@@ -142,21 +136,16 @@ class HardwareController < PoolController
       # filtering on which pool to exclude
       id = params[:exclude_pool]
       hosts = Host
-      find_opts = {:include => :hardware_pool, 
+      find_opts = {:include => :hardware_pool,
         :conditions => ["pools.id != ?", id]}
       include_pool = true
     end
-    attr_list = []
-    attr_list << :id if params[:checkboxes]
-    attr_list << :hostname
-    attr_list << [:hardware_pool, :name] if include_pool
-    attr_list += [:uuid, :hypervisor_type, :num_cpus, :cpu_speed, :arch, :memory_in_mb, :status_str, :load_average]
-    json_list(hosts, attr_list, [:all], find_opts)
+    super(:full_items => hosts,:include_pool => include_pool,:find_opts => find_opts)
   end
 
   def vm_pools_json
-    json_list(Pool, 
-              [:id, :name, :id], 
+    json_list(Pool,
+              [:id, :name, :id],
               [@pool, :children],
               {:finder => 'call_finder', :conditions => ["type = 'VmResourcePool'"]})
   end
@@ -172,24 +161,22 @@ class HardwareController < PoolController
       # filtering on which pool to exclude
       id = params[:exclude_pool]
       storage_pools = StoragePool
-      find_opts = {:include => :hardware_pool, 
+      find_opts = {:include => :hardware_pool,
         :conditions => ["pools.id != ?", id]}
       include_pool = true
     end
-    attr_list = [:id, :display_name, :ip_addr, :get_type_label]
-    attr_list.insert(2, [:hardware_pool, :name]) if include_pool
-    json_list(storage_pools, attr_list, [:all], find_opts)
+    super(:full_items => storage_pools,:include_pool => include_pool,:find_opts => find_opts)
   end
 
   def storage_volumes_json
-    json_list(@pool.all_storage_volumes, 
+    json_list(@pool.all_storage_volumes,
               [:display_name, :size_in_gb, :get_type_label])
   end
 
   def move
     pre_modify
     @resource_type = params[:resource_type]
-    render :layout => 'popup'    
+    render :layout => 'popup'
   end
 
   def new
@@ -279,87 +266,44 @@ class HardwareController < PoolController
     end
   end
 
-  #FIXME: we need permissions checks. user must have permission on src pool
-  # in addition to the current pool (which is checked). We also need to fail
-  # for hosts that aren't currently empty
   def add_hosts
-    host_ids_str = params[:resource_ids]
-    host_ids = host_ids_str.split(",").collect {|x| x.to_i}
-
-    begin
-      @pool.transaction do
-        @pool.move_hosts(host_ids, @pool.id)
-      end
-      render :json => { :object => "host", :success => true, 
-        :alert => "Hosts were successfully added to this Hardware pool." }
-    rescue
-      render :json => { :object => "host", :success => false, 
-        :alert => "Error adding Hosts to this Hardware pool." }
-    end
+    edit_items(Host, :move_hosts, @pool.id, :add)
   end
 
-  #FIXME: we need permissions checks. user must have permission on src pool
-  # in addition to the current pool (which is checked). We also need to fail
-  # for hosts that aren't currently empty
   def move_hosts
-    target_pool_id = params[:target_pool_id]
-    host_ids_str = params[:resource_ids]
-    host_ids = host_ids_str.split(",").collect {|x| x.to_i}
-    
-    begin
-      @pool.transaction do
-        @pool.move_hosts(host_ids, target_pool_id)
-      end
-      render :json => { :object => "host", :success => true, 
-        :alert => "Hosts were successfully moved." }
-    rescue
-      render :json => { :object => "host", :success => false, 
-        :alert => "Error moving hosts." }
-    end
+    edit_items(Host, :move_hosts, params[:target_pool_id], :move)
   end
 
-  #FIXME: we need permissions checks. user must have permission on src pool
-  # in addition to the current pool (which is checked). We also need to fail
-  # for storage that aren't currently empty
   def add_storage
-    storage_pool_ids_str = params[:resource_ids]
-    storage_pool_ids = storage_pool_ids_str.split(",").collect {|x| x.to_i}
-    
-    begin
-      @pool.transaction do
-        @pool.move_storage(storage_pool_ids, @pool.id)
-      end
-      render :json => { :object => "storage_pool", :success => true, 
-        :alert => "Storage Pools were successfully added to this Hardware pool." }
-    rescue
-      render :json => { :object => "storage_pool", :success => false, 
-        :alert => "Error adding storage pools to this Hardware pool." }
-    end
+    edit_items(StoragePool, :move_storage, @pool.id, :add)
+  end
+
+  def move_storage
+    edit_items(StoragePool, :move_storage, params[:target_pool_id], :move)
   end
 
   #FIXME: we need permissions checks. user must have permission on src pool
   # in addition to the current pool (which is checked). We also need to fail
   # for storage that aren't currently empty
-  def move_storage
-    target_pool_id = params[:target_pool_id]
-    storage_pool_ids_str = params[:resource_ids]
-    storage_pool_ids = storage_pool_ids_str.split(",").collect {|x| x.to_i}
+  def edit_items(item_class, item_method, target_pool_id, item_action)
+    resource_ids_str = params[:resource_ids]
+    resource_ids = resource_ids_str.split(",").collect {|x| x.to_i}
 
     begin
       @pool.transaction do
-        @pool.move_storage(storage_pool_ids, target_pool_id)
+        @pool.send(item_method, resource_ids, target_pool_id)
       end
-      render :json => { :object => "storage_pool", :success => true, 
-        :alert => "Storage Pools were successfully moved." }
+      render :json => { :success => true,
+        :alert => "#{item_action.to_s} #{item_class.table_name.humanize} successful." }
     rescue
-      render :json => { :object => "storage_pool", :success => false, 
-        :alert => "Error moving storage pools." }
+      render :json => { :success => false,
+        :alert => "#{item_action.to_s} #{item_class.table_name.humanize} failed." }
     end
   end
 
   def removestorage
     pre_modify
-    render :layout => 'popup'    
+    render :layout => 'popup'
   end
 
   def destroy

@@ -1,0 +1,27 @@
+<%- content_for :title do -%>
+  <%= _("Add Vm to Smart Pool") %>
+<%- end -%>
+<%- content_for :description do -%>
+  Select vms from the list below to add to the <%= @pool.name %> smart pool.</a>
+<%- end -%>
+<div id="dialog-content-area">
+<div class="dialog_body_small">
+<div class="panel_header"></div>
+  <%= render :partial => "/vm/grid", :locals => { :table_id => "add_smart_vms_grid",
+             :pool => nil,
+             :pool_controller => "smart_pools",
+             :exclude_pool => @pool.id,
+             :checkboxes => true,
+             :on_select => false,
+             :on_deselect => false,
+             :on_hover => false,
+             :on_unhover => false,
+             :is_popup => true,
+             :vms_per_page => 40} %>
+</div>
+
+<%= popup_footer("add_vms_to_smart_pool('#{url_for :controller => "smart_pools",
+                                                     :action => "add_vms",
+                                                     :id => @pool}')",
+                 "Add Vms") %>
+</div>

@@ -43,7 +43,7 @@ function load(settings, params, child, container) {
    		        } else {
 			    span_onclick = ""
 		        }
-                        if (settings.current_pool_id==this.id) {
+                        if (settings.current_pool_id==this.id || !((settings.disabled_pools == undefined) || ($.inArray(this.id,settings.disabled_pools)==-1))) {
                           current.html("<span class=\"" + settings.current_class + ">" + this.text  + "</span>")
                             .appendTo(parent);
                         } else {

@@ -68,8 +68,8 @@ class ResourcesController < PoolController
   end
 
   def vms_json
-    json_list(@pool.vms,
-              [:id, :description, :uuid, :num_vcpus_allocated, :memory_allocated_in_mb, :vnic_mac_addr, :state, :id])
+    pre_show
+    super(:full_items => @pool.vms, :find_opts => {}, :include_pool => :true)
   end
 
   def create

@@ -1,0 +1,28 @@
+<%- content_for :title do -%>
+  <%= _("Add Host to Smart Pool") %>
+<%- end -%>
+<%- content_for :description do -%>
+  Select hosts from the list below to add to the <%= @pool.name %> smart pool.</a>
+<%- end -%>
+<div id="dialog-content-area">
+<div class="dialog_body_small">
+<div class="panel_header"></div>
+  <%= render :partial => "/host/grid", :locals => { :table_id => "add_smart_hosts_grid",
+             :hwpool => nil,
+             :pool_controller => "smart_pools",
+             :exclude_pool => @pool.id,
+             :exclude_host => nil,
+             :checkboxes => true,
+             :on_select => false,
+             :on_deselect => false,
+             :on_hover => false,
+             :on_unhover => false,
+             :is_popup => true,
+             :hosts_per_page => 10} %>
+</div>
+
+<%= popup_footer("add_hosts_to_smart_pool('#{url_for :controller => "smart_pools",
+                                                     :action => "add_hosts",
+                                                     :id => @pool}')",
+                 "Add Hosts") %>
+</div>

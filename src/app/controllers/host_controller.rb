@@ -84,6 +84,11 @@ class HostController < ApplicationController
     render :layout => 'popup'    
   end
 
+  def add_to_smart_pool
+    @pool = SmartPool.find(params[:smart_pool_id])
+    render :layout => 'popup'
+  end
+
   def new
   end
 

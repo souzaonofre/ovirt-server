@@ -89,7 +89,7 @@ class ApplicationController < ActionController::Base
   end
 
   # don't define find_opts for array inputs
-  def json_hash(full_items, attributes, arg_list=[], find_opts={})
+  def json_hash(full_items, attributes, arg_list=[], find_opts={}, id_method=:id)
     page = params[:page].to_i
     paginate_opts = {:page => page, 
                      :order => "#{params[:sortname]} #{params[:sortorder]}", 
@@ -101,7 +101,7 @@ class ApplicationController < ActionController::Base
     json_hash[:total] = item_list.total_entries
     json_hash[:rows] = item_list.collect do |item|
       item_hash = {}
-      item_hash[:id] = item.id
+      item_hash[:id] = item.send(id_method)
       item_hash[:cell] = attributes.collect do |attr| 
         if attr.is_a? Array
           value = item
@@ -115,9 +115,12 @@ class ApplicationController < ActionController::Base
     end
     json_hash
   end
-  # don't define find_opts for array inputs
-  def json_list(full_items, attributes, arg_list=[], find_opts={})
-    render :json => json_hash(full_items, attributes, arg_list, find_opts).to_json
+
+  # json_list is a helper method used to format data for paginated flexigrid tables
+  #
+  # FIXME: what is the intent of this comment? don't define find_opts for array inputs
+  def json_list(full_items, attributes, arg_list=[], find_opts={}, id_method=:id)
+    render :json => json_hash(full_items, attributes, arg_list, find_opts, id_method).to_json
   end
 
 

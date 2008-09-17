@@ -1,0 +1,26 @@
+<%- content_for :title do -%>
+  <%= _("Add New Smart Pool") %>
+<%- end -%>
+<%- content_for :description do -%>
+  Add a new Smart Pool.
+<%- end -%>
+
+<form method="POST" action="<%= url_for :action => 'create' %>" id="smart_pool_form" >
+  <div class="dialog_form">
+    <%= render :partial => 'form' %>
+  </div>
+  <%= popup_footer("$('#smart_pool_form').submit()", "Create Smart Pool") %>
+</form>
+
+<script type="text/javascript">
+$(function() {
+    var hwpooloptions = {
+        target:        '<%= url_for :action => 'create' %>',   // target element to update
+	dataType:      'json',
+        success:       afterSmartPool  // post-submit callback
+    };
+
+    // bind form using 'ajaxForm'
+    $('#smart_pool_form').ajaxForm(hwpooloptions);
+});
+</script>

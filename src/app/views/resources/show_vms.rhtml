@@ -26,7 +26,7 @@
   }
   function delete_vms()
   {
-    vms = get_selected_vms()
+    var vms = get_selected_vms();
     if (validate_selected(vms, "vm")) {
       $.post('<%= url_for :controller => "vm", :action => "delete", :id => @pool %>',
              { vm_ids: vms.toString() },
@@ -43,7 +43,7 @@
   }
   function vm_actions(action)
   {
-    vms = get_selected_vms()
+    var vms = get_selected_vms();
     if (validate_selected(vms, "vm")) {
       jQuery.facebox('<div id="vm_action_results">');
       $('#vm_action_results').load('<%= url_for :controller => "resources", 
@@ -70,10 +70,12 @@
   <div class="data_section">
        <%= render :partial => "/vm/grid", :locals => { :table_id => "vms_grid",
                                                        :pool => @pool,
+                                                       :exclude_pool => nil,
                                                        :on_select => "vms_select",
                                                        :on_deselect => "load_widget_deselect",
                                                        :on_hover => "load_widget_hover",
-                                                       :on_unhover => "load_widget_unhover" } %>
+                                                       :on_unhover => "load_widget_unhover",
+                                                       :is_popup => false } %>
   </div>
   <div class="selection_detail" id="vms_selection">
      <div class="selection_left">

@@ -15,7 +15,7 @@
 <script type="text/javascript">
   function remove_storage()
   {
-    storage = get_selected_storage()
+    var storage = get_selected_storage();
     if (validate_selected(storage, "storage pool")) {
       $.post('<%= url_for :controller => "hardware", :action => "move_storage", :id => @pool %>',
              { resource_ids: storage.toString(), target_pool_id: <%= HardwarePool.get_default_pool.id %> },
@@ -25,14 +25,14 @@
 		  $.jGrowl(data.alert);
                 }
 		if (storage.indexOf($('#storage_selection_id').html()) != -1){
-		  empty_summary('storage_selection', 'Storage Pool')
+		  empty_summary('storage_selection', 'Storage Pool');
 		}   
                }, 'json');
     }
   }
   function delete_storage()
   {
-    storage = get_selected_storage()
+    var storage = get_selected_storage();
     if (validate_selected(storage, "storage pool")) {
       $.post('<%= url_for :controller => "storage", :action => "delete_pools", :id => @pool %>',
              { storage_pool_ids: storage.toString() },
@@ -42,15 +42,15 @@
 		  $.jGrowl(data.alert);
                 }
 		if (storage.indexOf($('#storage_selection_id').html()) != -1){
-		  empty_summary('storage_selection', 'Storage Pool')
+		  empty_summary('storage_selection', 'Storage Pool');
 		}   
                }, 'json');
     }
   }
   function storage_select(selected_rows)
   {
-    var selected_ids = new Array() ;
-    for(i=0; i<selected_rows.length; i++) { 
+    var selected_ids = new Array();
+    for(i=0; i<selected_rows.length; i++) {
       selected_ids[i] = selected_rows[i].id;
     }
     if (selected_ids.length == 1)
@@ -80,7 +80,7 @@
    <div class="data_section">
        <div class="no-grid-items">
           <%= image_tag 'no-grid-items.png', :style => 'float: left;' %>
-          
+
           <div class="no-grid-items-text">
             No storage Volumes found in this pool. <br/><br/>
             <%= image_tag "icon_addhost.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;

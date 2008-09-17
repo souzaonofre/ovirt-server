@@ -1,0 +1,22 @@
+<%- content_for :title do -%>
+  <%= _("Add Storage Pool to Smart Pool") %>
+<%- end -%>
+<%- content_for :description do -%>
+  Select storage pools from the list below to add to the <%= @pool.name %> smart pool.</a>
+<%- end -%>
+<div id="dialog-content-area">
+<div class="dialog_body_small">
+<div class="panel_header"></div>
+  <%= render :partial => "/storage/grid", :locals => { :table_id => "add_smart_storage_grid",
+             :hwpool => nil,
+             :pool_controller => "smart_pools",
+             :exclude_pool => @pool.id,
+             :on_select => false,
+             :is_popup => true} %>
+</div>
+
+<%= popup_footer("add_storage_to_smart_pool('#{url_for :controller => "smart_pools",
+                                                     :action => "add_storage",
+                                                     :id => @pool}')",
+                 "Add Storage Pools") %>
+</div>

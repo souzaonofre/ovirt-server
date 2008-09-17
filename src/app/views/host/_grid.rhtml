@@ -1,6 +1,14 @@
 <%= render :partial => 'graph/load_graph.rhtml' %>
+<% pool_controller = 'hardware' unless (defined? pool_controller) and !(pool_controller.nil?) %>
 
 <% hosts_per_page.nil? ? hosts_per_page = 40: hosts_per_page = hosts_per_page %>
+<% if (hwpool.nil? or
+       ((hwpool.is_a? HardwarePool) and (hwpool.hosts.size > hosts_per_page)) or
+       ((hwpool.is_a? SmartPool) and (hwpool.tagged_hosts.size > hosts_per_page)))
+     usepager = 'true'
+   else
+     usepager = 'false'
+   end %>
 <div id="<%= table_id %>_div">
 <%= "<form id=\"#{table_id}_form\">" if checkboxes %>
 <table id="<%= table_id %>" style="display:none"></table>
@@ -10,7 +18,7 @@
     $("#<%= table_id %>").flexigrid
     (
     {
-    url: '<%=  url_for :controller => "hardware",
+    url: '<%=  url_for :controller => pool_controller,
                        :action => "hosts_json",
                        :escape => false,
                        :id => (hwpool.nil? ? nil : hwpool.id),
@@ -38,8 +46,8 @@
 	],
     sortname: "hostname",
     sortorder: "asc",
-    usepager: <%= (hwpool.nil? or hwpool.hosts.size > hosts_per_page) ? 'true' : 'false' %>,
-    useRp: <%= (hwpool.nil? or hwpool.hosts.size > hosts_per_page) ? 'true' : 'false' %>,
+    usepager: <%= usepager %>,
+    useRp: <%= usepager %>,
     rp: <%= hosts_per_page %>,
     showTableToggleBtn: true,
     onSelect: <%= on_select %>,

@@ -199,6 +199,11 @@ class StorageController < ApplicationController
     render :layout => false
   end
 
+  def add_to_smart_pool
+    @pool = SmartPool.find(params[:smart_pool_id])
+    render :layout => 'popup'
+  end
+
   #FIXME: we need permissions checks. user must have permission on src pool
   # in addition to the current pool (which is checked). We also need to fail
   # for storage that aren't currently empty

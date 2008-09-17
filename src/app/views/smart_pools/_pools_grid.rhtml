@@ -1,0 +1,39 @@
+<% resources_per_page = 40 %>
+<div id="<%= table_id %>_div">
+<form id="<%= table_id %>_form">
+<table id="<%= table_id %>" style="display:none"></table>
+</form>
+</div>
+<script type="text/javascript">
+    $("#<%= table_id %>").flexigrid
+    (
+    {
+    url: '<%=  url_for :controller => "smart_pools", :action => "pools_json", :id => pool.id %>',
+    dataType: 'json',
+    colModel : [
+        {display: '', name : 'id', width : 20, sortable : false, align: 'left', process: <%= table_id %>checkbox},
+        {display: 'Name', name : 'name', width : 160, sortable : true, align: 'left'},
+        {display: 'Type', width : 160, sortable : true, align: 'left'}
+        ],
+    sortname: "name",
+    sortorder: "asc",
+    usepager: <%= pool.tagged_pools.size > resources_per_page ? 'true' : 'false' %>,
+    useRp: <%= pool.tagged_pools.size > resources_per_page ? 'true' : 'false' %>,
+    rp: <%= resources_per_page %>,
+    showTableToggleBtn: true,
+    onSelect: <%= on_select %>,
+    onDeselect: <%= on_deselect %>,
+    onHover: <%= on_hover %>,
+    onUnhover: <%= on_unhover %>
+    }
+    );
+    function <%= table_id %>checkbox(celDiv)
+    {
+       $(celDiv).html('<input type="checkbox" name="grid_checkbox'+$(celDiv).html()+'" class="grid_checkbox" value="'+$(celDiv).html()+'"/>');
+    }
+    function <%= table_id %>_load_widget(celDiv)
+    {
+        load_widget(celDiv, "resource");
+    };
+
+</script>

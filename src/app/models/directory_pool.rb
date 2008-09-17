@@ -55,6 +55,7 @@ class DirectoryPool < Pool
         permission.save!
       end
     end
+    user_root
   end
 
 end

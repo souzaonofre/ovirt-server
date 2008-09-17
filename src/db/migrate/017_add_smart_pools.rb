@@ -47,7 +47,7 @@ class AddSmartPools < ActiveRecord::Migration
             new_permission = Permission.new({:pool_id     => dir_root.id,
                                              :uid         => permission.uid,
                                              :user_role   => permission.user_role})
-            new_permission.save!
+            new_permission.save_with_new_children
           end
         end
       end

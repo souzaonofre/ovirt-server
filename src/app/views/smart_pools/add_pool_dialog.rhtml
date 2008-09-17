@@ -1,0 +1,52 @@
+<%- content_for :title do -%>
+  Add a Hardware or Virtual Machine Pool
+<%- end -%>
+<%- content_for :description do -%>
+  Choose a Hardware or Virtual Machine Pool to add to this Smart Pool
+<%- end -%>
+
+<script type="text/javascript">
+      $(document).ready(function(){
+        $("#add_tree").asynch_treeview({
+            //animated: "normal",
+            current_pool_id:  <%=@current_pool_id%>,
+            disabled_pools: [<%=@selected_pools.join(',')%>],
+            url: "<%=  url_for :controller =>'/hardware', :action => 'json_view_tree' %>",
+            current: "disabled",
+            hardware_url: "#",
+            resource_url: "#",
+            onclick: "add_pool_to_smart_pool",
+            action_type: "javascript"
+	    })
+	});
+  function add_pool_to_smart_pool(added_pool_id)
+  {
+    $.post('<%= url_for :controller => "smart_pools", :action => "add_pools", :id => @pool %>',
+           { resource_ids: added_pool_id },
+            function(data,status){
+              grid = $("#smart_pools_grid");
+              if (grid.size()>0 && grid != null) {
+                grid.flexReload();
+              } else {
+                $tabs.tabs("load",$tabs.data('selected.tabs'));
+              }
+              $("smart_pools_grid").flexReload()
+	      jQuery(document).trigger('close.facebox');
+	      if (data.alert) {
+	        $.jGrowl(data.alert);
+              }
+             }, 'json');
+  }
+</script>
+
+<div class="dialog_tree">
+  <ul id="add_tree" class="filetree treeview-famfamfam treeview"></ul>
+</div>
+
+<div class="facebox_timfooter">
+  <div class="button">
+    <div class="button_left_grey"></div>
+    <div class="button_middle_grey"><a href="#" onclick="jQuery(document).trigger('close.facebox')">Cancel</a></div>
+    <div class="button_right_grey"></div>
+  </div>
+</div>

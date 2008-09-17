@@ -42,7 +42,7 @@ function add_hosts(url)
       $.post(url,
              { resource_ids: hosts.toString() },
               function(data,status){ 
-                jQuery(document).trigger('close.facebox');
+                $(document).trigger('close.facebox');
 	        grid = $("#hosts_grid");
                 if (grid.size()>0 && grid != null) {
                   grid.flexReload();
@@ -62,12 +62,72 @@ function add_storage(url)
       $.post(url,
              { resource_ids: storage.toString() },
               function(data,status){;
-                jQuery(document).trigger('close.facebox');
+                $(document).trigger('close.facebox');
 	        grid = $("#storage_grid");
                 if (grid.size()>0 && grid != null) {
                   grid.flexReload();
                 } else {
                    $tabs.tabs("load",$tabs.data('selected.tabs'));
+                }
+		if (data.alert) {
+		  $.jGrowl(data.alert);
+                }
+               }, 'json');
+    }
+}
+function add_hosts_to_smart_pool(url)
+{
+    hosts= get_selected_checkboxes("add_smart_hosts_grid_form");
+    if (validate_selected(hosts, "host")) {
+      $.post(url,
+             { resource_ids: hosts.toString() },
+              function(data,status){
+                $(document).trigger('close.facebox');
+	        grid = $("#smart_hosts_grid");
+                if (grid.size()>0 && grid != null) {
+                  grid.flexReload();
+                } else {
+		  $tabs.tabs("load",$tabs.data('selected.tabs'));
+                }
+		if (data.alert) {
+		  $.jGrowl(data.alert);
+                }
+               }, 'json');
+    }
+}
+function add_storage_to_smart_pool(url)
+{
+    storage= get_selected_checkboxes("add_smart_storage_grid_form");
+    if (validate_selected(storage, "storage pool")) {
+      $.post(url,
+             { resource_ids: storage.toString() },
+              function(data,status){
+                $(document).trigger('close.facebox');
+	        grid = $("#smart_storage_grid");
+                if (grid.size()>0 && grid != null) {
+                  grid.flexReload();
+                } else {
+		  $tabs.tabs("load",$tabs.data('selected.tabs'));
+                }
+		if (data.alert) {
+		  $.jGrowl(data.alert);
+                }
+               }, 'json');
+    }
+}
+function add_vms_to_smart_pool(url)
+{
+    vms= get_selected_checkboxes("add_smart_vms_grid_form");
+    if (validate_selected(vms, "vm")) {
+      $.post(url,
+             { resource_ids: vms.toString() },
+              function(data,status){
+                $(document).trigger('close.facebox');
+	        grid = $("#smart_vms_grid");
+                if (grid.size()>0 && grid != null) {
+                  grid.flexReload();
+                } else {
+		  $tabs.tabs("load",$tabs.data('selected.tabs'));
                 }
 		if (data.alert) {
 		  $.jGrowl(data.alert);
@@ -102,7 +162,7 @@ function ajax_validation(response, status)
 function afterHwPool(response, status){
     ajax_validation(response, status);
     if (response.success) {
-      jQuery(document).trigger('close.facebox');
+      $(document).trigger('close.facebox');
       // FIXME do we need to reload the tree here
 
       // this is for reloading the host/storage grid when 
@@ -128,7 +188,7 @@ function afterHwPool(response, status){
 function afterVmPool(response, status){
     ajax_validation(response, status);
     if (response.success) {
-      jQuery(document).trigger('close.facebox');
+      $(document).trigger('close.facebox');
       grid = $("#vmpools_grid");
       if (grid.size()>0 && grid != null) {
         grid.flexReload();
@@ -137,10 +197,16 @@ function afterVmPool(response, status){
       }
     }
 }
+function afterSmartPool(response, status){
+    ajax_validation(response, status);
+    if (response.success) {
+      $(document).trigger('close.facebox');
+    }
+}
 function afterStoragePool(response, status){
     ajax_validation(response, status);
     if (response.success) {
-      jQuery(document).trigger('close.facebox');
+      $(document).trigger('close.facebox');
       grid = $("#storage_grid");
       if (grid.size()>0 && grid != null) {
         grid.flexReload();
@@ -152,7 +218,7 @@ function afterStoragePool(response, status){
 function afterPermission(response, status){
     ajax_validation(response, status);
     if (response.success) {
-      jQuery(document).trigger('close.facebox');
+      $(document).trigger('close.facebox');
       grid = $("#users_grid");
       if (grid.size()>0 && grid!= null) {
         grid.flexReload();
@@ -164,7 +230,7 @@ function afterPermission(response, status){
 function afterVm(response, status){
     ajax_validation(response, status);
     if (response.success) {
-      jQuery(document).trigger('close.facebox');
+      $(document).trigger('close.facebox');
       grid = $("#vms_grid");
       if (grid.size()>0 && grid != null) {
         grid.flexReload();
@@ -212,7 +278,23 @@ function delete_or_remove_storage()
     } else if (selected[0].value == "delete") {
         delete_storage();
     }
-    jQuery(document).trigger('close.facebox');
+    $(document).trigger('close.facebox');
+}
+function delete_pool(delete_url, id)
+{
+  $(document).trigger('close.facebox');
+
+  if (delete_url==='') {
+    $.jGrowl("Invalid Pool Type");
+    return;
+  }
+  $.post(delete_url,
+         {id: id},
+          function(data,status){
+            if (data.alert) {
+              $.jGrowl(data.alert);
+            }
+           }, 'json');
 }
 
 

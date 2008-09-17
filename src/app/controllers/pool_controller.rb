@@ -23,8 +23,13 @@ class PoolController < ApplicationController
   before_filter :pre_show_pool, :only => [:show_vms, :show_users,
                                           :show_hosts, :show_storage,
                                           :users_json, :show_tasks, :tasks,
-                                          :vms_json, :vm_pools_json,
+                                          :vm_pools_json,
+                                          :pools_json, :show_pools,
                                           :storage_volumes_json, :quick_summary]
+
+  XML_OPTS  = {
+    :include => [ :storage_pools, :hosts, :quota ]
+  }
 
   def show
     respond_to do |format|
@@ -86,6 +91,28 @@ class PoolController < ApplicationController
     json_hash(@pool.tasks, attr_list, [:all], find_opts)
   end
 
+  def hosts_json(args)
+    attr_list = []
+    attr_list << :id if params[:checkboxes]
+    attr_list << :hostname
+    attr_list << [:hardware_pool, :name] if args[:include_pool]
+    attr_list += [:uuid, :hypervisor_type, :num_cpus, :cpu_speed, :arch, :memory_in_mb, :status_str, :load_average]
+    json_list(args[:full_items], attr_list, [:all], args[:find_opts])
+  end
+
+  def storage_pools_json(args)
+    attr_list = [:id, :display_name, :ip_addr, :get_type_label]
+    attr_list.insert(2, [:hardware_pool, :name]) if args[:include_pool]
+    json_list(args[:full_items], attr_list, [:all], args[:find_opts])
+  end
+
+  def vms_json(args)
+    attr_list = [:id, :description, :uuid,
+                 :num_vcpus_allocated, :memory_allocated_in_mb,
+                 :vnic_mac_addr, :state, :id]
+    json_list(args[:full_items], attr_list, [:all], args[:find_opts])
+  end
+
   def new
     render :layout => 'popup'
   end
@@ -120,7 +147,7 @@ class PoolController < ApplicationController
     @current_pool_id=@pool.id
     set_perms(@perm_obj)
     unless @can_view
-      flash[:notice] = 'You do not have permission to view this pool pool: redirecting to top level'
+      flash[:notice] = 'You do not have permission to view this pool: redirecting to top level'
       respond_to do |format|
         format.html { redirect_to :controller => "dashboard" }
         format.xml { head :forbidden }

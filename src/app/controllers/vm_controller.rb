@@ -35,6 +35,11 @@ class VmController < ApplicationController
     render :layout => 'selection'    
   end
 
+  def add_to_smart_pool
+    @pool = SmartPool.find(params[:smart_pool_id])
+    render :layout => 'popup'
+  end
+
   def new
     render :layout => 'popup'    
   end

@@ -111,6 +111,9 @@ class Pool < ActiveRecord::Base
   def self.select_vm_pools(pools)
     pools.select {|pool| pool[:type] == "VmResourcePool"}
   end
+  def self.select_hardware_and_vm_pools(pools)
+    pools.select {|pool| ["HardwarePool", "VmResourcePool"].include?(pool[:type])}
+  end
 
   def sub_hardware_pools
     children({:conditions => "type='HardwarePool'"})
@@ -225,22 +228,44 @@ class Pool < ActiveRecord::Base
   # or :current_id to specify which pool gets ":selected => true" set
   def full_set_nested(opts={})
     method = opts.delete(:method) {:hash_element}
+    privilege = opts.delete(:privilege)
+    user = opts.delete(:user)
+    smart_pool_set = opts.delete(:smart_pool_set)
+    if privilege and user
+      opts[:include] = "permissions"
+      opts[:conditions] = "permissions.uid='#{user}' and
+                       permissions.user_role in
+                       ('#{Permission.roles_for_privilege(privilege).join("', '")}')"
+    end
     current_id = opts.delete(:current_id)
     opts.delete(:order)
     subtree_list = full_set(opts)
-    return_tree = send(method)
-    ref_hash = { id => return_tree}
+    subtree_list -= [self] if smart_pool_set
+    return_tree_list = []
+    ref_hash = {}
     subtree_list.each do |pool|
-      unless pool.id==return_tree[:id]
-        new_element = pool.send(method)
-        ref_hash[pool.id] = new_element
-        parent = ref_hash[pool.parent_id]
+      new_element = pool.send(method)
+      ref_hash[pool.id] = new_element
+      parent = ref_hash[pool.parent_id]
+      if parent
         parent[:children] ||= []
         parent[:children] << new_element
+      else
+        # for smart pools include the parent DirectoryPool
+        if smart_pool_set and pool[:type]=="SmartPool"
+          pool_parent = pool.parent
+          parent_element = pool_parent.send(method)
+          ref_hash[pool_parent.id] = parent_element
+          return_tree_list << parent_element
+          parent_element[:children] ||= []
+          parent_element[:children] << new_element
+        else
+          return_tree_list << new_element
+        end
       end
     end
     ref_hash[current_id][:selected] = true if current_id
-    return_tree
+    return_tree_list
   end
 
   def self.call_finder(*args)
@@ -273,6 +298,9 @@ class Pool < ActiveRecord::Base
     end
   end
 
+  def class_and_id
+    self.class.name + "_" + self.id.to_s
+  end
   protected
   def traverse_parents
     if id
