@@ -33,11 +33,20 @@ require 'util/stats/Stats'
 #   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::Load, 0, LoadCounter::Load_15min, 0, 0, RRDResolution::Long )
 #   requestList << StatsRequest.new("node7.priv.ovirt.org", DevClass::NIC, 0, NicCounter::Octets_rx, 0, 0, RRDResolution::Long )
 #   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::NIC, 1, NicCounter::Octets_rx, 0, 0, RRDResolution::Long )
-   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::NIC, 0, NicCounter::Octets_tx, 0, 604800, RRDResolution::Medium )
+#   requestList << StatsRequest.new("node5.priv.ovirt.org", DevClass::NIC, 0, NicCounter::Octets_tx, 0, 604800, RRDResolution::Long, DataFunction::Average )
+#   requestList << StatsRequest.new("node5.priv.ovirt.org", DevClass::NIC, 0, NicCounter::Octets_tx, 0, 604800, RRDResolution::Long, DataFunction::Peak )
+#   requestList << StatsRequest.new("node5.priv.ovirt.org", DevClass::NIC, 0, NicCounter::Octets_tx, 0, 604800, RRDResolution::Long)
 #   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::Disk, 0, DiskCounter::Octets_read, 0, 0, RRDResolution::Long )
 #   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::Disk, 0, DiskCounter::Octets_write, 0, 0, RRDResolution::Long )
 #   requestList << StatsRequest.new("node3.priv.ovirt.org", "cpu", 0, "idle", 1211688000, 3600, 10 )
-#   requestList << StatsRequest.new("node4.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::Idle, 0, 3600, RRDResolution::Short )
+
+   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::CalcUsed, 0, 300, RRDResolution::Default, DataFunction::Average )
+   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::NIC, 0, NicCounter::Octets_rx, 0, 0, RRDResolution::Default )
+#   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::Idle, 0, 300, RRDResolution::Default, DataFunction::RollingAverage )
+#   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::Idle, 0, 300, RRDResolution::Default, DataFunction::Average )
+   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::CalcUsed, 0, 300, RRDResolution::Default, DataFunction::RollingAverage )
+#   requestList << StatsRequest.new("node4.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::Idle, 0, 3600, RRDResolution::Short, DataFunction::Average )
+#   requestList << StatsRequest.new("node4.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::CalcUsed, 0, 3600, RRDResolution::Short, DataFunction::Min )
 #   requestList << StatsRequest.new("node5.priv.ovirt.org", "cpu", 0, "idle", 1211688000, 3600, 500 )
 #   requestList << StatsRequest.new("node5.priv.ovirt.org", DevClass::Memory, 0, MemCounter::Used, 0, 3600, 10 )
 
@@ -58,21 +67,24 @@ require 'util/stats/Stats'
    myCounter = statsList.get_counter?()
    myStatus = statsList.get_status?()
 
-   case myStatus
-      when StatsStatus::E_NOSUCHNODE
-          puts "Can't find data for node " + myNodeName
-      when StatsStatus::E_UNKNOWN
-          puts "Can't find data for requested file path"
-   end
-      if tmp != myNodeName then
+      case myStatus
+         when StatsStatus::E_NOSUCHNODE
+             puts "Can't find data for node " + myNodeName
+         when StatsStatus::E_UNKNOWN
+             puts "Can't find data for requested file path"
+      end
+         if tmp != myNodeName then
+            puts
+         end
+      list = statsList.get_data?()
+      list.each do |d|
+         print("\t", myNodeName, "\t", myDevClass, "\t", myInstance, "\t",  myCounter, "\t",d.get_value?, "\t",d.get_timestamp?)
          puts
       end
-   list = statsList.get_data?()
-   list.each do |d|
-      print("\t", myNodeName, "\t", myDevClass, "\t", myInstance, "\t",  myCounter, "\t",d.get_value?, "\t",d.get_timestamp?)
       puts
-   end  
       tmp = myNodeName
+      print("\tmin_value is: ", statsList.get_min_value?(), "\tmax_value is: ", statsList.get_max_value?())
+      puts
    end  
 
 

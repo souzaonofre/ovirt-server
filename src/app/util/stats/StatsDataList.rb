@@ -29,13 +29,19 @@ class StatsDataList
     @data=[]
     @status = status
     @function = function
-  end  
+    @min_value = 0
+    @max_value = 0
+  end
   
   def get_node?()  
     return @node
   end  
   
-  def get_devClass?()  
+  def get_node?()
+    return @node
+  end
+
+  def get_devClass?()
     return @devClass
   end  
   
@@ -66,4 +72,20 @@ class StatsDataList
   def length()
     return @data.length
    end
-end  
+
+  def set_min_value(min)
+    @min_value = min
+  end
+
+  def set_max_value(max)
+    @max_value = max
+  end
+
+  def get_min_value?()
+    return @min_value
+  end
+
+  def get_max_value?()
+    return @max_value
+  end
+end

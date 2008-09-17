@@ -29,6 +29,8 @@ require 'util/stats/StatsRequest'
 
 def fetchRollingAve?(rrdPath, start, endTime, interval, myFunction, lIndex, returnList, aveLen=7)
    final = 0
+   my_min = 0
+   my_max = 0
 
    #  OK, first thing we need to do is to move the start time back in order to 
    #  have data to average.
@@ -65,18 +67,31 @@ def fetchRollingAve?(rrdPath, start, endTime, interval, myFunction, lIndex, retu
             final += rdata
          end
          final = (final / aveLen )
+
+         # Determine min / max to help with autoscale.
+         unless final.is_a? (Float) && final.nan?
+           my_min = [my_min, final].min
+           my_max = [my_max, final].max
+         end
          returnList.append_data( StatsData.new(fstart + interval * ( i - indexOffset), final ))
  
          # Now shift the head off the array
          roll.shift
       end
    end
-   
+
+   # Now add the min / max to the lists
+   returnList.set_min_value(my_min)
+   returnList.set_max_value(my_max)
+
  return returnList
 end
 
 
 def fetchRollingCalcUsedData?(rrdPath, start, endTime, interval, myFunction, lIndex, returnList, aveLen=7)
+
+   my_min = 0
+   my_max = 0
 
    # OK, first thing we need to do is to move the start time back in order to have data to average.
       
@@ -120,11 +135,21 @@ def fetchRollingCalcUsedData?(rrdPath, start, endTime, interval, myFunction, lIn
             final += rdata
          end
          final = (final / aveLen)
+
+         # Determine min / max to help with autoscale.
+         unless final.is_a? (Float) && final.nan?
+           my_min = [my_min, final].min
+           my_max = [my_max, final].max
+         end
          returnList.append_data( StatsData.new(fstart + interval * ( i - indexOffset), final ))
          # Now shift the head off the array
          roll.shift
       end
    end
+
+   # Now add the min / max to the lists
+   returnList.set_min_value(my_min)
+   returnList.set_max_value(my_max)
 
  return returnList
 end
@@ -137,6 +162,9 @@ def fetchCalcUsedData?(rrdPath, start, endTime, interval, myFunction, lIndex, re
    #  We also need to handle NaN differently 
    #  Finally, we need to switch Min and Max
  
+   my_min = 0
+   my_max = 0
+
    lFunc = "AVERAGE"   
    case myFunction
       when "MAX"
@@ -155,19 +183,32 @@ def fetchCalcUsedData?(rrdPath, start, endTime, interval, myFunction, lIndex, re
    data.each do |vdata|
       i += 1
       value = vdata[lIndex]
-         value = 100 if value.nan?
-         if ( value > 100 )
-            value = 100
-         end
-         value  =  100 - value
+      value = 100 if value.nan?
+      if ( value > 100 )
+         value = 100
+      end
+      value  =  100 - value
+
+      # Determine min / max to help with autoscale.
+      unless value.is_a? (Float) && value.nan?
+        my_min = [my_min, value].min
+        my_max = [my_max, value].max
+      end
       returnList.append_data( StatsData.new(fstart + interval * i, value ))
    end
+
+   # Now add the min / max to the lists
+   returnList.set_min_value(my_min)
+   returnList.set_max_value(my_max)
    
  return returnList
 end
 
 
 def fetchRegData?(rrdPath, start, endTime, interval, myFunction, lIndex, returnList)
+
+   my_min = 0
+   my_max = 0
 
    (fstart, fend, names, data, interval) = RRD.fetch(rrdPath, "--start", start.to_s, "--end", \
                                                endTime.to_s, myFunction, "-r", interval.to_s)
@@ -177,9 +218,18 @@ def fetchRegData?(rrdPath, start, endTime, interval, myFunction, lIndex, returnL
 
    # Now, lets walk the returned data and create the ojects, and put them in a list.
    data.each do |vdata|
+      value = vdata[lIndex]
       i += 1
-      returnList.append_data( StatsData.new(fstart + interval * i, vdata[lIndex] ))
+      unless value.is_a? (Float) && value.nan?
+        my_min = [my_min, value].min
+        my_max = [my_max, value].max
+      end
+      returnList.append_data( StatsData.new(fstart + interval * i, value ))
    end
+
+   # Now add the min / max to the lists
+   returnList.set_min_value(my_min)
+   returnList.set_max_value(my_max)
    
  return returnList
 end
