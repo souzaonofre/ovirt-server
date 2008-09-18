@@ -1,0 +1,15 @@
+load_balancing_bonding_type:
+    label: Load Balancing
+    mode: 2
+
+failover_bonding_type:
+    label: Failover
+    mode: 1
+
+broadcast_bonding_type:
+    label: Broadcast
+    mode: 3
+
+link_aggregation_bonding_type:
+    label: Link Aggregation
+    mode: 4

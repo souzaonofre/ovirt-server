@@ -1,0 +1,11 @@
+boot_type_static_ip:
+    label: Static IP
+    proto: static
+
+boot_type_dhcp:
+    label: DHCP
+    proto: dhcp
+
+boot_type_bootp:
+    label: BOOTP
+    proto: bootp

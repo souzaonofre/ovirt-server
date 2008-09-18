@@ -5,6 +5,7 @@ one:
   usage_type: '1'
   bandwidth: 100
   host_id: 10
+  boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
 two:
   id: 2
   mac: 'AA:BB:CC:DD:EE:FF'
@@ -12,6 +13,7 @@ two:
   usage_type: '2'
   bandwidth: 1000
   host_id: 10
+  boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
 three:
   id: 3
   mac: '00:FF:11:EE:22:DD'
@@ -19,6 +21,7 @@ three:
   usage_type: '1'
   bandwidth: 10
   host_id: 10
+  boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
 four:
   id: 4
   mac: '00:FF:11:EE:22:DD'
@@ -26,11 +29,52 @@ four:
   usage_type: '1'
   bandwidth: 10
   host_id: 10
+  boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
+
 mailserver_nic_one:
-    id: 5
-    mac:        '00:11:22:33:44:55'
+    mac: '00:11:22:33:44:55'
     usage_type: '1'
-    bandwidth:  100
-    host_id:    <%= Fixtures.identify(:mailservers_managed_node) %>
+    bandwidth: 100
+    ip_addr: '172.31.0.15'
+    host_id: <%= Fixtures.identify(:mailservers_managed_node) %>
+    boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
 
+mailserver_nic_two:
+    mac: '22:11:33:66:44:55'
+    usage_type: '1'
+    bandwidth: 100
+    host_id: <%= Fixtures.identify(:mailservers_managed_node) %>
+    boot_type_id: <%= Fixtures.identify(:boot_type_dhcp) %>
 
+fileserver_nic_one:
+    mac: '00:99:00:99:13:07'
+    usage_type: '1'
+    bandwidth: 100
+    host_id: <%= Fixtures.identify(:fileserver_managed_node) %>
+    boot_type_id: <%= Fixtures.identify(:boot_type_dhcp) %>
+
+ldapserver_nic_one:
+    mac: '00:03:02:00:09:06'
+    usage_type: '1'
+    bandwidth: 100
+    bridge: 'ovirtbr0'
+    ip_addr: '172.31.0.25'
+    host_id: <%= Fixtures.identify(:ldapserver_managed_node) %>
+    boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
+
+buildserver_nic_one:
+    mac: '07:17:19:65:03:38'
+    usage_type: '1'
+    bandwidth: 100
+    host_id: <%= Fixtures.identify(:buildserver_managed_node) %>
+    boot_type_id: <%= Fixtures.identify(:boot_type_dhcp) %>
+
+buildserver_nic_two:
+    mac: '07:17:19:65:03:39'
+    usage_type: '1'
+    bandwidth: 100
+    ip_addr: '172.31.0.31'
+    netmask: '255.255.255.0'
+    broadcast: '172.31.0.255'
+    host_id: <%= Fixtures.identify(:buildserver_managed_node) %>
+    boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>

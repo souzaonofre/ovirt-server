@@ -1,0 +1,7 @@
+mailservers_managed_node_bonding_nic_1:
+    bonding_id: <%= Fixtures.identify(:mailservers_managed_node_bonding) %>
+    nic_id: <%= Fixtures.identify(:mailserver_nic_one) %>
+
+mailservers_managed_node_bonding_nic_2:
+    bonding_id: <%= Fixtures.identify(:mailservers_managed_node_bonding) %>
+    nic_id: <%= Fixtures.identify(:mailserver_nic_two) %>

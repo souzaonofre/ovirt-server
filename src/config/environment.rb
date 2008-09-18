@@ -80,3 +80,5 @@ end
 require 'gettext/rails'                                                                                                                                                     
 gem 'cobbler'
 require 'cobbler'
+
+MANAGED_NODE_CONFIGURATION_DIR = '/var/www/html/ovirt-cfgdb'
