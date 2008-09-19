@@ -3,14 +3,13 @@
 
 Summary: oVirt Server Suite
 Name: ovirt-server
-Source1: version
-Version: %(echo `awk '{ print $1 }' %{SOURCE1}`)
-Release: %(echo `awk '{ print $2 }' %{SOURCE1}`)%{?dist}%{?extra_release}
+Version: @VERSION@
+Release: 0%{?dist}%{?extra_release}
 Source0: %{name}-%{version}.tar.gz
-#Entire source code is GPL except for vendor/plugins/will_paginate and 
+#Entire source code is GPL except for vendor/plugins/will_paginate and
 #vendor/plugins/betternestedset, which are MIT, and
 #public/javascripts/jquery.*, which is both MIT and GPL
-License: GPL and MIT
+License: GPLv2+ and MIT
 Group: Applications/System
 Requires: ruby >= 1.8.1
 Requires: ruby(abi) = 1.8
@@ -104,7 +103,7 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/host-status.log
 %{__cp} -a %{pbuild}/scripts/ovirt-server-install %{buildroot}%{_sbindir}
 %{__cp} -a %{pbuild}/scripts/ovirt-reindex-search %{buildroot}%{_sbindir}
 %{__cp} -a %{pbuild}/scripts/ovirt-update-search %{buildroot}%{_sbindir}
-%{__rm} -rf %{buildroot}%{app_root}/tmp 
+%{__rm} -rf %{buildroot}%{app_root}/tmp
 %{__mkdir} %{buildroot}%{_localstatedir}/lib/%{name}/tmp
 %{__ln_s} %{_localstatedir}/lib/%{name}/tmp %{buildroot}%{app_root}/tmp
 
