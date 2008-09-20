@@ -28,7 +28,8 @@ EXTRA_DIST =			\
 git_head	= $$(git log -1 --pretty=format:%h)
 GIT_RELEASE	= $$(date --utc +%Y%m%d%H%M%S)git$(git_head)
 RPMDIR		= $$(rpm --eval '%{_rpmdir}')
-RPM_FLAGS	= $(if $(OVIRT_DEV),--define "extra_release $(GIT_RELEASE)")
+RPM_FLAGS	= --define "ovirt_cache_dir $(OVIRT_CACHE_DIR)"
+RPM_FLAGS	+= $(if $(OVIRT_DEV),--define "extra_release .$(GIT_RELEASE)")
 
 rpms: dist
 	rpmbuild $(RPM_FLAGS) -ta $(distdir).tar.gz
