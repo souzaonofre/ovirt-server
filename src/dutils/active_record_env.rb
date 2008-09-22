@@ -65,6 +65,8 @@ require 'models/smart_pool.rb'
 require 'models/host.rb'
 require 'models/cpu.rb'
 require 'models/boot_type.rb'
+require 'models/bonding.rb'
+require 'models/bonding_type.rb'
 require 'models/nic.rb'
 
 require 'models/vm_resource_pool.rb'

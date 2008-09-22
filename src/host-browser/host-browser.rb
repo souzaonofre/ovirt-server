@@ -307,7 +307,7 @@ class HostBrowser
         nic_info.collect do |nic|
             puts "Creating a new nic..."
             detail = Nic.new(
-                'mac'          => nic['MAC'],
+                'mac'          => nic['MAC'].upcase,
                 'bandwidth'    => nic['BANDWIDTH'],
                 'usage_type'   => 1,
                 'ip_addr'      => nic['IP_ADDRESS'],
