@@ -40,7 +40,7 @@ require "#{OVIRT_DIR}/vendor/plugins/acts_as_xapian/lib/acts_as_xapian"
 
 def database_connect
   $dbconfig = YAML::load(ERB.new(IO.read("#{OVIRT_DIR}/config/database.yml")).result)
-  $develdb = $dbconfig['development']
+  $develdb = $dbconfig[ENV['RAILS_ENV']]
   ActiveRecord::Base.establish_connection(
                                           :adapter  => $develdb['adapter'],
                                           :host     => $develdb['host'],
