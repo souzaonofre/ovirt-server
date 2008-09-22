@@ -25,9 +25,12 @@ set -v
 
 test -f Makefile && make -k distclean || :
 
-make tar
+# set ovirt to initialize / use test db
+sed -i "s/DATABASE=ovirt/DATABASE=ovirt_test/" scripts/ovirt-server-install
+sed -i "s/rake/export RAILS_ENV=test\\nrake/" scripts/ovirt-server-install
 
-version=$(awk '{print $1}' version)
+./autogen.sh --prefix=$AUTOBUILD_INSTALL_ROOT
+make dist
 
 if [ -f /usr/bin/rpmbuild ]; then
   if [ -n "$AUTOBUILD_COUNTER" ]; then
@@ -36,10 +39,6 @@ if [ -f /usr/bin/rpmbuild ]; then
     NOW=`date +"%s"`
     EXTRA_RELEASE=".$USER$NOW"
   fi
-  # manually copy files over until we have an autotools
-  #  generated tarball to base rpmbuild on
-  cp version $AUTOBUILD_PACKAGE_ROOT/rpm/SOURCES/
-  cp rpm-build/ovirt-server-$version.tar.gz $AUTOBUILD_PACKAGE_ROOT/rpm/SOURCES/
 
-  rpmbuild --nodeps --define "extra_release $EXTRA_RELEASE" -ba --clean ovirt-server.spec
+  rpmbuild --nodeps --define "extra_release $EXTRA_RELEASE" -ta --clean *.tar.gz
 fi
