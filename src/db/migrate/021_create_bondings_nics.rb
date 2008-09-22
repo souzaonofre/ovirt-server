@@ -1,6 +1,6 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
-# Written by Scott Seago <sseago@redhat.com>
+# Written by Darryl L. Pierce <dpierce@redhat.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,36 +17,24 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
-require File.dirname(__FILE__) + '/../test_helper'
-require 'nic_controller'
+class CreateBondingsNics < ActiveRecord::Migration
+  def self.up
+    create_table :bondings_nics do |t|
+      t.integer :bonding_id, :null => false
+      t.integer :nic_id,     :null => false
 
-# Re-raise errors caught by the controller.
-class NicController; def rescue_action(e) raise e end; end
+      t.timestamps
+    end
 
-class NicControllerTest < Test::Unit::TestCase
-  fixtures :nics
+    add_index :bondings_nics, [:bonding_id, :nic_id], :unique => true
 
-  def setup
-    @controller = NicController.new
-    @request    = ActionController::TestRequest.new
-    @response   = ActionController::TestResponse.new
+    execute 'alter table bondings_nics add constraint fk_bondings_nics_bonding
+             foreign key (bonding_id) references bondings(id)'
+    execute 'alter table bondings_nics add constraint fk_bondings_nics_nic
+             foreign key (nic_id) references nics(id)'
   end
 
-  def test_show
-    get :show, :id => @first_id
-
-    assert_response :success
-    assert_template 'show'
-
-    assert_not_nil assigns(:nic)
-    assert assigns(:nic).valid?
-  end
-
-  def test_new
-    get :new, :host_id => 1
-
-    assert_response :redirect
-    assert_redirected_to :controller => 'host', :action => 'show', :id => 1
-
+  def self.down
+    drop_table :bondings_nics
   end
 end

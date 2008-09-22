@@ -297,16 +297,18 @@ class HostBrowser
         end
 
         # iterate over any nics left and create new records for them.
+        boot_type = BootType.find_by_proto('dhcp')
 
         nic_info.collect do |nic|
             puts "Creating a new nic..."
             detail = Nic.new(
-                'mac'        => nic['MAC'],
-                'bandwidth'  => nic['BANDWIDTH'],
-                'usage_type' => 1,
-                'ip_addr'    => nic['IP_ADDRESS'],
-                'netmask'    => nic['NETMASK'],
-                'broadcast'  => nic['BROADCAST'])
+                'mac'          => nic['MAC'],
+                'bandwidth'    => nic['BANDWIDTH'],
+                'usage_type'   => 1,
+                'ip_addr'      => nic['IP_ADDRESS'],
+                'netmask'      => nic['NETMASK'],
+                'broadcast'    => nic['BROADCAST'],
+                'boot_type_id' => boot_type.id)
 
             host.nics << detail
         end

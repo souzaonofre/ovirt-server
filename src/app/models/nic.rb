@@ -19,4 +19,7 @@
 
 class Nic < ActiveRecord::Base
   belongs_to :host
+  belongs_to :boot_type
+
+  has_and_belongs_to_many :bonding, :join_table => 'bondings_nics'
 end

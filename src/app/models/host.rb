@@ -21,15 +21,16 @@ require 'util/ovirt'
 
 class Host < ActiveRecord::Base
   belongs_to :hardware_pool
+  belongs_to :bonding_type
 
-  has_many :cpus, :dependent => :destroy
-  has_many :nics, :dependent => :destroy
-  has_many :vms,  :dependent => :nullify do
+  has_many :cpus,     :dependent => :destroy
+  has_many :nics,     :dependent => :destroy
+  has_many :bondings, :dependent => :destroy
+  has_many :vms,      :dependent => :nullify
 
     def consuming_resources
       find(:all, :conditions=>{:state=>Vm::RUNNING_STATES})
     end
-  end
   has_many :tasks, :class_name => "HostTask", :dependent => :destroy, :order => "id DESC" do
     def queued
       find(:all, :conditions=>{:state=>Task::STATE_QUEUED})

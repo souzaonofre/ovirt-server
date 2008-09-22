@@ -18,7 +18,7 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
-require File.dirname(__FILE__) + '/../test/test_helper'
+require File.dirname(__FILE__) + '/../test_helper'
 require 'test/unit'
 require 'flexmock/test_unit'
 
@@ -26,8 +26,10 @@ TESTING=true
 
 require 'host-browser'
 
-# +TestHostBrowserAwaken+
-class TestHostBrowserAwaken < Test::Unit::TestCase
+# +HostBrowserAwakenTest+ ensures that the host-browser daemon works correctly
+# during the identify phase of operation.
+#
+class HostBrowserAwakenTest < Test::Unit::TestCase
 
   def setup
     @session = flexmock('session')

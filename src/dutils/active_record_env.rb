@@ -62,6 +62,7 @@ require 'models/directory_pool.rb'
 require 'models/smart_pool.rb'
 require 'models/host.rb'
 require 'models/cpu.rb'
+require 'models/boot_type.rb'
 require 'models/nic.rb'
 
 require 'models/vm_resource_pool.rb'

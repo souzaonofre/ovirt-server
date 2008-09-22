@@ -24,24 +24,40 @@ require 'managed_node_configuration'
 # Performs unit tests on the +ManagedNodeConfiguration+ class.
 #
 class ManagedNodeConfigurationTest < Test::Unit::TestCase
+  fixtures :bonding_types
+  fixtures :bondings
+  fixtures :bondings_nics
+  fixtures :boot_types
+  fixtures :hosts
+  fixtures :nics
+
   def setup
-    @host   = Host.new
-    @nic    = Nic.new(:mac => '00:11:22:33:44:55')
-    @host.nics << @nic
+    @host_with_dhcp_card = hosts(:fileserver_managed_node)
+    @host_with_ip_address = hosts(:ldapserver_managed_node)
+    @host_with_multiple_nics = hosts(:buildserver_managed_node)
+    @host_with_bondings = hosts(:mailservers_managed_node)
   end
 
   # Ensures that network interfaces uses DHCP when no IP address is specified.
   #
   def test_generate_with_no_ip_address
+    nic = @host_with_dhcp_card.nics.first
+
     expected = <<-HERE
+#!/bin/bash
+# THIS FILE IS GENERATED!
+cat <<\EOF > /var/tmp/node-augtool
 rm /files/etc/sysconfig/network-scripts/ifcfg-eth0
 set /files/etc/sysconfig/network-scripts/ifcfg-eth0/DEVICE eth0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BOOTPROTO dhcp
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BOOTPROTO #{nic.boot_type.proto}
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/ONBOOT yes
+save
+EOF
     HERE
 
     result = ManagedNodeConfiguration.generate(
-      @host,
-      {'00:11:22:33:44:55' => 'eth0'}
+      @host_with_dhcp_card,
+      {"#{nic.mac}" => 'eth0'}
     )
 
     assert_equal expected, result
@@ -49,38 +65,28 @@ set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BOOTPROTO dhcp
 
   # Ensures that network interfaces use the IP address when it's provided.
   #
-  def test_generate_with_ip_address
-    @nic.ip_addr = '192.168.2.1'
+  def test_generate_with_ip_address_and_bridge
+    nic = @host_with_ip_address.nics.first
 
     expected = <<-HERE
+#!/bin/bash
+# THIS FILE IS GENERATED!
+cat <<\EOF > /var/tmp/node-augtool
 rm /files/etc/sysconfig/network-scripts/ifcfg-eth0
 set /files/etc/sysconfig/network-scripts/ifcfg-eth0/DEVICE eth0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/IPADDR 192.168.2.1
-    HERE
-
-    result = ManagedNodeConfiguration.generate(
-      @host,
-      {'00:11:22:33:44:55' => 'eth0'}
-    )
-
-    assert_equal expected, result
-  end
-
-  # Ensures the bridge is added to the configuration if one is defined.
-  #
-  def test_generate_with_bridge
-    @nic.bridge = 'ovirtbr0'
-
-    expected = <<-HERE
-rm /files/etc/sysconfig/network-scripts/ifcfg-eth0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/DEVICE eth0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BOOTPROTO dhcp
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BOOTPROTO #{nic.boot_type.proto}
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/IPADDR #{nic.ip_addr}
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/NETMASK #{nic.netmask}
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BROADCAST #{nic.broadcast}
 set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BRIDGE ovirtbr0
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/ONBOOT yes
+save
+EOF
     HERE
 
     result = ManagedNodeConfiguration.generate(
-      @host,
-      {'00:11:22:33:44:55' => 'eth0'}
+      @host_with_ip_address,
+      {"#{nic.mac}" => 'eth0'}
     )
 
     assert_equal expected, result
@@ -89,35 +95,82 @@ set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BRIDGE ovirtbr0
   # Ensures that more than one NIC is successfully processed.
   #
   def test_generate_with_multiple_nics
-    @host.nics << Nic.new(:mac => '11:22:33:44:55:66', :ip_addr => '172.31.0.15')
-    @host.nics << Nic.new(:mac => '22:33:44:55:66:77', :ip_addr => '172.31.0.100')
-    @host.nics << Nic.new(:mac => '33:44:55:66:77:88')
-
+    nic1 = @host_with_multiple_nics.nics[0]
+    nic2 = @host_with_multiple_nics.nics[1]
 
     expected = <<-HERE
+#!/bin/bash
+# THIS FILE IS GENERATED!
+cat <<\EOF > /var/tmp/node-augtool
 rm /files/etc/sysconfig/network-scripts/ifcfg-eth0
 set /files/etc/sysconfig/network-scripts/ifcfg-eth0/DEVICE eth0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BOOTPROTO dhcp
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BOOTPROTO #{nic1.boot_type.proto}
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/IPADDR #{nic1.ip_addr}
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/NETMASK #{nic1.netmask}
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BROADCAST #{nic1.broadcast}
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/ONBOOT yes
 rm /files/etc/sysconfig/network-scripts/ifcfg-eth1
 set /files/etc/sysconfig/network-scripts/ifcfg-eth1/DEVICE eth1
-set /files/etc/sysconfig/network-scripts/ifcfg-eth1/IPADDR 172.31.0.15
-rm /files/etc/sysconfig/network-scripts/ifcfg-eth2
-set /files/etc/sysconfig/network-scripts/ifcfg-eth2/DEVICE eth2
-set /files/etc/sysconfig/network-scripts/ifcfg-eth2/IPADDR 172.31.0.100
-rm /files/etc/sysconfig/network-scripts/ifcfg-eth3
-set /files/etc/sysconfig/network-scripts/ifcfg-eth3/DEVICE eth3
-set /files/etc/sysconfig/network-scripts/ifcfg-eth3/BOOTPROTO dhcp
+set /files/etc/sysconfig/network-scripts/ifcfg-eth1/BOOTPROTO #{nic2.boot_type.proto}
+set /files/etc/sysconfig/network-scripts/ifcfg-eth1/ONBOOT yes
+save
+EOF
     HERE
 
     result = ManagedNodeConfiguration.generate(
-      @host,
+      @host_with_multiple_nics,
       {
-        '00:11:22:33:44:55' => 'eth0',
-        '11:22:33:44:55:66' => 'eth1',
-        '22:33:44:55:66:77' => 'eth2',
-        '33:44:55:66:77:88' => 'eth3'
+        "#{nic1.mac}" => 'eth0',
+        "#{nic2.mac}" => 'eth1'
       })
 
     assert_equal expected, result
   end
+
+  # Ensures that the bonding portion is created if the host has a bonded
+  # interface defined.
+  #
+  def test_generate_with_bonding
+    bonding = @host_with_bondings.bondings.first
+
+    nic1 = bonding.nics[0]
+    nic2 = bonding.nics[1]
+
+    expected = <<-HERE
+#!/bin/bash
+# THIS FILE IS GENERATED!
+cat <<\EOF > /var/tmp/pre-config-script
+#!/bin/bash
+# THIS FILE IS GENERATED!
+/sbin/modprobe bonding mode=#{bonding.bonding_type.mode}
+EOF
+cat <<\EOF > /var/tmp/node-augtool
+rm /files/etc/sysconfig/network-scripts/ifcfg-#{bonding.interface_name}
+set /files/etc/sysconfig/network-scripts/ifcfg-#{bonding.interface_name}/DEVICE #{bonding.interface_name}
+set /files/etc/sysconfig/network-scripts/ifcfg-#{bonding.interface_name}/IPADDR 172.31.0.15
+set /files/etc/sysconfig/network-scripts/ifcfg-#{bonding.interface_name}/ONBOOT yes
+rm /files/etc/sysconfig/network-scripts/ifcfg-eth0
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/DEVICE eth0
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/MASTER #{bonding.interface_name}
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/SLAVE yes
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/ONBOOT yes
+rm /files/etc/sysconfig/network-scripts/ifcfg-eth1
+set /files/etc/sysconfig/network-scripts/ifcfg-eth1/DEVICE eth1
+set /files/etc/sysconfig/network-scripts/ifcfg-eth1/MASTER #{bonding.interface_name}
+set /files/etc/sysconfig/network-scripts/ifcfg-eth1/SLAVE yes
+set /files/etc/sysconfig/network-scripts/ifcfg-eth1/ONBOOT yes
+save
+EOF
+HERE
+
+    result = ManagedNodeConfiguration.generate(
+      @host_with_bondings,
+      {
+        "#{nic1.mac}" => 'eth0',
+        "#{nic2.mac}" => 'eth1'
+      })
+
+    assert_equal expected, result
+  end
+
 end
