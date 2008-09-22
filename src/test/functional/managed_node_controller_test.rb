@@ -32,11 +32,11 @@ class ManagedNodeControllerTest < ActionController::TestCase
   def test_config_with_invalid_hostname
     get :config
 
-    assert_redirected_to :action => :error
+    assert_response :error
 
     get :config, {:host => 'invalid.prod.com'}
 
-    assert_redirected_to :action => :error
+    assert_response :error
   end
 
   # Ensures the request fails if no mac addresses are supplied.
@@ -44,7 +44,7 @@ class ManagedNodeControllerTest < ActionController::TestCase
   def test_config_without_macs
     get :config, {:host => hosts(:mailservers_managed_node).hostname}
 
-    assert_redirected_to :action => :error
+    assert_response :error
   end
 
   # Ensures the request succeeds if it is well-formed.
@@ -53,7 +53,7 @@ class ManagedNodeControllerTest < ActionController::TestCase
     get :config,
       {
       :host => hosts(:mailservers_managed_node).hostname,
-      :macs => {nics(:mailserver_nic_one).mac, 'eth0'}
+      :macs => "#{nics(:mailserver_nic_one).mac}=eth0}"
     }
 
     assert_response :success

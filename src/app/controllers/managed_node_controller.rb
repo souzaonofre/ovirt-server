@@ -44,24 +44,20 @@ class ManagedNodeController < ApplicationController
   def load_host
     @host = Host.find_by_hostname(params[:host])
 
-    unless @host
-      flash[:message] = 'Missing or invalid hostname specified.'
-      redirect_to :action => :error
-    end
+    render :nothing => true, :status => :error unless @host
   end
 
   def load_macs
     @macs = Hash.new
     mac_text = params[:macs]
 
-    mac_text.scan(/([^,]+)\,?/).each do |line|
-      key, value = line.first.split("=")
-      @macs[key] = value
+    if mac_text != nil
+      mac_text.scan(/([^,]+)\,?/).each do |line|
+        key, value = line.first.split("=")
+        @macs[key] = value
+      end
     end
 
-    if @macs.empty?
-      flash[:message] = 'No MAC address mappings provided.'
-      redirect_to :action => :error
-    end
+    render :nothing => true, :status => :error if @macs.empty?
   end
 end
