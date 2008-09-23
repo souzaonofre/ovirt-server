@@ -39,14 +39,16 @@ require "#{OVIRT_DIR}/vendor/plugins/betternestedset/init.rb"
 require "#{OVIRT_DIR}/vendor/plugins/acts_as_xapian/lib/acts_as_xapian"
 
 def database_connect
-  $dbconfig = YAML::load(ERB.new(IO.read("#{OVIRT_DIR}/config/database.yml")).result)
-  $develdb = $dbconfig[ENV['RAILS_ENV']]
+  yml = YAML::load(ERB.new(IO.read("#{OVIRT_DIR}/config/database.yml")).result)
+  rails_env = ENV['RAILS_ENV']
+  rails_env = 'production' unless rails_env
+  dbconfig = yml[rails_env]
   ActiveRecord::Base.establish_connection(
-                                          :adapter  => $develdb['adapter'],
-                                          :host     => $develdb['host'],
-                                          :username => $develdb['username'],
-                                          :password => $develdb['password'],
-                                          :database => $develdb['database']
+                                          :adapter  => dbconfig['adapter'],
+                                          :host     => dbconfig['host'],
+                                          :username => dbconfig['username'],
+                                          :password => dbconfig['password'],
+                                          :database => dbconfig['database']
                                           )
 end
 
