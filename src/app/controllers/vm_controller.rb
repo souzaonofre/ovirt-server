@@ -54,6 +54,7 @@ class VmController < ApplicationController
                              :state   => Task::STATE_QUEUED})
         @task.save!
       end
+      _setup_vm_provision(params)
       start_now = params[:start_now]
       if (start_now)
         if @vm.get_action_list.include?(VmTask::ACTION_START_VM)
@@ -239,6 +240,7 @@ class VmController < ApplicationController
     # spaces are invalid in the cobbler name
     name = params[:vm][:description].gsub(" ", "-")
     provision = params[:vm][:provisioning_and_boot_settings]
+    mac = params[:vm][:vnic_mac_addr]
     unless provision == Vm::PXE_OPTION_VALUE or
            provision == Vm::HD_OPTION_VALUE
       found = false
@@ -252,7 +254,7 @@ class VmController < ApplicationController
       unless found
         system = Cobbler::System.create("name" => name,
                                         "profile" => provision)
-        # do we need to set any of the other system attributes?
+        system.interfaces=[Cobbler::NetworkInterface.new({'mac_address' => mac})]
         system.save
       end
     end
