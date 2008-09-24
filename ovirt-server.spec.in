@@ -14,11 +14,11 @@ Group: Applications/System
 Requires: ruby >= 1.8.1
 Requires: ruby(abi) = 1.8
 Requires: rubygem(activeldap) >= 0.10.0
-Requires: rubygem(rails) >= 2.0.1
+Requires: rubygem(rails) >= 2.1.1
 Requires: rubygem(mongrel) >= 1.0.1
 Requires: rubygem(krb5-auth) >= 0.6
 Requires: rubygem(cobbler) >= 0.0.2
-Requires: ruby-gettext-package
+Requires: rubygem(gettext)
 Requires: postgresql-server
 Requires: ruby-postgres
 Requires: xapian-bindings-ruby
@@ -35,7 +35,7 @@ Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
 BuildRequires: ruby >= 1.8.1
 BuildRequires: ruby-devel
-BuildRequires: ruby-gettext-package
+BuildRequires: rubygem(gettext)
 BuildRequires: rubygem(rake) >= 0.7
 Provides: ovirt-server
 BuildArch: noarch
