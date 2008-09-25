@@ -54,7 +54,6 @@ class VmController < ApplicationController
                              :state   => Task::STATE_QUEUED})
         @task.save!
       end
-      _setup_vm_provision(params)
       start_now = params[:start_now]
       if (start_now)
         if @vm.get_action_list.include?(VmTask::ACTION_START_VM)
@@ -227,9 +226,10 @@ class VmController < ApplicationController
     # FIXME add cobbler images too
     begin
       @provisioning_options += Cobbler::Profile.find.collect do |profile|
-        [profile.name + Vm::COBBLER_PROFILE_SUFFIX, profile.name]
-
-    end
+        [profile.name + Vm::COBBLER_PROFILE_SUFFIX,
+         Vm::COBBLER_PREFIX + Vm::PROVISIONING_DELIMITER +
+         Vm::PROFILE_PREFIX + Vm::PROVISIONING_DELIMITER + profile.name]
+      end
     rescue
       #if cobbler doesn't respond/is misconfigured/etc just don't add profiles
     end
@@ -238,8 +238,10 @@ class VmController < ApplicationController
   # FIXME: move this to an edit_vm task in taskomatic
   def _setup_vm_provision(params)
     # spaces are invalid in the cobbler name
-    name = params[:vm][:description].gsub(" ", "-")
-    provision = params[:vm][:provisioning_and_boot_settings]
+    name = params[:vm][:uuid]
+    provision = params[:vm][:provisioning_and_boot_settings].gsub(
+         Vm::COBBLER_PREFIX + Vm::PROVISIONING_DELIMITER +
+         Vm::PROFILE_PREFIX + Vm::PROVISIONING_DELIMITER, "")
     mac = params[:vm][:vnic_mac_addr]
     unless provision == Vm::PXE_OPTION_VALUE or
            provision == Vm::HD_OPTION_VALUE
