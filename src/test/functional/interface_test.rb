@@ -54,13 +54,13 @@ if File.exists? File.dirname(__FILE__) + '/../selenium.rb'
               "selenium.isElementPresent(\"//div[@id='side']/ul/li/span/a\")",
               10000)
          @browser.click(
-              "//div[@id='side']/ul/li/span/a")  # click 'master pool' link
+              "//div[@id='side']/ul/li/span/a")  # click 'default pool' link
          @browser.wait_for_condition(
               "selenium.isElementPresent(\"//div[@class='summary_title']\")",
                10000)
 
          # verify the title of the pool
-	     assert_equal("master pool",
+	     assert_equal("default",
                       @browser.get_text("//div[@class='summary_title']"))
 	 end
 

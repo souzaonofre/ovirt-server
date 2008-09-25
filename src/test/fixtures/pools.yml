@@ -1,77 +1,100 @@
 one:
   id: 1
-  name: 'master pool'
+  name: 'default'
   type: 'HardwarePool'
+  parent_id: 12
   created_at: '2008-02-13 15:42:43.417883'
   updated_at: '2008-02-14 16:41:42.417883'
-  lft: 1
-  rgt: 20
+  lft: 3
+  rgt: 24
 two:
   id: 2
   name: 'foobar hosts'
   type: 'VmResourcePool'
   parent_id: 1
-  lft: 2
-  rgt: 3
+  lft: 4
+  rgt: 5
 three:
   id: 3
   name: 'corp.com'
   type: 'HardwarePool'
   parent_id: 1
-  lft: 4
-  rgt: 19
+  lft: 6
+  rgt: 23
 four:
   id: 4
   name: 'corp.com dev'
   type: 'HardwarePool'
   parent_id: 3
-  lft: 5
-  rgt: 6
+  lft: 7
+  rgt: 8
 five:
   id: 5
   name: 'corp.com qa'
   type: 'HardwarePool'
   parent_id: 3
-  lft: 7
-  rgt: 16
+  lft: 9
+  rgt: 20
 six:
   id: 6
   name: 'corp.com production vms'
   type: 'VmResourcePool'
   parent_id: 3
-  lft: 17
-  rgt: 18
+  lft: 21
+  rgt: 22
 seven:
   id: 7
   name: 'foobar'
   type: 'VmResourcePool'
   parent_id: 5
-  lft: 8
-  rgt: 9
+  lft: 10
+  rgt: 11
 eight:
   id: 8
   name: 'some foobar hardware'
   type: 'HardwarePool'
   parent_id: 5
-  lft: 10
-  rgt: 13
+  lft: 12
+  rgt: 15
 nine:
   id: 9
   name: 'some more foobar hardware'
   type: 'HardwarePool'
   parent_id: 8
-  lft: 11
-  rgt: 12
+  lft: 13
+  rgt: 14
 ten:
   id: 10
   name: 'yet another pool'
   type: 'VmResourcePool'
   parent_id: 5
-  lft: 14
-  rgt: 15
+  lft: 16
+  rgt: 17
 prodops_pool:
-    id: 11
-    name: 'Production Operations'
-    type: 'HardwarePool'
-    parent_id: 5
+  id: 11
+  name: 'Production Operations'
+  type: 'HardwarePool'
+  parent_id: 5
+  lft: 18
+  rgt: 19
+hw_dir_pool:
+  id: 12
+  name: 'hardware'
+  type: 'DirectoryPool'
+  parent_id: 13
+  lft: 2
+  rgt: 25
+root_dir_pool:
+  id: 13
+  name: 'root'
+  type: 'DirectoryPool'
+  lft: 1
+  rgt: 28
+smart_dir_pool:
+  id: 14
+  name: 'hardware'
+  type: 'DirectoryPool'
+  parent_id: 13
+  lft: 26
+  rgt: 27
 

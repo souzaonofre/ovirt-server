@@ -255,7 +255,7 @@ class StorageController < ApplicationController
     respond_to do |format|
       format.json { render :json => { :object => "storage_pool",
           :success => success, :alert => alert } }
-      format.xml { head (success ? :ok : :method_not_allowed) }
+      format.xml { head(success ? :ok : :method_not_allowed) }
     end
   end
 
