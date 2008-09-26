@@ -167,10 +167,8 @@ function afterHwPool(response, status){
 
       // this is for reloading the host/storage grid when 
       // adding hosts/storage to a new HW pool
-      alert(response.resource_type);
       if (response.resource_type) {
         grid = $('#' + response.resource_type + '_grid');
-        alert(response.resource_type);
         if (grid.size()>0 && grid != null) {
           grid.flexReload();
         } else {
