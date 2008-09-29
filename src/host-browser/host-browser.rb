@@ -46,10 +46,15 @@ class HostBrowser
     def initialize(session)
         @session = session
         @keytab_dir = '/usr/share/ipa/html/'
+        set_peeraddr @session.peeraddr[3]
+    end
+
+    def set_peeraddr(peeraddr)
+      @peeraddr = peeraddr
     end
 
     def prefix(session)
-      "#{Time.now.strftime('%b %d %H:%M:%S')} #{session.peeraddr[3]} "
+      "#{Time.now.strftime('%b %d %H:%M:%S')} #{@peeraddr} "
     end
 
     # Ensures the conversation starts properly.
@@ -113,7 +118,7 @@ class HostBrowser
                 nic_info << nic
             else
 
-                raise Exception.new("ERRINFO! Expected key=value : #{info}\n") unless info =~ /[\w]+[\s]*=[\w]*/
+                raise Exception.new("ERRINFO! Expected key=value : #{info}\n") unless info =~ /[\w]+[\s]*=[\w]+/
 
                 key, value = info.split("=")
 

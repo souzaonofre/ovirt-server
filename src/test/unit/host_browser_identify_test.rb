@@ -18,6 +18,9 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
+$: << File.join(File.dirname(__FILE__), "../../dutils")
+$: << File.join(File.dirname(__FILE__), "../../host-browser")
+
 require File.dirname(__FILE__) + '/../test_helper'
 
 require 'test/unit'

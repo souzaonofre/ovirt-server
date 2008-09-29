@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -30,6 +30,8 @@ class NicControllerTest < Test::Unit::TestCase
     @controller = NicController.new
     @request    = ActionController::TestRequest.new
     @response   = ActionController::TestResponse.new
+
+    @first_id = nics(:one).id
   end
 
   def test_show
