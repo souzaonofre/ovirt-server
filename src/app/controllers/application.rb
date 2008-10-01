@@ -31,7 +31,7 @@ class ApplicationController < ActionController::Base
   before_filter :pre_edit, :only => [:edit, :update, :destroy]
   before_filter :pre_show, :only => [:show]
   before_filter :authorize_admin, :only => [:new, :create, :edit, :update, :destroy]
-  before_filter :is_logged_in
+  before_filter :is_logged_in, :get_help_section
 
   def choose_layout
     if(params[:component_layout])
@@ -42,6 +42,19 @@ class ApplicationController < ActionController::Base
 
   def is_logged_in
     redirect_to(:controller => "login", :action => "login") unless get_login_user
+  end
+
+  def get_help_section
+      help = HelpSection.find(:first, :conditions => [ "controller = ? AND action = ?", controller_name, action_name ])
+      @help_section = help ? help.section : ""
+      if @help_section.index('#')
+        help_sections = @help_section.split('#')
+        @help_section = help_sections[0]
+        @anchor = help_sections[1]
+      else
+        @help_section = @help_section
+        @anchor = ""
+      end
   end
 
   def get_login_user

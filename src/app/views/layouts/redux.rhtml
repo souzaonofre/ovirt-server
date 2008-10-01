@@ -79,11 +79,17 @@
    </div>
 
    <div id="tabs-and-content-container">
+
      <div id="navigation-tabs" style="position:absolute; top:40px; left:250px;">
        <%= render :partial => '/layouts/navigation_tabs' %>
      </div> 
      <div id="main">
         <div id="content_area">
+          <div id="help-div">
+                <%= link_to image_tag("icon_help.png"),
+                {:controller => 'help', :action => @help_section, :anchor => @anchor},
+                :id=>"help-link", :popup => true %>
+          </div>
           <%= yield  %> <%# the rest of the center and right hand side %>
         </div>
      </div>

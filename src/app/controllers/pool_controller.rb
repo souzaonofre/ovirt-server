@@ -35,7 +35,7 @@ class PoolController < ApplicationController
     respond_to do |format|
       format.html {
         render :layout => 'tabs-and-content' if params[:ajax]
-        render :layout => false if params[:nolayout]
+        render :layout => 'help-and-content' if params[:nolayout]
       }
       format.xml {
         render :xml => @pool.to_xml(XML_OPTS)

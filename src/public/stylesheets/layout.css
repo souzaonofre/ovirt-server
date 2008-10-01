@@ -128,7 +128,7 @@ a { color:#000000; text-decoration: none;}
 /*  ----- Right side of Header --------  */
 
 .header_info {
-  padding: 10px 20px 0px 10px;
+  padding: 10px 30px 0px 10px;
   margin: 0;
   float: right;
   text-align: right;
@@ -139,6 +139,12 @@ a { color:#000000; text-decoration: none;}
 .header_info a:active  { color: #B5B5B5; text-decoration: none; }
 .header_info a:visited { color: #B5B5B5; text-decoration: none; }
 .header_info a:hover   { color: #FFFFFF; text-decoration: none; }
+
+#help-div {
+  position: fixed;
+  top: 10px;
+  right: -1px;
+}
 
 #textfield_effect {
     border-width: 1px;
