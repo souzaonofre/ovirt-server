@@ -23,36 +23,57 @@
 
 require 'stringio'
 
+# +ManagedNodeConfiguration+ generates a configuration file for an oVirt node
+# based on information about the hardware submitted by the node and the
+# configuration details held in the database.
+#
+# The configuration is returned as a series of encoded lines.
+#
+# For a kernel module, the formation of the line is as follows:
+#
+# bonding=[bonding alias]
+#
+# An example would be for loading the +bonding+ kernel module to setup a bonded
+# interface for load balancing. In this example, the bonded interface would be
+# named +failover0+ on the node:
+#
+# bonding=failover0
+#
+# For a network interface (including a bonded interface) an example would be:
+#
+# ifcfg=00:11:22:33:44|eth0|BOOTPROTO=dhcp|bridge=ovirtbr0|ONBOOT=yes
+#
+# In this line, the network interface +eth0+ has a hardware MAC address of
+# +00:11:22:33:44+. It will use DHCP for retrieving it's IP address details,
+# and will use the +ovirtbr0+ interface as a bridge.
+#
 class ManagedNodeConfiguration
   NIC_ENTRY_PREFIX='/files/etc/sysconfig/network-scripts'
 
   def self.generate(host, macs)
     result = StringIO.new
 
-    result.puts "#!/bin/bash"
     result.puts "# THIS FILE IS GENERATED!"
 
     # first process any bondings that're defined
     unless host.bondings.empty?
-      result.puts "cat <<\EOF > /var/tmp/pre-config-script"
-      result.puts "#!/bin/bash"
-      result.puts "# THIS FILE IS GENERATED!"
-
       host.bondings.each do |bonding|
-        result.puts "/sbin/modprobe bonding mode=#{bonding.bonding_type.mode}"
+        result.puts "bonding=#{bonding.interface_name}"
       end
-
-      result.puts "EOF"
     end
 
     # now process the network interfaces  and bondings
-    result.puts "cat <<\EOF > /var/tmp/node-augtool"
 
     host.bondings.each do |bonding|
-      result.puts "rm #{NIC_ENTRY_PREFIX}/ifcfg-#{bonding.interface_name}"
-      result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{bonding.interface_name}/DEVICE #{bonding.interface_name}"
-      result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{bonding.interface_name}/IPADDR #{bonding.ip_addr}" if bonding.ip_addr
-      result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{bonding.interface_name}/ONBOOT yes"
+      entry = "ifcfg=none|#{bonding.interface_name}|BONDING_OPTS=\"mode=#{bonding.bonding_type.mode} miimon=100\""
+
+      if bonding.ip_addr == nil || bonding.ip_addr.empty?
+        entry += "|BOOTPROTO=dhcp"
+      else
+        entry += "|BOOTPROTO=static|IPADDR=#{bonding.ip_addr}|NETMASK=#{bonding.netmask}|BROADCAST=#{bonding.broadcast}"
+      end
+
+      result.puts "#{entry}|ONBOOT=yes"
 
       bonding.nics.each do |nic|
         process_nic result, nic, macs, bonding
@@ -75,9 +96,6 @@ class ManagedNodeConfiguration
       end
     end
 
-    result.puts "save"
-    result.puts "EOF"
-
     result.string
   end
 
@@ -87,31 +105,20 @@ class ManagedNodeConfiguration
     iface_name = macs[nic.mac]
 
     if iface_name
-      result.puts "rm #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}"
-      result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/DEVICE #{iface_name}"
+      entry = "ifcfg=#{nic.mac}|#{iface_name}"
 
       if bonding
-        result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/MASTER #{bonding.interface_name}"
-        result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/SLAVE yes"
+        entry += "|MASTER=#{bonding.interface_name}|SLAVE=yes"
       else
-        result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/BOOTPROTO #{nic.boot_type.proto}"
-
-        if nic.boot_type.proto == 'static'
-          result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/IPADDR #{nic.ip_addr}"
-          result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/NETMASK #{nic.netmask}"
-          result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/BROADCAST #{nic.broadcast}"
-        end
-
-	if bridged
-	  result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/BRIDGE ovirtbr0"
-	elsif is_bridge
-	  result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/TYPE bridge"
-	  result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/PEERNTP yes"
-	  result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/DELAY 0"
-	end
+        entry += "|BOOTPROTO=#{nic.boot_type.proto}"
+        entry += "|IPADDR=#{nic.ip_addr}|NETMASK=#{nic.netmask}|BROADCAST=#{nic.broadcast}" if nic.boot_type.proto == 'static'
+        entry += "|BRIDGE=#{nic.bridge}" if nic.bridge && !is_bridge
+        entry += "|BRIDGE=ovirtbr0" if !nic.bridge && !is_bridge
+        entry += "|TYPE=bridge" if is_bridge
       end
-
-      result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/ONBOOT yes"
+      entry += "|ONBOOT=yes"
     end
+
+    result.puts entry if defined? entry
   end
 end

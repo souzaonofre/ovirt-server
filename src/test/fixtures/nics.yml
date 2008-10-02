@@ -78,3 +78,17 @@ buildserver_nic_two:
     broadcast: '172.31.0.255'
     host_id: <%= Fixtures.identify(:buildserver_managed_node) %>
     boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
+
+mediaserver_nic_one:
+    mac: '07:17:19:65:03:32'
+    usage_type: '1'
+    bandwidth: 100
+    host_id: <%= Fixtures.identify(:mediaserver_managed_node) %>
+    boot_type_id: <%= Fixtures.identify(:boot_type_dhcp) %>
+
+mediaserver_nic_two:
+    mac: '07:17:19:65:03:31'
+    usage_type: '1'
+    bandwidth: 100
+    host_id: <%= Fixtures.identify(:mediaserver_managed_node) %>
+    boot_type_id: <%= Fixtures.identify(:boot_type_dhcp) %>

@@ -17,15 +17,12 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
-class AddBootTypeToBonding < ActiveRecord::Migration
+class AllowNicBootTypeToBeNull < ActiveRecord::Migration
   def self.up
-    add_column :bondings, :boot_type_id, :integer, :null => true
-
-    execute 'alter table bondings add constraint fk_bondings_boot_type
-             foreign key (boot_type_id) references boot_types(id)'
+    change_column :nics, :boot_type_id, :integer, :null => true
   end
 
   def self.down
-    remove_column :bondings, :boot_type_id
+    change_column :nics, :boot_type_id, :integer, :null => false
   end
 end
