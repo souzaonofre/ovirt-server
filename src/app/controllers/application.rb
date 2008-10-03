@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -24,7 +24,7 @@ class ApplicationController < ActionController::Base
   # Pick a unique cookie name to distinguish our session data from others'
   session :session_key => '_ovirt_session_id'
   init_gettext "ovirt"
-  layout 'redux'
+  layout :choose_layout
 
   before_filter :pre_new, :only => [:new]
   before_filter :pre_create, :only => [:create]
@@ -33,6 +33,13 @@ class ApplicationController < ActionController::Base
   before_filter :authorize_admin, :only => [:new, :create, :edit, :update, :destroy]
   before_filter :is_logged_in
 
+  def choose_layout
+    if(params[:component_layout])
+      return (ENV["RAILS_ENV"] != "production")?'components/' << params[:component_layout]:'redux'
+    end
+    return 'redux'
+  end
+
   def is_logged_in
     redirect_to(:controller => "login", :action => "login") unless get_login_user
   end
@@ -40,7 +47,7 @@ class ApplicationController < ActionController::Base
   def get_login_user
     (ENV["RAILS_ENV"] == "production") ? session[:user] : "ovirtadmin"
   end
-  
+
   def set_perms(hwpool)
     @user = get_login_user
     @can_view = hwpool.can_view(@user)
@@ -91,8 +98,8 @@ class ApplicationController < ActionController::Base
   # don't define find_opts for array inputs
   def json_hash(full_items, attributes, arg_list=[], find_opts={}, id_method=:id)
     page = params[:page].to_i
-    paginate_opts = {:page => page, 
-                     :order => "#{params[:sortname]} #{params[:sortorder]}", 
+    paginate_opts = {:page => page,
+                     :order => "#{params[:sortname]} #{params[:sortorder]}",
                      :per_page => params[:rp]}
     arg_list << find_opts.merge(paginate_opts)
     item_list = full_items.paginate(*arg_list)
@@ -102,7 +109,7 @@ class ApplicationController < ActionController::Base
     json_hash[:rows] = item_list.collect do |item|
       item_hash = {}
       item_hash[:id] = item.send(id_method)
-      item_hash[:cell] = attributes.collect do |attr| 
+      item_hash[:cell] = attributes.collect do |attr|
         if attr.is_a? Array
           value = item
           attr.each { |attr_item| value = value.send(attr_item)}

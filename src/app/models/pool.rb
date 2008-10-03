@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -45,7 +45,7 @@ class Pool < ActiveRecord::Base
   has_many :smart_pool_tags, :as => :tagged, :dependent => :destroy
   has_many :smart_pools, :through => :smart_pool_tags
 
-  # used to allow parent traversal before obj is saved to the db 
+  # used to allow parent traversal before obj is saved to the db
   # (needed for view code 'create' form)
   attr_accessor :tmp_parent
 
@@ -168,10 +168,10 @@ class Pool < ActiveRecord::Base
     end
   end
 
-  RESOURCE_LABELS = [["CPUs", :cpus, ""], 
-                     ["Memory", :memory_in_mb, "(mb)"], 
-                     ["NICs", :nics, ""], 
-                     ["VMs", :vms, ""], 
+  RESOURCE_LABELS = [["CPUs", :cpus, ""],
+                     ["Memory", :memory_in_mb, "(mb)"],
+                     ["NICs", :nics, ""],
+                     ["VMs", :vms, ""],
                      ["Disk", :storage_in_gb, "(gb)"]]
 
   #needed by tree widget for display
@@ -195,7 +195,7 @@ class Pool < ActiveRecord::Base
       found = false
       open_list.each do |open_pool|
         if pool.id == open_pool.id
-          new_open_list = open_list[(open_list.index(open_pool)+1)..-1]          
+          new_open_list = open_list[(open_list.index(open_pool)+1)..-1]
           unless new_open_list.empty?
             pool_children = pool.children unless pool_children
             hash[:children] = pool_hash(pool_children, new_open_list, filter_vm_pools)
@@ -210,7 +210,7 @@ class Pool < ActiveRecord::Base
   end
 
   def json_hash_element
-    { :id => id, :type => self[:type], :text => name, :name => name}
+    { :id => id, :type => self[:type], :text => name, :name => name, :parent_id => parent_id}
   end
 
   def hash_element
@@ -272,7 +272,7 @@ class Pool < ActiveRecord::Base
     obj = args.shift
     method = args.shift
     obj.send(method, *args)
-  end    
+  end
 
   def display_name
     name

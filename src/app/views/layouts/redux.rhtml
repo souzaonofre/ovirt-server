@@ -16,20 +16,18 @@
   <%= stylesheet_link_tag 'flexigrid/flexigrid.css' %>
   <%= stylesheet_link_tag 'facebox' %>
   <%= stylesheet_link_tag 'jquery.jgrowl.css' %>
-  <!--%= stylesheet_link_tag 'jquery.ui-1.5b4/themes/flora/flora.tabs.css' %-->
+
   <%= javascript_include_tag "jquery-1.2.6.min.js" -%>
   <%= javascript_include_tag "jquery-treeview/jquery.treeview.js" -%>
   <%= javascript_include_tag "jquery-treeview/jquery.treeview.async.js" -%>
   <%= javascript_include_tag "flexigrid.js" -%>
   <%= javascript_include_tag "facebox.js" -%>
-  <%= javascript_include_tag "jquery.timers.js" -%>
+  <%#= javascript_include_tag "jquery.timers.js" -%>
   <%= javascript_include_tag "jquery-svg/jquery.svg.pack.js" -%>
   <!--%= javascript_include_tag "jquery-svg/jquery.svgfilter.js" -%-->
   <%= javascript_include_tag "jquery-svg/jquery.svggraph.js" -%>
-  <!--%= javascript_include_tag "jquery.ui-1.5b4/ui.core.js" -%>
-  < %= javascript_include_tag "jquery.ui-1.5b4/ui.tabs.js" -%-->
   <%= javascript_include_tag "jquery.cookie.js" -%>
-  <%= javascript_include_tag "jquery.livequery.pack.js" -%>
+  <%= javascript_include_tag "jquery.livequery.min.js" -%>
   <%= javascript_include_tag "jquery.form.js" -%>
   <%= javascript_include_tag "jquery.jgrowl.js" -%>
 
@@ -40,37 +38,9 @@
   <%= javascript_include_tag "ovirt.js" -%>
     <script type="text/javascript">
       var $tabs, selected_tab;
-      $(document).ready(function(){  
+      $(document).ready(function(){
+         $.ajaxSetup({error: function(xhr) {$.jGrowl(xhr.status + ' ' + xhr.statusText);}});
             $('a[rel*=facebox]').livequery(function(){$(this).facebox();},function(){});
-            $('#side a').livequery(function(){
-                $(this).bind('click', function(){ 
-                    currentNode = $(this).parent().parent()[0].id;
-                    if ($tabs != null) {
-                    var tabType = $tabs.data("pool_type.tabs");
-                    ($(this).attr('href').indexOf(tabType) == -1) ?selected_tab = 0 :selected_tab = $tabs.data("selected.tabs");
-                    }
-                    $('#side span').each(function(){
-                        var nodeType = $(this).attr('class');
-                        if (nodeType.indexOf('_') != -1){
-                            nodeType = nodeType.substr(nodeType.indexOf('_') +1);
-                            $(this).attr('class', nodeType);
-                        }                        
-                    });
-                    var nodeType = $(this).parent().attr('class');
-                    $(this).parent().attr('class', 'current_' + nodeType);
-                    $.ajax({
-                        url: $(this).attr('href'),
-                        type: 'GET',
-                        data: {ajax:true,tab:selected_tab},
-                        //data: {nolayout:true},
-                        dataType: 'html',
-                        success: function(data) {
-                          $('#side-toolbar').html($(data).find('div.toolbar'));
-                          $('#tabs-and-content-container').html($(data).not('div#side-toolbar'));
-                        },
-                        error: function(xhr) {$.jGrowl(xhr.status + ' ' + xhr.statusText);}
-                    });
-                    return false;})},function(){});
             $('.dialog_tab_nav a').livequery(function(){
                 $(this).bind('click', function(){
                     $('.dialog_tab_nav li').removeClass('current');

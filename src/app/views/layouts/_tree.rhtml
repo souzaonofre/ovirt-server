@@ -1,32 +1,124 @@
-<div style=" float:left; padding:0 0 0 5px;"><%= image_tag("icon_dashboard.gif")%></div>
-  <% selected = "selected" if controller.controller_name == "dashboard" && params[:action] == "index" %>
-<div style=" float:left; padding:5px 0 0 5px;">
-    <%= link_to "Dashboard", { :controller => "dashboard" }, { :id => "dashboard", :class => "#{selected}" } %>
-</div>
-<div style="clear:both"></div>
-<%= javascript_include_tag "jquery.ovirt.treeview.js" -%>
-<script type="text/javascript">    
-    $(document).ready(function(){         
-        $("#test-tree").ovirt_treeview({
-            collapsed: true,
-            //animated: "normal",
-            url: "<%=  url_for :controller =>'/tree', :action => 'fetch_json' %>",
-            hardware_url: "<%=  url_for :controller =>'/hardware', :action => 'show' %>",
-            resource_url: "<%=  url_for :controller =>'/resources', :action => 'show' %>",
-            smart_url: "<%=  url_for :controller =>'/smart_pools', :action => 'show' %>"
-	});
-        var tree_reload = {
-            url: "<%=  url_for :controller =>'/tree', :action => 'fetch_json' %>",
-            hardware_url: "<%=  url_for :controller =>'/hardware', :action => 'show' %>",
-            resource_url: "<%=  url_for :controller =>'/resources', :action => 'show' %>",
-            smart_url: "<%=  url_for :controller =>'/smart_pools', :action => 'show' %>"
+<%= javascript_include_tag "trimpath-template-1.0.38.js" %>
+<%= javascript_include_tag "ovirt.tree.js" %>
+<%= stylesheet_link_tag 'ovirt-tree/tree' %>
+<script type="text/javascript">
+    var treeTimer, urlObj;
+    var processRecursive = true;
+    var recursiveTreeTempl, treeItemTempl, tree_url;
+    $(document).ready(function(){
+      recursiveTreeTempl = TrimPath.parseDOMTemplate("nav_tree_template");
+      treeItemTempl = TrimPath.parseDOMTemplate("nav_tree_updater_template");
+      urlObj = {
+        "HardwarePool" : "<%=  url_for :controller =>'/hardware', :action => 'show' %>",
+        "VmResourcePool" : "<%=  url_for :controller =>'/resources', :action => 'show' %>",
+        "SmartPool" : "<%=  url_for :controller =>'/smart_pools', :action => 'show' %>",
+        "DirectoryPool" : null
+      }
+      tree_url = "<%=  url_for :controller =>"/tree", :action => "return_filtered_list" %>";
+      processTree();
+      treeTimer = setInterval(processTree,15000);
+      $('ul.ovirt-tree li').livequery(
+        function(){
+          $(this)
+          .children('div')
+          .bind('click',function(){
+            $('ul.ovirt-tree li div').removeClass('current');
+            var thisHref = (urlObj[$(this).attr('class')] !=null) ? urlObj[$(this).attr('class')] + '/' + this.id :null;
+            $(this).toggleClass('current');
+            currentNode = this.id;
+            if ($tabs != null) {
+              var tabType = $tabs.data("pool_type.tabs");
+              ($(this).attr('class').toLowerCase().indexOf(tabType) == -1) ?selected_tab = 0 :selected_tab = $tabs.data("selected.tabs");
+            }
+            if (thisHref != null) {
+              $.ajax({
+                url: thisHref,
+                type: 'GET',
+                data: {ajax:true,tab:selected_tab},
+                dataType: 'html',
+                success: function(data) {
+                  $('#side-toolbar').html($(data).find('div.toolbar'));
+                  $('#tabs-and-content-container').html($(data).not('div#side-toolbar'));
+                },
+                error: function(xhr) {$.jGrowl(xhr.status + ' ' + xhr.statusText);}
+              });
+            }
+          });
+        },function(){
+          $(this)
+          .children('div')
+          .unbind('click');
         }
-        $('#test-tree').everyTime(15000,function(){
-          load(tree_reload, {}, this, this);
-        })
+      );
+      $('ul.ovirt-tree li:has(ul)').livequery(
+        function(){
+          $(this)
+            .children('span.hitarea')
+            .click(function(event){
+              if (this == event.target) {
+                  if($(this).siblings('ul').size() >0) {
+                      $(this)
+                        .toggleClass('expanded')
+                        .toggleClass('expandable')
+                        .siblings('ul').slideToggle("normal");
+                  }
+              }
+            });
+        },function(){
+            $(this).children('span.hitarea')
+              .removeClass('expanded expandable')
+              .unbind('click');
+        }
+      );
     });
 </script>
 
-<ul id="test-tree" class="filetree treeview-famfamfam treeview">
-</ul>
-<!--<ul id="tree" class="filetree treeview-famfamfam treeview"></ul>-->
+<!-- Output elements -->
+<div class="nav-dashboard">
+  <% selected = "selected" if controller.controller_name == "dashboard" && params[:action] == "index" %>
+  <%= link_to "Dashboard", { :controller => "dashboard" }, { :id => "dashboard", :class => "#{selected}" } %>
+</div>
+<form id="nav_tree_form">
+  <div class="nav-tree">
+    <ul id="nav_tree" class="ovirt-tree"></ul>
+  </div>
+  <div class="nav-smart-pool">
+    <span class="nav-smart-pool-header">Smart Pools</span> <!--FIXME: replace with i18n text -->
+    <ul id="smart_nav_tree" class="ovirt-tree"></ul>
+  </div>
+</form>
+
+<!-- Template content -->
+<!-- TODO: possibly move these templates into external files-->
+<textarea id="nav_tree_updater_template" style="display:none;">
+  <li>
+    <input type="checkbox" name="item[]" value="${id}-${name}" style="display:none" checked="checked"/>
+    <span class="hitarea {if defined('children')} expandable{/if}">&nbsp;</span><div id="${id}" class="${type}">${name}</div>
+  </li>
+</textarea>
+<textarea id="nav_tree_template" style="display:none;">
+  {macro htmlList(list, optionalListType)}
+    {var listType = optionalListType != null ? optionalListType : "ul"}
+    <${listType} style="display:none;">
+      {for item in list}
+        <li>
+          <input type="checkbox" name="item[]" value="${item.id}-${item.name}" style="display:none" checked="checked"/>
+          <span class="hitarea {if item.children} expandable{/if}">&nbsp;</span><div id="${item.id}" class="${item.type}">${item.name}</div>
+          {if item.children}
+            ${htmlList(item.children)}
+          {/if}
+        </li>
+      {/for}
+    </${listType}>
+  {/macro}
+
+  {for item in pools}
+    <li>
+      <input type="checkbox" name="item[]" value="${item.id}-${item.name}" style="display:none" checked="checked"/>
+      <span class="hitarea {if item.children} expandable{/if}">&nbsp;</span><div id="${item.id}" class="${item.type}">${item.name}</div>
+      {if item.children}
+        ${htmlList(item.children)}
+      {/if}
+    </li>
+  {/for}
+</textarea>

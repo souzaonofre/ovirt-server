@@ -1,6 +1,5 @@
 // ovirt-specific javascript functions are defined here
 
-
 // helper functions for dialogs and action links
 
 
@@ -41,7 +40,7 @@ function add_hosts(url)
     if (validate_selected(hosts, "host")) {
       $.post(url,
              { resource_ids: hosts.toString() },
-              function(data,status){ 
+              function(data,status){
                 $(document).trigger('close.facebox');
 	        grid = $("#hosts_grid");
                 if (grid.size()>0 && grid != null) {
@@ -142,11 +141,11 @@ function ajax_validation(response, status)
     $(".fieldWithErrors").removeClass("fieldWithErrors");
     $("div.errorExplanation").remove();
     if (!response.success && response.errors ) {
-      for(i=0; i<response.errors.length; i++) { 
+      for(i=0; i<response.errors.length; i++) {
         var element = $("div.form_field:has(#"+response.object + "_" + response.errors[i][0]+")");
         if (element) {
           element.addClass("fieldWithErrors");
-          for(j=0; j<response.errors[i][1].length; j++) { 
+          for(j=0; j<response.errors[i][1].length; j++) {
             element.append('<div class="errorExplanation">'+response.errors[i][1][j]+'</div>');
           }
         }
@@ -163,9 +162,7 @@ function afterHwPool(response, status){
     ajax_validation(response, status);
     if (response.success) {
       $(document).trigger('close.facebox');
-      // FIXME do we need to reload the tree here
-
-      // this is for reloading the host/storage grid when 
+      // this is for reloading the host/storage grid when
       // adding hosts/storage to a new HW pool
       if (response.resource_type) {
         grid = $('#' + response.resource_type + '_grid');
@@ -176,9 +173,12 @@ function afterHwPool(response, status){
         }
       }
       
+      //FIXME: point all these refs at a widget so we dont need the functions in here
+      processTree();
+
       if ((response.resource_type == 'hosts' ? get_selected_hosts() : get_selected_storage()).indexOf($('#'+response.resource_type+'_selection_id').html()) != -1){
 	  empty_summary(response.resource_type +'_selection', (response.resource_type == 'hosts' ? 'Host' : 'Storage Pool'));
-      }   
+      }
       // do we have HW pools grid?
       //$("#vmpools_grid").flexReload()
     }
@@ -193,12 +193,14 @@ function afterVmPool(response, status){
       } else {
         $tabs.tabs("load",$tabs.data('selected.tabs'));
       }
+      processTree();
     }
 }
 function afterSmartPool(response, status){
     ajax_validation(response, status);
     if (response.success) {
       $(document).trigger('close.facebox');
+      processTree();
     }
 }
 function afterStoragePool(response, status){
@@ -208,7 +210,7 @@ function afterStoragePool(response, status){
       grid = $("#storage_grid");
       if (grid.size()>0 && grid != null) {
         grid.flexReload();
-      } else {;
+      } else {
         $tabs.tabs("load",$tabs.data('selected.tabs'));
       }
     }
@@ -238,7 +240,7 @@ function afterVm(response, status){
     }
 }
 
-//selection detail refresh 
+//selection detail refresh
 function refresh_summary(element_id, url, obj_id){
   $('#'+element_id+'').load(url, { id: obj_id})
 }
@@ -289,10 +291,10 @@ function delete_pool(delete_url, id)
   $.post(delete_url,
          {id: id},
           function(data,status){
+            //no more flex reload?
+            processTree();
             if (data.alert) {
               $.jGrowl(data.alert);
             }
            }, 'json');
 }
-
-
