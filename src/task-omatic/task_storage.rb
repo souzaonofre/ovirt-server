@@ -23,14 +23,14 @@ require 'libvirt'
 def refresh_pool(task)
   puts "refresh_pool"
 
-  pool = StoragePool.find(task[:storage_pool_id])
+  pool = task.storage_pool
 
   if pool == nil
     raise "Could not find storage pool"
   end
 
   if pool[:type] == "IscsiStoragePool"
-    storage = Iscsi.new(pool.ip_addr, pool.target)
+    storage = Iscsi.new(pool.ip_addr, pool[:target])
   elsif pool[:type] == "NfsStoragePool"
     storage = NFS.new(pool.ip_addr, pool.export_path)
   else

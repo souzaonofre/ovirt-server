@@ -1,5 +1,6 @@
+#
 # Copyright (C) 2008 Red Hat, Inc.
-# Written by Chris Lalancette <clalance@redhat.com>
+# Written by Scott Seago <sseago@redhat.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,18 +17,8 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
-require 'utils'
-
-# FIXME: a little ugly to be including all of task_vm here, but
-# utils really isn't the right place for the migrate() method
-require 'task_vm'
-
-def clear_vms_host(task)
-  puts "clear_vms_host"
-
-  src_host = task.host
-
-  src_host.vms.each do |vm|
-    migrate(vm)
+class LvmStorageVolume < StorageVolume
+  def display_name
+    "#{get_type_label}: #{storage_pool.vg_name}:#{lv_name}"
   end
 end

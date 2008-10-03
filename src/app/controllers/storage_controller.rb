@@ -111,10 +111,10 @@ class StorageController < ApplicationController
   end
 
   def insert_refresh_task
-    @task = StorageTask.new({ :user            => @user,
-                              :storage_pool_id => @storage_pool.id,
-                              :action          => StorageTask::ACTION_REFRESH_POOL,
-                              :state           => Task::STATE_QUEUED})
+    @task = StorageTask.new({ :user        => @user,
+                              :task_target => @storage_pool,
+                              :action      => StorageTask::ACTION_REFRESH_POOL,
+                              :state       => Task::STATE_QUEUED})
     @task.save!
   end
 
@@ -144,12 +144,14 @@ class StorageController < ApplicationController
             :location => storage_pool_url(@storage_pool)
         }
       end
-    rescue
+    rescue => ex
       # FIXME: need to distinguish pool vs. task save errors (but should mostly be pool)
       respond_to do |format|
         format.json {
-          render :json => { :object => "storage_pool", :success => false,
-            :errors => @storage_pool.errors.localize_error_messages.to_a  } }
+          json_hash = { :object => "storage_pool", :success => false,
+            :errors => @storage_pool.errors.localize_error_messages.to_a  }
+          json_hash[:message] = ex.message if json_hash[:errors].empty?
+          render :json => json_hash }
         format.xml { render :xml => @storage_pool.errors,
           :status => :unprocessable_entity }
       end
@@ -181,7 +183,7 @@ class StorageController < ApplicationController
     @redir_controller = @perm_obj.get_controller
     authorize_admin
     @storage_pools = @hardware_pool.storage_volumes
-    @storage_types = StoragePool::STORAGE_TYPES.keys
+    @storage_types = StoragePool::STORAGE_TYPE_PICKLIST
   end
 
   def addstorage
@@ -224,23 +226,6 @@ class StorageController < ApplicationController
       render :json => { :object => "storage_pool", :success => true, 
         :alert => "Error deleting storage pools." }
     end
-  end
-
-  def vm_action
-    if @vm.get_action_list.include?(params[:vm_action])
-      @task = VmTask.new({ :user    => get_login_user,
-                         :vm_id   => params[:id],
-                         :action  => params[:vm_action],
-                         :state   => Task::STATE_QUEUED})
-      if @task.save
-        flash[:notice] = "#{params[:vm_action]} was successfully queued."
-      else
-        flash[:notice] = "Error in inserting task for #{params[:vm_action]}."
-      end
-    else
-      flash[:notice] = "#{params[:vm_action]} is an invalid action."
-    end
-    redirect_to :controller => 'vm', :action => 'show', :id => params[:id]
   end
 
   def destroy

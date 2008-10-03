@@ -1,5 +1,6 @@
+#
 # Copyright (C) 2008 Red Hat, Inc.
-# Written by Chris Lalancette <clalance@redhat.com>
+# Written by Scott Seago <sseago@redhat.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,18 +17,26 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
-require 'utils'
+class StorageVolumeTask < Task
 
-# FIXME: a little ugly to be including all of task_vm here, but
-# utils really isn't the right place for the migrate() method
-require 'task_vm'
+  ACTION_CREATE_VOLUME = "create_volume"
+  ACTION_EDIT_VOLUME = "edit_volume"
 
-def clear_vms_host(task)
-  puts "clear_vms_host"
+  def after_initialize
+    self.hardware_pool = task_target.storage_pool.hardware_pool if self.task_target_type=="StorageVolume"
+  end
 
-  src_host = task.host
-
-  src_host.vms.each do |vm|
-    migrate(vm)
+  def task_obj
+    "StorageVolume;;;#{self.storage_volume.id};;;#{self.storage_volume.display_name}"
+  end
+  end
+  def host
+    nil
+  end
+  def vm
+    nil
+  end
+  def storage_pool
+    nil
   end
 end

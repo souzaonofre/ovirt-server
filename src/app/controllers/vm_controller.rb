@@ -49,19 +49,19 @@ class VmController < ApplicationController
       Vm.transaction do
         @vm.save!
         _setup_vm_provision(params)
-        @task = VmTask.new({ :user    => @user,
-                             :vm_id   => @vm.id,
-                             :action  => VmTask::ACTION_CREATE_VM,
-                             :state   => Task::STATE_QUEUED})
+        @task = VmTask.new({ :user        => @user,
+                             :task_target => @vm,
+                             :action      => VmTask::ACTION_CREATE_VM,
+                             :state       => Task::STATE_QUEUED})
         @task.save!
       end
       start_now = params[:start_now]
       if (start_now)
         if @vm.get_action_list.include?(VmTask::ACTION_START_VM)
-          @task = VmTask.new({ :user    => @user,
-                               :vm_id   => @vm.id,
-                               :action  => VmTask::ACTION_START_VM,
-                               :state   => Task::STATE_QUEUED})
+          @task = VmTask.new({ :user        => @user,
+                               :task_target => @vm,
+                               :action      => VmTask::ACTION_START_VM,
+                               :state       => Task::STATE_QUEUED})
           @task.save!
           alert = "VM was successfully created. VM Start action queued."
         else
@@ -105,19 +105,19 @@ class VmController < ApplicationController
       _setup_vm_provision(params)
 
       if (params[:start_now] and @vm.get_action_list.include?(VmTask::ACTION_START_VM) )
-        @task = VmTask.new({ :user    => @user,
-                             :vm_id   => @vm.id,
-                             :action  => VmTask::ACTION_START_VM,
-                             :state   => Task::STATE_QUEUED})
+        @task = VmTask.new({ :user        => @user,
+                             :task_target => @vm,
+                             :action      => VmTask::ACTION_START_VM,
+                             :state       => Task::STATE_QUEUED})
         @task.save!
       elsif ( params[:restart_now] and @vm.get_action_list.include?(VmTask::ACTION_SHUTDOWN_VM) )
-        @task = VmTask.new({ :user    => @user,
-                             :vm_id   => @vm.id,
-                             :action  => VmTask::ACTION_SHUTDOWN_VM,
-                             :state   => Task::STATE_QUEUED})
+        @task = VmTask.new({ :user        => @user,
+                             :task_target => @vm,
+                             :action      => VmTask::ACTION_SHUTDOWN_VM,
+                             :state       => Task::STATE_QUEUED})
         @task.save!
         @task = VmTask.new({ :user    => @user,
-                             :vm_id   => @vm.id,
+                             :task_target => @vm,
                              :action  => VmTask::ACTION_START_VM,
                              :state   => Task::STATE_QUEUED})
         @task.save!

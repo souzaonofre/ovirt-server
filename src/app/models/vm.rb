@@ -22,7 +22,7 @@ require 'util/ovirt'
 class Vm < ActiveRecord::Base
   belongs_to :vm_resource_pool
   belongs_to :host
-  has_many :tasks, :class_name => "VmTask", :dependent => :destroy, :order => "id ASC" do
+  has_many :tasks, :as => :task_target, :dependent => :destroy, :order => "id ASC" do
     def queued
       find(:all, :conditions=>{:state=>Task::STATE_QUEUED})
     end
@@ -231,11 +231,11 @@ class Vm < ActiveRecord::Base
 
   def queue_action(user, action, data = nil)
     return false unless get_action_list.include?(action)
-    task = VmTask.new({ :user    => user,
-                        :vm_id   => id,
-                        :action  => action,
-                        :args    => data,
-                        :state   => Task::STATE_QUEUED})
+    task = VmTask.new({ :user        => user,
+                        :task_target => self,
+                        :action      => action,
+                        :args        => data,
+                        :state       => Task::STATE_QUEUED})
     task.save!
     return true
   end

@@ -19,7 +19,7 @@
 
 class StoragePool < ActiveRecord::Base
   belongs_to              :hardware_pool
-  has_many :tasks, :class_name => "StorageTask", :dependent => :destroy, :order => "id DESC" do
+  has_many :tasks, :as => :task_target, :dependent => :destroy, :order => "id ASC" do
     def queued
       find(:all, :conditions=>{:state=>Task::STATE_QUEUED})
     end
@@ -33,14 +33,18 @@ class StoragePool < ActiveRecord::Base
   has_many :smart_pool_tags, :as => :tagged, :dependent => :destroy
   has_many :smart_pools, :through => :smart_pool_tags
 
-  validates_presence_of :ip_addr, :hardware_pool_id
+
+  validates_presence_of :hardware_pool_id
 
   acts_as_xapian :texts => [ :ip_addr, :target, :export_path, :type ],
                  :terms => [ [ :search_users, 'U', "search_users" ] ]
   ISCSI = "iSCSI"
   NFS   = "NFS"
+  LVM   = "LVM"
   STORAGE_TYPES = { ISCSI => "Iscsi",
-                    NFS   => "Nfs" }
+                    NFS   => "Nfs",
+                    LVM   => "Lvm" }
+  STORAGE_TYPE_PICKLIST = STORAGE_TYPES.keys - [LVM]
 
   def self.factory(type, params = nil)
     case type
@@ -48,6 +52,8 @@ class StoragePool < ActiveRecord::Base
       return IscsiStoragePool.new(params)
     when NFS
       return NfsStoragePool.new(params)
+    when LVM
+      return LvmStoragePool.new(params)
     else
       return nil
     end

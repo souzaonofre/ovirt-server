@@ -92,11 +92,10 @@ def kick_taskomatic(msg, vm, host_id = nil)
   task.user = "host-status"
   task.action = VmTask::ACTION_UPDATE_STATE_VM
   task.state = Task::STATE_QUEUED
-  task.args = msg
-  task.host_id = host_id
+  task.args = host_id ? [msg,host_id].join(',') : msg
   task.created_at = Time.now
   task.time_started = Time.now
-  task.vm_id = vm.id
+  task.task_target = vm
   task.save
 end
 

@@ -107,9 +107,9 @@ class VmTask < Task
                                       :popup_action => 'migrate'} }
 
   def after_initialize
-    if self.vm
-      self.vm_resource_pool = vm.vm_resource_pool
-      self.hardware_pool = vm.get_hardware_pool
+    if self.task_target_type=="Vm"
+      self.vm_resource_pool = task_target.vm_resource_pool
+      self.hardware_pool = task_target.get_hardware_pool
     end
   end
 
@@ -140,5 +140,14 @@ class VmTask < Task
   end
   def self.label_and_action(action)
     return [action_label(action), action, action_icon(action)]
+  end
+  def host
+    nil
+  end
+  def storage_volume
+    nil
+  end
+  def storage_pool
+    nil
   end
 end

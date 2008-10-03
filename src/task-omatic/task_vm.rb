@@ -118,10 +118,10 @@ end
 
 def findVM(task, fail_on_nil_host_id = true)
   # find the matching VM in the vms table
-  vm = Vm.find(:first, :conditions => [ "id = ?", task.vm_id ])
+  vm = task.vm
 
   if vm == nil
-    raise "VM id " + task.vm_id + "not found"
+    raise "VM not found for task " + task.id
   end
 
   if vm.host_id == nil && fail_on_nil_host_id
@@ -135,7 +135,7 @@ def findVM(task, fail_on_nil_host_id = true)
     # can mark it either as off (if we didn't find it), or mark the correct
     # vm.host_id if we did.  However, if you have a large number of hosts
     # out there, this could take a while.
-    raise "No host_id for VM " + task.vm_id.to_s
+    raise "No host_id for VM " + vm.id.to_s
   end
 
   return vm
@@ -196,10 +196,7 @@ def shutdown_vm(task)
   setVmState(vm, Vm::STATE_STOPPING)
 
   begin
-    # OK, now that we found the VM, go looking in the hosts table
-    host = findHost(vm.host_id)
-
-    conn = Libvirt::open("qemu+tcp://" + host.hostname + "/system")
+    conn = Libvirt::open("qemu+tcp://" + vm.host.hostname + "/system")
     dom = conn.lookup_domain_by_uuid(vm.uuid)
     # FIXME: crappy.  Right now we destroy the domain to make sure it
     # really went away.  We really want to shutdown the domain to make
@@ -357,10 +354,7 @@ def save_vm(task)
   setVmState(vm, Vm::STATE_SAVING)
 
   begin
-    # OK, now that we found the VM, go looking in the hosts table
-    host = findHost(vm.host_id)
-
-    conn = Libvirt::open("qemu+tcp://" + host.hostname + "/system")
+    conn = Libvirt::open("qemu+tcp://" + vm.host.hostname + "/system")
     dom = conn.lookup_domain_by_uuid(vm.uuid)
     dom.save("/tmp/" + vm.uuid + ".save")
     conn.close
@@ -400,13 +394,10 @@ def restore_vm(task)
   setVmState(vm, Vm::STATE_RESTORING)
 
   begin
-    # OK, now that we found the VM, go looking in the hosts table
-    host = findHost(vm.host_id)
-
     # FIXME: we should probably go out to the host and check what it thinks
     # the state is
 
-    conn = Libvirt::open("qemu+tcp://" + host.hostname + "/system")
+    conn = Libvirt::open("qemu+tcp://" + vm.host.hostname + "/system")
     dom = conn.lookup_domain_by_uuid(vm.uuid)
     dom.restore
 
@@ -442,10 +433,7 @@ def suspend_vm(task)
   setVmState(vm, Vm::STATE_SUSPENDING)
 
   begin
-    # OK, now that we found the VM, go looking in the hosts table
-    host = findHost(vm.host_id)
-
-    conn = Libvirt::open("qemu+tcp://" + host.hostname + "/system")
+    conn = Libvirt::open("qemu+tcp://" + vm.host.hostname + "/system")
     dom = conn.lookup_domain_by_uuid(vm.uuid)
     dom.suspend
     conn.close
@@ -482,10 +470,7 @@ def resume_vm(task)
   setVmState(vm, Vm::STATE_RESUMING)
 
   begin
-    # OK, now that we found the VM, go looking in the hosts table
-    host = findHost(vm.host_id)
-
-    conn = Libvirt::open("qemu+tcp://" + host.hostname + "/system")
+    conn = Libvirt::open("qemu+tcp://" + vm.host.hostname + "/system")
     dom = conn.lookup_domain_by_uuid(vm.uuid)
     dom.resume
     conn.close
@@ -507,27 +492,24 @@ def update_state_vm(task)
   #
   # Actually for migration it is necessary that it be able to update
   # the host and state of the VM once it is migrated.
-  vm = findVM(task, fail_on_nil_host_id = false)
-  if vm == nil
-    raise "VM id " + task.vm_id + "not found"
-  end
-
-  if vm.host_id == nil
-    vm.host_id = task.host_id
+  vm = findVM(task, false)
+  new_vm_state, host_id_str = task.args.split(",")
+  if (vm.host_id == nil) and host_id_str
+    vm.host_id = host_id_str.to_i
   end
 
 
   vm_effective_state = Vm::EFFECTIVE_STATE[vm.state]
-  task_effective_state = Vm::EFFECTIVE_STATE[task.args]
+  task_effective_state = Vm::EFFECTIVE_STATE[new_vm_state]
 
   if vm_effective_state != task_effective_state
-    vm.state = task.args
+    vm.state = new_vm_state
 
     if task_effective_state == Vm::STATE_STOPPED
       setVmShutdown(vm)
     end
     vm.save
-    puts "Updated state to " + task.args
+    puts "Updated state to " + new_vm_state
   end
 end
 

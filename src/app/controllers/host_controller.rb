@@ -139,10 +139,10 @@ class HostController < ApplicationController
   def clear_vms
     begin
       Host.transaction do
-        task = HostTask.new({ :user    => get_login_user,
-                              :host_id   => @host.id,
-                              :action  => HostTask::ACTION_CLEAR_VMS,
-                              :state   => Task::STATE_QUEUED})
+        task = HostTask.new({ :user        => get_login_user,
+                              :task_target => @host,
+                              :action      => HostTask::ACTION_CLEAR_VMS,
+                              :state       => Task::STATE_QUEUED})
         task.save!
         @host.is_disabled = true
         @host.save!
