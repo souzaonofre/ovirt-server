@@ -23,12 +23,23 @@ class StorageVolume < ActiveRecord::Base
   belongs_to              :storage_pool
   has_and_belongs_to_many :vms
 
+  belongs_to :lvm_storage_pool, :class_name => "LvmStoragePool",
+                            :foreign_key => "lvm_pool_id"
+
+  has_many :tasks, :as => :task_target, :dependent => :destroy, :order => "id ASC" do
+    def queued
+      find(:all, :conditions=>{:state=>Task::STATE_QUEUED})
+    end
+  end
+
   def self.factory(type, params = nil)
     case type
-    when "iSCSI"
+    when StoragePool::ISCSI
       return IscsiStorageVolume.new(params)
-    when "NFS"
+    when StoragePool::NFS
       return NfsStorageVolume.new(params)
+    when StoragePool::LVM
+      return LvmStorageVolume.new(params)
     else
       return nil
     end

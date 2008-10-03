@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -17,12 +17,8 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
-class IscsiStoragePool < StoragePool
-  
-  validates_presence_of :ip_addr, :port, :target
-  validates_uniqueness_of :ip_addr, :scope => [:port, :target]
-  
-  def label_components
-    "#{target}"
+class LvmStorageVolume < StorageVolume
+  def display_name
+    "#{get_type_label}: #{storage_pool.vg_name}:#{lv_name}"
   end
 end

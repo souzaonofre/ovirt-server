@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -17,12 +17,26 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
-class IscsiStoragePool < StoragePool
-  
-  validates_presence_of :ip_addr, :port, :target
-  validates_uniqueness_of :ip_addr, :scope => [:port, :target]
-  
-  def label_components
-    "#{target}"
+class StorageVolumeTask < Task
+
+  ACTION_CREATE_VOLUME = "create_volume"
+  ACTION_EDIT_VOLUME = "edit_volume"
+
+  def after_initialize
+    self.hardware_pool = task_target.storage_pool.hardware_pool if self.task_target_type=="StorageVolume"
+  end
+
+  def task_obj
+    "StorageVolume;;;#{self.storage_volume.id};;;#{self.storage_volume.display_name}"
+  end
+  end
+  def host
+    nil
+  end
+  def vm
+    nil
+  end
+  def storage_pool
+    nil
   end
 end
