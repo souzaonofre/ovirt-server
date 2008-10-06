@@ -3,6 +3,7 @@ mailservers_managed_node_bonding:
     interface_name: bond0
     bonding_type_id: <%= Fixtures.identify(:link_aggregation_bonding_type) %>
     host_id: <%= Fixtures.identify(:mailservers_managed_node) %>
+    boot_type_id: <%= Fixtures.identify(:boot_type_static) %>
     ip_addr: 172.31.0.15
     netmask: 255.255.255.
     broadcast: 172.31.0.255

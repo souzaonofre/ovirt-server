@@ -42,8 +42,15 @@ class Bonding < ActiveRecord::Base
   validates_presence_of :interface_name,
     :message => 'An interface name is required.'
 
+  validates_presence_of :boot_type_id,
+    :message => 'A boot type must be specified.'
+
+  validates_presence_of :bonding_type_id,
+    :message => 'A bonding type must be specified.'
+
   belongs_to :host
   belongs_to :bonding_type
+  belongs_to :boot_type
 
   has_and_belongs_to_many :nics,
     :join_table  => 'bondings_nics',

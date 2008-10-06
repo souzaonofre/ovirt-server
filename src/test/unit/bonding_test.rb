@@ -23,6 +23,7 @@ class BondingTest < ActiveSupport::TestCase
   fixtures :bondings
   fixtures :bonding_types
   fixtures :bondings_nics
+  fixtures :boot_types
   fixtures :hosts
   fixtures :nics
 
@@ -31,6 +32,7 @@ class BondingTest < ActiveSupport::TestCase
       :name            => 'Bonding1',
       :interface_name  => 'bond0',
       :bonding_type_id => bonding_types(:failover_bonding_type),
+      :boot_type_id    => boot_types(:boot_type_dhcp),
       :host_id         => hosts(:mailservers_managed_node))
   end
 
@@ -48,6 +50,14 @@ class BondingTest < ActiveSupport::TestCase
     @bonding.interface_name = ''
 
     flunk 'Bondings have to have an interface name.' if @bonding.valid?
+  end
+
+  # Ensures that the bonding requires a boot type.
+  #
+  def test_valid_fails_without_boot_type
+    @bonding.boot_type_id = nil
+
+    flunk 'Bondings have to have a boot type.' if @bonding.valid?
   end
 
   # Ensures that the bonding type is required.
