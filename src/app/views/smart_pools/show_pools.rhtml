@@ -66,8 +66,8 @@
 
           <div class="no-grid-items-text">
             No pools found in this pool. <br/><br/>
-            <%= image_tag "icon_addpool.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;
-            <a href="<%= url_for :controller => 'pool', :action => 'add_to_smart_pool', :smart_pool_id => @pool %>" rel="facebox[.bolder]">Add first Pool to this smart pool</a>
+            <%= image_tag "icon_add_smartpool.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;
+            <a href="<%= url_for :controller => 'smart_pools', :action => 'add_pool_dialog', :id => @pool %>" rel="facebox[.bolder]">Add first Pool to this smart pool</a>
           </div>
        </div>
    </div>
