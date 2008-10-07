@@ -76,6 +76,14 @@ class HardwareController < PoolController
       open_list = []
     else
       pools = Pool.list_for_user(get_login_user,Permission::PRIV_VIEW)
+      hw_root = HardwarePool.get_default_pool
+      if !(pools.include?(hw_root))
+        if pools.include?(DirectoryPool.get_directory_root)
+          pools << hw_root
+        elsif pools.include?(DirectoryPool.get_hardware_root)
+          pools << hw_root
+        end
+      end
       current_id = params[:current_id]
       if current_id
         current_pool = Pool.find(current_id)
