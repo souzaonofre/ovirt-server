@@ -46,6 +46,7 @@
 	Architecture:<br/>    
 	Hypervisor Type:<br/> 
         Status:<br/>
+        VMs:<br/>
     </div>
     <div class="selection_value">
     	<%=h @host.uuid %><br/>
@@ -55,6 +56,7 @@
         <%=h @host.arch %><br/>
 	<%=h @host.hypervisor_type %><br/>
 	<%=h @host.status_str %><br/>
+    <%= @host.vms.collect{|x| x.uuid }.join(" <br/> ") %><br/>
 
 <!-- FIXME: need styling
 <h3>Network Interfaces</h3>

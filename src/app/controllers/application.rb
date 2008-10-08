@@ -112,7 +112,7 @@ class ApplicationController < ActionController::Base
       item_hash[:cell] = attributes.collect do |attr|
         if attr.is_a? Array
           value = item
-          attr.each { |attr_item| value = value.send(attr_item)}
+          attr.each { |attr_item| value = (value.nil? ? nil : value.send(attr_item))}
           value
         else
           item.send(attr)
