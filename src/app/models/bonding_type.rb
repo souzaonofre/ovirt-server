@@ -22,5 +22,9 @@
 #
 class BondingType < ActiveRecord::Base
   validates_presence_of :label
+  validates_uniqueness_of :label,
+    :message => 'Label must be unique'
   validates_presence_of :mode
+  validates_uniqueness_of :mode,
+    :message => 'Mode must be unique'
 end

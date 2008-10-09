@@ -28,10 +28,10 @@ class BondingTest < ActiveSupport::TestCase
 
   def setup
     @bonding = Bonding.new(
-      :name           => 'Bonding1',
-      :interface_name => 'bond0',
-      :type_id        => bonding_types(:failover_bonding_type),
-      :host_id        => hosts(:mailservers_managed_node))
+      :name            => 'Bonding1',
+      :interface_name  => 'bond0',
+      :bonding_type_id => bonding_types(:failover_bonding_type),
+      :host_id         => hosts(:mailservers_managed_node))
   end
 
   # Ensures that the name is required.
@@ -53,7 +53,7 @@ class BondingTest < ActiveSupport::TestCase
   # Ensures that the bonding type is required.
   #
   def test_valid_fails_without_type
-    @bonding.type_id = nil
+    @bonding.bonding_type_id = nil
 
     flunk 'Bondings have to have a valid type.' if @bonding.valid?
   end

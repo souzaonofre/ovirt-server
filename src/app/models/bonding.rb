@@ -33,6 +33,12 @@ class Bonding < ActiveRecord::Base
   validates_presence_of :name,
     :message => 'A name is required.'
 
+  validates_presence_of :host_id,
+    :message => 'A host must be specified.'
+
+  validates_presence_of :bonding_type_id,
+    :message => 'A bonding type must be specified.'
+
   validates_presence_of :interface_name,
     :message => 'An interface name is required.'
 
