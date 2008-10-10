@@ -35,6 +35,8 @@ require 'host-browser'
 # works correctly during the identify mode of operation.
 #
 class HostBrowserIdentifyTest < Test::Unit::TestCase
+  fixtures :boot_types
+  
   def setup
     @connection = flexmock('connection')
     @connection.should_receive(:peeraddr).at_least.once.returns { [nil,nil,nil,"192.168.2.255"] }
