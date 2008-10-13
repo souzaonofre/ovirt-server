@@ -65,16 +65,26 @@ def create_vm_xml(name, uuid, memAllocated, memUsed, vcpus, bootDevice,
   doc.root.elements["devices"].add_element("emulator")
   doc.root.elements["devices"].elements["emulator"].text = "/usr/bin/qemu-kvm"
 
-  devs = [ 'hda', 'hdb', 'hdc', 'hdd' ]
-  i = 0
+  devs = ['hda', 'hdb', 'hdc', 'hdd']
+  which_device = 0
   diskDevices.each do |disk|
+    is_cdrom = (disk =~ /\.iso/) ? true : false
+
     diskdev = Element.new("disk")
-    diskdev.add_attribute("type", "block")
-    diskdev.add_attribute("device", "disk")
-    diskdev.add_element("source", {"dev" => disk})
-    diskdev.add_element("target", {"dev" => devs[i]})
+    diskdev.add_attribute("type", is_cdrom ? "file" : "block")
+    diskdev.add_attribute("device", is_cdrom ? "cdrom" : "disk")
+
+    if is_cdrom
+      diskdev.add_element("readonly")
+      diskdev.add_element("source", {"file" => disk})
+      diskdev.add_element("target", {"dev" => devs[which_device], "bus" => "ide"})
+    else
+      diskdev.add_element("source", {"dev" => disk})
+      diskdev.add_element("target", {"dev" => devs[which_device]})
+    end
+
     doc.root.elements["devices"] << diskdev
-    i += 1
+    which_device += 1
   end
 
   doc.root.elements["devices"].add_element("interface", {"type" => "bridge"})
@@ -154,15 +164,12 @@ def create_vm(task)
   # create cobbler system profile
   begin
     if vm.provisioning and !vm.provisioning.empty?
-      provisioning_arr = vm.provisioning.split(Vm::PROVISIONING_DELIMITER)
-      if provisioning_arr[0]==Vm::COBBLER_PREFIX
-        if provisioning_arr[1]==Vm::PROFILE_PREFIX
+      if vm.uses_cobbler?
+        if vm.cobbler_type == Vm::PROFILE_PREFIX:
           system = Cobbler::System.new('name' => vm.uuid,
                                        'profile' => provisioning_arr[2])
           system.interfaces=[Cobbler::NetworkInterface.new({'mac_address' => vm.vnic_mac_addr})]
           system.save
-        elsif provisioning_arr[1]==Vm::IMAGE_PREFIX
-          #FIXME handle cobbler images
         end
       end
     end
@@ -266,9 +273,52 @@ def start_vm(task)
     # hosts to see if there is a host that will fit these constraints
     host = findHostSLA(vm)
 
+    # if we're booting from a CDROM the VM is an image,
+    # then we need to add the NFS mount as a storage volume for this
+    # boot
+    #
+    if (vm.boot_device == Vm::BOOT_DEV_CDROM) && vm.uses_cobbler? && (vm.cobbler_type == Vm::IMAGE_PREFIX)
+      details = Cobbler::Image.find_one(vm.cobbler_name)
+
+      raise "Image #{vm.cobbler_name} not found in Cobbler server" unless details
+
+      ignored, ip_addr, export_path, filename =
+        details.file.split(/(.*):(.*)\/(.*)/)
+
+      found = false
+
+      vm.storage_volumes.each do |volume|
+        if volume.filename == filename
+          if (volume.storage_pool.ip_addr == ip_addr) &&
+          (volume.storage_pool.export_path == export_path)
+            found = true
+          end
+        end
+      end
+
+      unless found
+        # Create a new transient NFS storage volume
+        # This volume is *not* persisted.
+        image_volume = StorageVolume.factory("NFS",
+          :filename => filename
+        )
+
+        image_volume.storage_pool
+        image_pool = StoragePool.factory(StoragePool::NFS)
+
+        image_pool.ip_addr = ip_addr
+        image_pool.export_path = export_path
+        image_pool.storage_volumes << image_volume
+        image_volume.storage_pool = image_pool
+      end
+    end
+
     conn = Libvirt::open("qemu+tcp://" + host.hostname + "/system")
 
-    storagedevs = connect_storage_pools(conn, vm)
+    volumes = []
+    volumes += vm.storage_volumes
+    volumes << image_volume if image_volume
+    storagedevs = connect_storage_pools(conn, volumes)
 
     # FIXME: get rid of the hardcoded bridge
     xml = create_vm_xml(vm.description, vm.uuid, vm.memory_allocated,

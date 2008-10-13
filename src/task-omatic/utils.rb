@@ -67,7 +67,7 @@ def teardown_storage_pools(conn)
   end
 end
 
-def connect_storage_pools(conn, vm)
+def connect_storage_pools(conn, storage_volumes)
   # here, build up a list of already defined pools.  We'll use it
   # later to see if we need to define new pools for the storage or just
   # keep using existing ones
@@ -78,7 +78,7 @@ def connect_storage_pools(conn, vm)
   end
 
   storagedevs = []
-  vm.storage_volumes.each do |volume|
+  storage_volumes.each do |volume|
     # here, we need to iterate through each volume and possibly attach it
     # to the host we are going to be using
     storage_pool = volume.storage_pool

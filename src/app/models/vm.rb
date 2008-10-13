@@ -49,7 +49,7 @@ class Vm < ActiveRecord::Base
   PROFILE_PREFIX         = "profile"
   IMAGE_PREFIX           = "image"
   COBBLER_PROFILE_SUFFIX = " (Cobbler Profile)"
-  COBBLER_IMAGE_SUFFIX   = " (Cobbler Profile)"
+  COBBLER_IMAGE_SUFFIX   = " (Cobbler Image)"
 
   PXE_OPTION_LABEL       = "PXE Boot"
   PXE_OPTION_VALUE       = "pxe"
@@ -139,7 +139,15 @@ class Vm < ActiveRecord::Base
   end
 
   def provisioning_and_boot_settings=(settings)
-    if settings==PXE_OPTION_VALUE
+    # if the settings have a prefix that matches cobber settings, then process
+    # those details
+    if settings =~ /#{IMAGE_PREFIX}@#{COBBLER_PREFIX}/
+      self[:boot_device] = BOOT_DEV_CDROM
+      self[:provisioning] = settings
+    elsif settings =~ /#{PROFILE_PREFIX}@#{COBBLER_PREFIX}/
+      self[:boot_device] = BOOT_DEV_NETWORK
+      self[:provisioning] = settings
+    elsif settings==PXE_OPTION_VALUE
       self[:boot_device]= BOOT_DEV_NETWORK
       self[:provisioning]= nil
     elsif settings==HD_OPTION_VALUE
@@ -240,6 +248,28 @@ class Vm < ActiveRecord::Base
 
   def search_users
     vm_resource_pool.search_users
+  end
+
+  # Reports whether the VM is uses Cobbler for booting.
+  #
+  def uses_cobbler?
+    (self.provisioning != nil) && (self.provisioning.include? COBBLER_PREFIX)
+  end
+
+  # Returns the cobbler type.
+  #
+  def cobbler_type
+    if self.uses_cobbler?
+      self.provisioning[/^(.*)@/,1]
+    end
+  end
+
+  # Returns the cobbler provisioning name.
+  #
+  def cobbler_name
+    if self.uses_cobbler?
+      self.provisioning[/^.*@.*:(.*)/,1]
+    end
   end
 
   protected
