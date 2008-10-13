@@ -158,4 +158,7 @@ module ApplicationHelper
     }
   end
 
+  def flash_path(source)
+    compute_public_path(source, 'swfs', 'swf')
+  end
 end
