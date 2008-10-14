@@ -84,6 +84,11 @@ class Vm < ActiveRecord::Base
   STATE_CREATE_FAILED  = "create_failed"
   STATE_INVALID        = "invalid"
 
+  DESTROYABLE_STATES   = [STATE_PENDING,
+                          STATE_STOPPED,
+                          STATE_CREATE_FAILED,
+                          STATE_INVALID]
+
   RUNNING_STATES       = [STATE_RUNNING,
                           STATE_SUSPENDED,
                           STATE_STOPPING,
@@ -270,6 +275,24 @@ class Vm < ActiveRecord::Base
     if self.uses_cobbler?
       self.provisioning[/^.*@.*:(.*)/,1]
     end
+  end
+
+  # whether this VM may be validly deleted. running VMs should not be
+  # allowed to be deleted. Currently we restrict deletion to VMs that
+  # are currently stopped, pending (new without any create_vm tasks having
+  # been run), or create_failed. Also, get_pending_state must equal the
+  # current state -- so that we won't delete a VM with a current pending task
+  def is_destroyable?
+    current_state = state
+    pending_state = get_pending_state
+    DESTROYABLE_STATES.include?(current_state) and (current_state == pending_state)
+  end
+
+  def destroy
+    if !is_destroyable?
+      raise "VM must be stopped to delete it"
+    end
+    super
   end
 
   protected

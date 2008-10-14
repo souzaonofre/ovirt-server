@@ -137,26 +137,35 @@ class VmController < ApplicationController
   def delete
     vm_ids_str = params[:vm_ids]
     vm_ids = vm_ids_str.split(",").collect {|x| x.to_i}
-    
+    failure_list = []
+    success = false
     begin
       Vm.transaction do
         vms = Vm.find(:all, :conditions => "id in (#{vm_ids.join(', ')})")
         vms.each do |vm|
-          vm.destroy
+          if vm.is_destroyable?
+            vm.destroy
+          else
+            failure_list << vm.description
+          end
         end
       end
-      render :json => { :object => "vm", :success => true, 
-        :alert => "Virtual Machines were successfully deleted." }
+      if failure_list.empty?
+        success = true
+        alert = "Virtual Machines were successfully deleted."
+      else
+        alert = "The following Virtual Machines were not deleted (a VM must be stopped to delete it): "
+        alert+= failure_list.join(', ')
+      end
     rescue
-      render :json => { :object => "vm", :success => false, 
-        :alert => "Error deleting virtual machines." }
+      alert = "Error deleting virtual machines."
     end
+    render :json => { :object => "vm", :success => success, :alert => alert }
   end
 
   def destroy
     vm_resource_pool = @vm.vm_resource_pool_id
-    if ((@vm.state == Vm::STATE_STOPPED and @vm.get_pending_state == Vm::STATE_STOPPED) or
-        (@vm.state == Vm::STATE_PENDING and @vm.get_pending_state == Vm::STATE_PENDING))
+    if (@vm.is_destroyable?)
       @vm.destroy
       render :json => { :object => "vm", :success => true, 
         :alert => "Virtual Machine was successfully deleted." }
