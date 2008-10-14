@@ -163,16 +163,9 @@ def create_vm(task)
 
   # create cobbler system profile
   begin
-    if vm.provisioning and !vm.provisioning.empty?
-      if vm.uses_cobbler?
-        if vm.cobbler_type == Vm::PROFILE_PREFIX:
-          system = Cobbler::System.new('name' => vm.uuid,
-                                       'profile' => provisioning_arr[2])
-          system.interfaces=[Cobbler::NetworkInterface.new({'mac_address' => vm.vnic_mac_addr})]
-          system.save
-        end
-      end
-    end
+    # FIXME: Presently the wui handles all cobbler system creation.
+    # This should be moved out of the wui into Taskomatic.  Specifically
+    # here, and in the edit_vm methods.
 
     setVmState(vm, Vm::STATE_STOPPED)
   rescue Exception => error
