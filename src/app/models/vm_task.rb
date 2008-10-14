@@ -122,13 +122,10 @@ class VmTask < Task
     ACTIONS.each do |action, hash|
       if hash[:start] == state
         add_action = true
-        print "vm: #{vm}\n user: #{user}\n"
         if (vm and user)
           pool = vm.send(hash[:privilege][1])
-          print "pool: #{pool}\n privilege: #{hash[:privilege][1]}\n"
           add_action = pool ? pool.has_privilege(user, hash[:privilege][0]) : false
         end
-        print "add_action: #{add_action}\n"
         actions << action if add_action
       end
     end

@@ -24,7 +24,7 @@ require 'task_controller'
 class TaskController; def rescue_action(e) raise e end; end
 
 class TaskControllerTest < Test::Unit::TestCase
-  fixtures :tasks
+  fixtures :tasks, :vms, :pools
 
   def setup
     @controller = TaskController.new
