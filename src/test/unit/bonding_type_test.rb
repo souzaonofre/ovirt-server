@@ -29,6 +29,6 @@ class BondingTypeTest < ActiveSupport::TestCase
   def test_modes_must_be_unique
     @bonding_type.mode = BondingType.find(:first).mode
 
-    assert @bonding_type.save == false, 'A bonding type with a duplicate mode should not save.'
+    flunk "Modes must be unique" if @bonding_type.valid?
   end
 end

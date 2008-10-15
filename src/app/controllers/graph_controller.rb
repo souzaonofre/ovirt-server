@@ -3,7 +3,25 @@ require 'util/stats/Stats'
 class GraphController < ApplicationController
   layout nil
 
-  # generate layout for avaialability bar graphs
+  def flexchart_data
+
+    #FIXME: use the stats package aggregation (when it's available)
+    #instead of the old method
+    graph_obj = history_graph_data_object
+
+    #FIXME: for this release, the flexchart shows only peak values,
+    #       and only shows a default of the last 40 data points in rrd.
+    graph_data = { :labels => graph_obj[:timepoints].last(40),
+                   :values => graph_obj[:dataset][2][:values].last(40) }
+    my_data = graph_data[:labels].zip(graph_data[:values])
+    graph = { :vectors => my_data,
+              :max_value => graph_obj[:total_peak]
+            }
+    render :json => graph
+  end
+
+
+  # generate layout for availability bar graphs
   def availability_graph
     @id = params[:id]
     @target = params[:target]
@@ -67,6 +85,10 @@ class GraphController < ApplicationController
 
   # retrieves data for history graphs
   def history_graph_data
+    render :json => history_graph_data_object
+  end
+
+  def history_graph_data_object
     history_graphs
     myDays = params[:days]
     target = params[:target]
@@ -212,9 +234,10 @@ class GraphController < ApplicationController
                 :stroke => @avg_history[:color],
                 :strokeWidth => 1
             }
-       ]
+       ],
+       :total_peak => total_peak
     }
-    render :json => graph_object
+
   end
 
 
@@ -261,7 +284,7 @@ class GraphController < ApplicationController
             }
        ]
     }
-    render :json => graph_object
+
 
   end
   

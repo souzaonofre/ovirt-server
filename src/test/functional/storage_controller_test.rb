@@ -24,7 +24,7 @@ require 'storage_controller'
 class StorageController; def rescue_action(e) raise e end; end
 
 class StorageControllerTest < Test::Unit::TestCase
-  fixtures :storage_volumes
+  fixtures :storage_volumes, :storage_pools
 
   def setup
     @controller = StorageController.new

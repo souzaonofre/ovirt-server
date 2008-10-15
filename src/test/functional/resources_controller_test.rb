@@ -58,14 +58,14 @@ class ResourcesControllerTest < ActionController::TestCase
   def test_destroy
     pool = nil
     assert_nothing_raised {
-        pool = VmResourcePool.find(2).parent.id
+        pool = VmResourcePool.find(10).parent.id
     }
 
-    post :destroy, :id => 2
+    post :destroy, :id => 10
     assert_response :success
 
     assert_raise(ActiveRecord::RecordNotFound) {
-      VmResourcePool.find(2)
+      VmResourcePool.find(10)
     }
   end
 end

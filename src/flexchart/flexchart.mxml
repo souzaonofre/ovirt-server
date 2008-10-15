@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" applicationComplete="populate(flexChart)">
+  <mx:Script>
+    <![CDATA[
+
+      import mx.containers.Box;
+      import org.ovirt.*;
+
+      private function populate(chart:Box):void {
+        var chartLoader:ChartLoader = new ChartLoader(chart, parameters['flexchart_data']);
+        chartLoader.load();
+      }
+
+    ]]>
+  </mx:Script>
+  <mx:Panel height="100%" width="100%" visible="true">
+    <mx:HBox id="flexChart"  height="100%" width="100%" visible="true" verticalAlign="bottom" opaqueBackground="0xFFFFFF" borderThickness="0">
+    </mx:HBox>
+  </mx:Panel>
+</mx:Application>

@@ -48,6 +48,7 @@ class VmController < ApplicationController
     begin
       Vm.transaction do
         @vm.save!
+        _setup_vm_provision(params)
         @task = VmTask.new({ :user    => @user,
                              :vm_id   => @vm.id,
                              :action  => VmTask::ACTION_CREATE_VM,
@@ -70,7 +71,7 @@ class VmController < ApplicationController
         alert = "VM was successfully created."
       end
       render :json => { :object => "vm", :success => true, :alert => alert  }
-    rescue
+    rescue Exception => error
       # FIXME: need to distinguish vm vs. task save errors (but should mostly be vm)
       render :json => { :object => "vm", :success => false, 
                         :errors => @vm.errors.localize_error_messages.to_a }
@@ -136,26 +137,35 @@ class VmController < ApplicationController
   def delete
     vm_ids_str = params[:vm_ids]
     vm_ids = vm_ids_str.split(",").collect {|x| x.to_i}
-    
+    failure_list = []
+    success = false
     begin
       Vm.transaction do
         vms = Vm.find(:all, :conditions => "id in (#{vm_ids.join(', ')})")
         vms.each do |vm|
-          vm.destroy
+          if vm.is_destroyable?
+            vm.destroy
+          else
+            failure_list << vm.description
+          end
         end
       end
-      render :json => { :object => "vm", :success => true, 
-        :alert => "Virtual Machines were successfully deleted." }
+      if failure_list.empty?
+        success = true
+        alert = "Virtual Machines were successfully deleted."
+      else
+        alert = "The following Virtual Machines were not deleted (a VM must be stopped to delete it): "
+        alert+= failure_list.join(', ')
+      end
     rescue
-      render :json => { :object => "vm", :success => false, 
-        :alert => "Error deleting virtual machines." }
+      alert = "Error deleting virtual machines."
     end
+    render :json => { :object => "vm", :success => success, :alert => alert }
   end
 
   def destroy
     vm_resource_pool = @vm.vm_resource_pool_id
-    if ((@vm.state == Vm::STATE_STOPPED and @vm.get_pending_state == Vm::STATE_STOPPED) or
-        (@vm.state == Vm::STATE_PENDING and @vm.get_pending_state == Vm::STATE_PENDING))
+    if (@vm.is_destroyable?)
       @vm.destroy
       render :json => { :object => "vm", :success => true, 
         :alert => "Virtual Machine was successfully deleted." }
@@ -223,13 +233,18 @@ class VmController < ApplicationController
   def _setup_provisioning_options
     @provisioning_options = [[Vm::PXE_OPTION_LABEL, Vm::PXE_OPTION_VALUE],
                              [Vm::HD_OPTION_LABEL, Vm::HD_OPTION_VALUE]]
-    # FIXME add cobbler images too
+
     begin
+      @provisioning_options += Cobbler::Image.find.collect do |image|
+        [image.name + Vm::COBBLER_IMAGE_SUFFIX,
+          "#{Vm::IMAGE_PREFIX}@#{Vm::COBBLER_PREFIX}#{Vm::PROVISIONING_DELIMITER}#{image.name}"]
+      end
+
       @provisioning_options += Cobbler::Profile.find.collect do |profile|
         [profile.name + Vm::COBBLER_PROFILE_SUFFIX,
-         Vm::COBBLER_PREFIX + Vm::PROVISIONING_DELIMITER +
-         Vm::PROFILE_PREFIX + Vm::PROVISIONING_DELIMITER + profile.name]
-      end
+          "#{Vm::PROFILE_PREFIX}@#{Vm::COBBLER_PREFIX}#{Vm::PROVISIONING_DELIMITER}#{profile.name}"]
+
+    end
     rescue
       #if cobbler doesn't respond/is misconfigured/etc just don't add profiles
     end
@@ -239,24 +254,27 @@ class VmController < ApplicationController
   def _setup_vm_provision(params)
     # spaces are invalid in the cobbler name
     name = params[:vm][:uuid]
-    provision = params[:vm][:provisioning_and_boot_settings].gsub(
-         Vm::COBBLER_PREFIX + Vm::PROVISIONING_DELIMITER +
-         Vm::PROFILE_PREFIX + Vm::PROVISIONING_DELIMITER, "")
     mac = params[:vm][:vnic_mac_addr]
-    unless provision == Vm::PXE_OPTION_VALUE or
-           provision == Vm::HD_OPTION_VALUE
-      found = false
-      Cobbler::System.find.each{ |system|
-        if system.name == name
-          system.profile = provision
-          system.save
-          found = true
+    provision = params[:vm][:provisioning_and_boot_settings]
+    # determine what type of provisioning was selected for the VM
+    provisioning_type = :pxe_or_hd_type
+    provisioning_type = :image_type  if provision.index "#{Vm::IMAGE_PREFIX}@#{Vm::COBBLER_PREFIX}"
+    provisioning_type = :system_type if provision.index "#{Vm::PROFILE_PREFIX}@#{Vm::COBBLER_PREFIX}"
+
+    unless provisioning_type == :pxe_or_hd_type
+      cobbler_name = provision.slice(/(.*):(.*)/, 2)
+      system = Cobbler::System.find_one(name)
+      unless system
+        nic = Cobbler::NetworkInterface.new({'mac_address' => mac})
+
+        case provisioning_type
+        when :image_type:
+            system = Cobbler::System.new("name" => name, "image"    => cobbler_name)
+        when :system_type:
+            system = Cobbler::System.new("name" => name, "profile" => cobbler_name)
         end
-      }
-      unless found
-        system = Cobbler::System.create("name" => name,
-                                        "profile" => provision)
-        system.interfaces=[Cobbler::NetworkInterface.new({'mac_address' => mac})]
+
+        system.interfaces = [nic]
         system.save
       end
     end

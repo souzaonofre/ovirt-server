@@ -49,7 +49,7 @@ class Vm < ActiveRecord::Base
   PROFILE_PREFIX         = "profile"
   IMAGE_PREFIX           = "image"
   COBBLER_PROFILE_SUFFIX = " (Cobbler Profile)"
-  COBBLER_IMAGE_SUFFIX   = " (Cobbler Profile)"
+  COBBLER_IMAGE_SUFFIX   = " (Cobbler Image)"
 
   PXE_OPTION_LABEL       = "PXE Boot"
   PXE_OPTION_VALUE       = "pxe"
@@ -83,6 +83,11 @@ class Vm < ActiveRecord::Base
 
   STATE_CREATE_FAILED  = "create_failed"
   STATE_INVALID        = "invalid"
+
+  DESTROYABLE_STATES   = [STATE_PENDING,
+                          STATE_STOPPED,
+                          STATE_CREATE_FAILED,
+                          STATE_INVALID]
 
   RUNNING_STATES       = [STATE_RUNNING,
                           STATE_SUSPENDED,
@@ -139,7 +144,15 @@ class Vm < ActiveRecord::Base
   end
 
   def provisioning_and_boot_settings=(settings)
-    if settings==PXE_OPTION_VALUE
+    # if the settings have a prefix that matches cobber settings, then process
+    # those details
+    if settings =~ /#{IMAGE_PREFIX}@#{COBBLER_PREFIX}/
+      self[:boot_device] = BOOT_DEV_CDROM
+      self[:provisioning] = settings
+    elsif settings =~ /#{PROFILE_PREFIX}@#{COBBLER_PREFIX}/
+      self[:boot_device] = BOOT_DEV_NETWORK
+      self[:provisioning] = settings
+    elsif settings==PXE_OPTION_VALUE
       self[:boot_device]= BOOT_DEV_NETWORK
       self[:provisioning]= nil
     elsif settings==HD_OPTION_VALUE
@@ -240,6 +253,46 @@ class Vm < ActiveRecord::Base
 
   def search_users
     vm_resource_pool.search_users
+  end
+
+  # Reports whether the VM is uses Cobbler for booting.
+  #
+  def uses_cobbler?
+    (self.provisioning != nil) && (self.provisioning.include? COBBLER_PREFIX)
+  end
+
+  # Returns the cobbler type.
+  #
+  def cobbler_type
+    if self.uses_cobbler?
+      self.provisioning[/^(.*)@/,1]
+    end
+  end
+
+  # Returns the cobbler provisioning name.
+  #
+  def cobbler_name
+    if self.uses_cobbler?
+      self.provisioning[/^.*@.*:(.*)/,1]
+    end
+  end
+
+  # whether this VM may be validly deleted. running VMs should not be
+  # allowed to be deleted. Currently we restrict deletion to VMs that
+  # are currently stopped, pending (new without any create_vm tasks having
+  # been run), or create_failed. Also, get_pending_state must equal the
+  # current state -- so that we won't delete a VM with a current pending task
+  def is_destroyable?
+    current_state = state
+    pending_state = get_pending_state
+    DESTROYABLE_STATES.include?(current_state) and (current_state == pending_state)
+  end
+
+  def destroy
+    if !is_destroyable?
+      raise "VM must be stopped to delete it"
+    end
+    super
   end
 
   protected
