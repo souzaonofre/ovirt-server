@@ -59,10 +59,19 @@ class ManagedNodeConfiguration
       end
     end
 
+    has_bridge = false
     host.nics.each do |nic|
       # only process this nic if it doesn't have a bonding
+      # TODO remove the hack to force a bridge into the picture
       if nic.bonding.empty?
-        process_nic result, nic, macs
+        process_nic result, nic, macs, nil, false, true
+
+	# TODO remove this when bridges are properly supported
+	unless has_bridge
+	  macs[nic.mac] = "ovirtbr0"
+	  process_nic result, nic, macs, nil, true, false
+	  has_bridge = true
+	end
       end
     end
 
@@ -74,7 +83,7 @@ class ManagedNodeConfiguration
 
   private
 
-  def self.process_nic(result, nic, macs, bonding = nil)
+  def self.process_nic(result, nic, macs, bonding = nil, is_bridge = false, bridged = true)
     iface_name = macs[nic.mac]
 
     if iface_name
@@ -92,9 +101,16 @@ class ManagedNodeConfiguration
           result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/NETMASK #{nic.netmask}"
           result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/BROADCAST #{nic.broadcast}"
         end
+
+	if bridged
+	  result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/BRIDGE ovirtbr0"
+	elsif is_bridge
+	  result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/TYPE bridge"
+	  result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/PEERNTP yes"
+	  result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/DELAY 0"
+	end
       end
 
-      result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/BRIDGE #{nic.bridge}"     if nic.bridge
       result.puts "set #{NIC_ENTRY_PREFIX}/ifcfg-#{iface_name}/ONBOOT yes"
     end
   end
