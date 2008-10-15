@@ -22,19 +22,10 @@ class StorageTask < Task
   ACTION_REFRESH_POOL = "refresh_pool"
 
   def after_initialize
-    self.hardware_pool = task_target.hardware_pool if self.task_target_type=="StoragePool"
+    self.hardware_pool = storage_pool.hardware_pool if self.storage_pool
   end
 
   def task_obj
     "StoragePool;;;#{self.storage_pool.id};;;#{self.storage_pool.display_name}"
-  end
-  def host
-    nil
-  end
-  def vm
-    nil
-  end
-  def storage_volume
-    nil
   end
 end

@@ -22,7 +22,7 @@ require 'util/ovirt'
 class Vm < ActiveRecord::Base
   belongs_to :vm_resource_pool
   belongs_to :host
-  has_many :tasks, :as => :task_target, :dependent => :destroy, :order => "id ASC" do
+  has_many :tasks, :class_name => "VmTask", :dependent => :destroy, :order => "id ASC" do
     def queued
       find(:all, :conditions=>{:state=>Task::STATE_QUEUED})
     end

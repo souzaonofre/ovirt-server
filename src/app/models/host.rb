@@ -31,7 +31,7 @@ class Host < ActiveRecord::Base
     def consuming_resources
       find(:all, :conditions=>{:state=>Vm::RUNNING_STATES})
     end
-  has_many :tasks, :as => :task_target, :dependent => :destroy, :order => "id ASC" do
+  has_many :tasks, :class_name => "HostTask", :dependent => :destroy, :order => "id DESC" do
     def queued
       find(:all, :conditions=>{:state=>Task::STATE_QUEUED})
     end

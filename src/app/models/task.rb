@@ -1,4 +1,4 @@
-#
+# 
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -20,20 +20,13 @@
 class Task < ActiveRecord::Base
   belongs_to :hardware_pool
   belongs_to :vm_resource_pool
-  belongs_to :task_target,       :polymorphic => true
   # moved associations here so that nested set :include directives work
   # StorageTask association
-  belongs_to :storage_pool,   :class_name => "StoragePool",
-                              :foreign_key => "task_target_id"
-  # StorageVolumeTask association
-  belongs_to :storage_volume, :class_name => "StorageVolume",
-                              :foreign_key => "task_target_id"
+  belongs_to :storage_pool
   # HostTask association
-  belongs_to :host,           :class_name => "Host",
-                              :foreign_key => "task_target_id"
+  belongs_to :host
   # VmTask association
-  belongs_to :vm,             :class_name => "Vm",
-                              :foreign_key => "task_target_id"
+  belongs_to :vm
 
   STATE_QUEUED       = "queued"
   STATE_RUNNING      = "running"

@@ -22,20 +22,11 @@ class HostTask < Task
   ACTION_CLEAR_VMS = "clear_vms"
 
   def after_initialize
-    self.hardware_pool = task_target.hardware_pool if self.task_target_type=="Host"
+    self.hardware_pool = host.hardware_pool if self.host
   end
 
   def task_obj
     "Host;;;#{self.host.id};;;#{self.host.hostname}"
   end
 
-  def vm
-    nil
-  end
-  def storage_volume
-    nil
-  end
-  def storage_pool
-    nil
-  end
 end

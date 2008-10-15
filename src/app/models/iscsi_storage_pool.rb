@@ -19,7 +19,7 @@
 
 class IscsiStoragePool < StoragePool
   
-  validates_presence_of :ip_addr, :port, :target
+  validates_presence_of :port, :target
   validates_uniqueness_of :ip_addr, :scope => [:port, :target]
   
   def label_components

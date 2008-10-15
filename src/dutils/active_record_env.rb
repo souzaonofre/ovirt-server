@@ -80,12 +80,10 @@ require 'models/vm_task.rb'
 require 'models/storage_pool.rb'
 require 'models/iscsi_storage_pool.rb'
 require 'models/nfs_storage_pool.rb'
-require 'models/lvm_storage_pool.rb'
 
 require 'models/storage_volume.rb'
 require 'models/iscsi_storage_volume.rb'
 require 'models/nfs_storage_volume.rb'
-require 'models/lvm_storage_volume.rb'
 require 'models/smart_pool.rb'
 require 'models/smart_pool_tag.rb'
 

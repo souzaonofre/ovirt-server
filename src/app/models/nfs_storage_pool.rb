@@ -19,7 +19,7 @@
 
 class NfsStoragePool < StoragePool
 
-  validates_presence_of :ip_addr, :export_path
+  validates_presence_of :export_path
   validates_uniqueness_of :ip_addr, :scope => :export_path
 
   def label_components
