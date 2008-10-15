@@ -50,7 +50,15 @@ cat <<\EOF > /var/tmp/node-augtool
 rm /files/etc/sysconfig/network-scripts/ifcfg-eth0
 set /files/etc/sysconfig/network-scripts/ifcfg-eth0/DEVICE eth0
 set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BOOTPROTO #{nic.boot_type.proto}
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BRIDGE ovirtbr0
 set /files/etc/sysconfig/network-scripts/ifcfg-eth0/ONBOOT yes
+rm /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/DEVICE ovirtbr0
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/BOOTPROTO #{nic.boot_type.proto}
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/TYPE bridge
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/PEERNTP yes
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/DELAY 0
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/ONBOOT yes
 save
 EOF
     HERE
@@ -80,6 +88,16 @@ set /files/etc/sysconfig/network-scripts/ifcfg-eth0/NETMASK #{nic.netmask}
 set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BROADCAST #{nic.broadcast}
 set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BRIDGE ovirtbr0
 set /files/etc/sysconfig/network-scripts/ifcfg-eth0/ONBOOT yes
+rm /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/DEVICE ovirtbr0
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/BOOTPROTO #{nic.boot_type.proto}
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/IPADDR #{nic.ip_addr}
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/NETMASK #{nic.netmask}
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/BROADCAST #{nic.broadcast}
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/TYPE bridge
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/PEERNTP yes
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/DELAY 0
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/ONBOOT yes
 save
 EOF
     HERE
@@ -108,10 +126,22 @@ set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BOOTPROTO #{nic1.boot_type.p
 set /files/etc/sysconfig/network-scripts/ifcfg-eth0/IPADDR #{nic1.ip_addr}
 set /files/etc/sysconfig/network-scripts/ifcfg-eth0/NETMASK #{nic1.netmask}
 set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BROADCAST #{nic1.broadcast}
+set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BRIDGE ovirtbr0
 set /files/etc/sysconfig/network-scripts/ifcfg-eth0/ONBOOT yes
+rm /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/DEVICE ovirtbr0
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/BOOTPROTO #{nic1.boot_type.proto}
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/IPADDR #{nic1.ip_addr}
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/NETMASK #{nic1.netmask}
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/BROADCAST #{nic1.broadcast}
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/TYPE bridge
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/PEERNTP yes
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/DELAY 0
+set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/ONBOOT yes
 rm /files/etc/sysconfig/network-scripts/ifcfg-eth1
 set /files/etc/sysconfig/network-scripts/ifcfg-eth1/DEVICE eth1
 set /files/etc/sysconfig/network-scripts/ifcfg-eth1/BOOTPROTO #{nic2.boot_type.proto}
+set /files/etc/sysconfig/network-scripts/ifcfg-eth1/BRIDGE ovirtbr0
 set /files/etc/sysconfig/network-scripts/ifcfg-eth1/ONBOOT yes
 save
 EOF
