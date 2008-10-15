@@ -70,4 +70,38 @@ class StorageVolume < ActiveRecord::Base
       return []
     end
   end
+
+  def supports_lvm_subdivision
+    return false
+  end
+
+  def storage_tree_element(vm_to_include=nil)
+    vm_ids = vms.collect {|vm| vm.id}
+    return_hash = { :id => id,
+      :type => self[:type],
+      :text => display_name,
+      :name => display_name,
+      :available => ((vm_ids.empty?) or
+                    (vm_to_include and vm_to_include.id and
+                     vm_ids.include?(vm_to_include.id))),
+      :create_volume => supports_lvm_subdivision,
+      :selected => (!vm_ids.empty? and vm_to_include and vm_to_include.id and
+                   (vm_ids.include?(vm_to_include.id)))}
+    if lvm_storage_pool
+      if return_hash[:available]
+        return_hash[:available] = lvm_storage_pool.storage_volumes.full_vm_list.empty?
+      end
+      condition = "vms.id is null"
+      if (vm_to_include and vm_to_include.id)
+        condition +=" or vms.id=#{vm_to_include.id}"
+      end
+      return_hash[:children] = lvm_storage_pool.storage_volumes.find(:all,
+                               :include => :vms,
+                               :conditions => condition).collect do |volume|
+        volume.storage_tree_element(vm_to_include)
+      end
+    end
+    return_hash
+  end
+
 end

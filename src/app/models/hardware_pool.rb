@@ -101,4 +101,10 @@ class HardwarePool < Pool
     return {:total => total, :labels => labels}
   end
 
+  def storage_tree(vm_to_include=nil)
+    storage_pools.find(:all,
+                    :conditions => "type != 'LvmStoragePool'").collect do |pool|
+      pool.storage_tree_element(vm_to_include)
+    end
+  end
 end
