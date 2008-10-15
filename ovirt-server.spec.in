@@ -86,6 +86,10 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/host-status.log
 # copy over all of the src directory...
 %{__cp} -a %{pbuild}/src/* %{buildroot}%{app_root}
 
+# move Flash movie to the public folder
+%{__install} -d -m0755 %{buildroot}%{app_root}/public/swfs
+%{__mv} %{buildroot}%{app_root}/flexchart/flexchart.swf %{buildroot}%{app_root}/public/swfs
+
 # move configs to /etc, keeping symlinks for Rails
 %{__mv} %{buildroot}%{app_root}/config/database.yml %{buildroot}%{_sysconfdir}/%{name}
 %{__mv} %{buildroot}%{app_root}/config/ldap.yml %{buildroot}%{_sysconfdir}/%{name}
