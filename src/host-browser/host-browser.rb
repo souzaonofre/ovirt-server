@@ -302,7 +302,7 @@ class HostBrowser
         end
 
         # iterate over any nics left and create new records for them.
-        boot_type = BootType.find_by_proto('static')
+        boot_type = BootType.find_by_proto('dhcp')
 
         nic_info.collect do |nic|
             puts "Creating a new nic..."
