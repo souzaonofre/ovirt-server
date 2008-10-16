@@ -59,7 +59,7 @@ end
 require 'dutils'
 
 def check_state(vm, dom_info, host)
-  puts 'checking state of vm', vm.description
+  puts 'checking state of vm ' + vm.description
 
   case dom_info.state
 
@@ -149,9 +149,10 @@ def check_status(host)
   rescue
     puts "Failed to request domain list on host " + host.hostname
     conn.close
-    next
+    return
   end
 
+  puts "** Host alive, checking vms by id **"
   # Here we're going through every vm listed through libvirt.  This
   # really only lets us find ones that are started that shouldn't be.
   vm_ids.each do |vm_id|
@@ -159,7 +160,7 @@ def check_status(host)
     begin
       dom = conn.lookup_domain_by_id(vm_id)
     rescue
-      puts "Failed to find domain " + vm.description
+      puts "Failed to find domain " + vm.description + " with vm_id ", vm_id
       next
     end
 
@@ -178,25 +179,26 @@ def check_status(host)
     check_state(vm, info, host)
   end
 
+  puts "** Checking all vms as appear in the database **"
   # Now we get a list of all vms that should be on this system and see if
   # they are all running.
   Vm.find(:all, :conditions => [ "host_id = ?", host.id ]).each do |vm|
 
     begin
+      puts "Looking up domain by uuid #{vm.uuid}"
       dom = conn.lookup_domain_by_uuid(vm.uuid)
     rescue
       # OK.  We couldn't find the UUID that we thought was there.  The only
       # explanation is that the domain is dead.
-      puts "Failed to find domain " + vm.description
+      puts "Failed to find domain " + vm.description + ", marking as dead"
       kick_taskomatic(Vm::STATE_STOPPED, vm)
       next
     end
     info = dom.info
     check_state(vm, info, host)
-
-    conn.close
-
   end
+
+  conn.close
 end
 
 get_credentials
