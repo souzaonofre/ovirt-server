@@ -5,15 +5,28 @@
 #   sudo /sbin/service postgresql initdb
 #   sudo /sbin/service postgresql start
 #   sudo su - postgres
-#   $   createdb ovirt
 #   $   psql ovirt
 #   $-# CREATE USER ovirt WITH PASSWORD 'v23zj59an';
-#   $-# CREATE DATABASE ovirt;
-#   $-# GRANT ALL PRIVILEGES ON DATABASE ovirt to ovirt;
+#   $-# CREATE DATABASE ovirt_development;
+#   $-# GRANT ALL PRIVILEGES ON DATABASE ovirt_development to ovirt;
 #   $-# CREATE DATABASE ovirt_test;
 #   $-# GRANT ALL PRIVILEGES ON DATABASE ovirt_test to ovirt;
+#   $-# CREATE DATABASE ovirt;
+#   $-# GRANT ALL PRIVILEGES ON DATABASE ovirt to ovirt;
 #   $-# \q
 #   $   exit
+#
+# To start off a new environment, use the following commands:
+#
+#   rake db:drop:all
+#   rake db:create:all
+#   rake db:migrate
+#   rake db:tests:prepare
+#
+# And when there are changes to the database, simple run:
+#
+#   rake db:migrate
+#   rake db:test:prepare
 #
 #   On a local system you may need to edit this file to have only the following
 #   /var/lib/pgsql/data/pg_hba.conf
@@ -23,7 +36,7 @@
 
 development:
   adapter: postgresql
-  database: ovirt
+  database: ovirt_development
   username: ovirt
   password: v23zj59an
   host: localhost
