@@ -96,7 +96,9 @@ class SearchController < ApplicationController
       item_hash = {}
       item = result[:model]
       item_hash[:id] = item.class.name+"_"+item.id.to_s
-      item_hash[:cell] = ["display_name", "display_class"].collect do |attr|
+      item_hash[:cell] = []
+      item_hash[:cell] << item_hash[:id] if params[:checkboxes]
+      item_hash[:cell] += ["display_name", "display_class"].collect do |attr|
         if attr.is_a? Array
           value = item
           attr.each { |attr_item| value = value.send(attr_item)}
@@ -106,6 +108,8 @@ class SearchController < ApplicationController
         end
       end
       item_hash[:cell] << result[:percent]
+      item_hash[:cell] << item.smart_pools.collect {|pool| pool.name}.join(', ')
+
       item_hash
     end
     render :json => json_hash.to_json

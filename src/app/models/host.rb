@@ -48,7 +48,8 @@ class Host < ActiveRecord::Base
                  :values => [ [ :created_at, 0, "created_at", :date ],
                               [ :updated_at, 1, "updated_at", :date ] ],
                  :terms => [ [ :hostname, 'H', "hostname" ],
-                             [ :search_users, 'U', "search_users" ] ]
+                             [ :search_users, 'U', "search_users" ] ],
+                 :eager_load => :smart_pools
 
 
   KVM_HYPERVISOR_TYPE = "KVM"

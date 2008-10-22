@@ -37,7 +37,8 @@ class Vm < ActiveRecord::Base
                         :memory_allocated, :vnic_mac_addr
 
   acts_as_xapian :texts => [ :uuid, :description, :vnic_mac_addr, :state ],
-                 :terms => [ [ :search_users, 'U', "search_users" ] ]
+                 :terms => [ [ :search_users, 'U', "search_users" ] ],
+                 :eager_load => :smart_pools
 
   BOOT_DEV_HD            = "hd"
   BOOT_DEV_NETWORK       = "network"

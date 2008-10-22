@@ -1,6 +1,21 @@
 <div id="toolbar_nav">
  <ul>
     <li><a href="<%= url_for :controller => 'resources', :action => 'new', :parent_id => @pool %>" rel="facebox[.bolder]"><%= image_tag "icon_add_vmpool.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;New Virtual Machine Pool</a></li>
+    <li>
+       <%= image_tag "icon_smartpool.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Add to Smart Pool &nbsp;&nbsp;&nbsp;<%= image_tag "icon_toolbar_arrow.gif", :style => "vertical-align:middle;" %>
+       <ul>
+        <% smart_pools = SmartPool.smart_pools_for_user(@user) %>
+        <% smart_pools.each_index { |index| %>
+            <li onClick="add_vm_pools_to_smart_pool(<%=smart_pools[index][1]%>)"
+            <% if (index == smart_pools.length - 1) or smart_pools[index].length == 3 %>
+                style="border-bottom: 1px solid #CCCCCC;"
+            <% end %>
+               >
+                 <%=smart_pools[index][0]%>
+            </li>
+        <% } %>
+       </ul>
+    </li>
     <li><a href="#" onClick="delete_vm_pools()"><%= image_tag "icon_delete_white.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Delete</a></li>
  </ul>
 </div>
@@ -8,6 +23,20 @@
   function get_selected_vm_pools()
   {
     return get_selected_checkboxes("vmpools_grid_form");
+  }
+  function add_vm_pools_to_smart_pool(smart_pool)
+  {
+    var vm_pools = get_selected_vm_pools();
+    if (validate_selected(vm_pools, "vm pool")) {
+      $.post('<%= url_for :controller => "smart_pools", :action => "add_pools" %>',
+             { resource_ids: vm_pools.toString(), id: smart_pool },
+             function(data,status){
+               $('#vmpools_grid').flexReload();
+               if (data.alert) {
+                 $.jGrowl(data.alert);
+               }
+             }, 'json');
+    }
   }
   function delete_vm_pools()
   {

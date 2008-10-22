@@ -40,7 +40,8 @@ class StoragePool < ActiveRecord::Base
   validates_presence_of :hardware_pool_id
 
   acts_as_xapian :texts => [ :ip_addr, :target, :export_path, :type ],
-                 :terms => [ [ :search_users, 'U', "search_users" ] ]
+                 :terms => [ [ :search_users, 'U', "search_users" ] ],
+                 :eager_load => :smart_pools
   ISCSI = "iSCSI"
   NFS   = "NFS"
   LVM   = "LVM"

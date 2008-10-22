@@ -89,7 +89,8 @@ class Pool < ActiveRecord::Base
   end
 
   acts_as_xapian :texts => [ :name ],
-                 :terms => [ [ :search_users, 'U', "search_users" ] ]
+                 :terms => [ [ :search_users, 'U', "search_users" ] ],
+                 :eager_load => :smart_pools
 
   # this method lists pools with direct permission grants, but by default does
   #  not include implied permissions (i.e. subtrees)

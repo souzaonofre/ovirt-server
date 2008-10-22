@@ -23,7 +23,8 @@ class SmartPoolsController < PoolController
   before_filter :pre_modify, :only => [:add_hosts, :remove_hosts,
                                        :add_storage, :remove_storage,
                                        :add_vms, :remove_vms,
-                                       :add_pools, :remove_pools]
+                                       :add_pools, :remove_pools,
+                                       :add_items]
   def show_vms
     show
   end
@@ -97,8 +98,7 @@ class SmartPoolsController < PoolController
       # filtering on which pool to exclude
       id = params[:exclude_pool]
       full_items = item_class
-      pool_items = SmartPool.find(id,
-                   :include => item_assoc).send(item_assoc).collect {|x| x.id}
+      pool_items = SmartPool.find(id).send(item_assoc).collect {|x| x.id}
       if pool_items.empty?
         conditions = []
       else
@@ -106,7 +106,7 @@ class SmartPoolsController < PoolController
       end
       find_opts = {:conditions => conditions}
     end
-    { :full_items => full_items, :find_opts => find_opts, :include_pool => :true}
+    { :full_items => full_items, :find_opts => find_opts, :include_pool => false}
   end
 
   def add_hosts
@@ -152,6 +152,25 @@ class SmartPoolsController < PoolController
       render :json => { :success => false,
         :alert => "#{item_action.to_s} #{item_class.table_name.humanize} failed." }
     end
+  end
+
+  def add_items
+    class_and_ids_str = params[:class_and_ids]
+    class_and_ids = class_and_ids_str.split(",").collect {|x| x.split("_")}
+
+    begin
+      @pool.transaction do
+        class_and_ids.each do |class_and_id|
+          @pool.add_item(class_and_id[0].constantize.find(class_and_id[1].to_i))
+        end
+      end
+      render :json => { :success => true,
+        :alert => "Add items to smart pool successful." }
+    rescue => ex
+      render :json => { :success => false,
+          :alert => "Add items to smart pool failed: " + ex.message }
+    end
+
   end
 
   def destroy
