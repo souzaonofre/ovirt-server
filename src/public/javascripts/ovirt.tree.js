@@ -83,3 +83,65 @@ function processChildren(list, templateObj){
     }
   });
 }
+
+(function($){
+	// widget prototype. Everything here is public
+	var Tree  = {
+                getTemplate: function () { return this.getData('template'); },
+		setTemplate: function (x) {
+                    this.setData('template', TrimPath.parseDOMTemplate(this.getData('template')));
+		},
+		init: function() {
+                    this.setTemplate(this.getTemplate());
+                    this.element.html(this.getTemplate().process(this.getData('content')));
+                    var self = this;
+                    this.element
+                    .find('li:has(ul)')
+                    .children('span.hitarea')
+                    .click(function(event){
+                      if (this == event.target) {
+                          if($(this).siblings('ul').size() >0) {
+                              if(self.getData('toggle') === 'toggle') {
+                                  self.toggle(event, this);  //we need 'this' so we have the right element to toggle
+                              } else {
+                                self.element.triggerHandler('toggle',[event,this],self.getData('toggle'));
+                              }
+                          }
+                      }
+                    });
+                    this.element
+                    .find('li > div')
+                    .filter(':not(.unclickable)')
+                    .bind('click', function(event) {
+                      if (this == event.target) {
+                          if(self.getData('clickHandler') === 'clickHandler') {
+                            self.clickHandler(event, this);  //we need 'this' so we have the right element to add click behavior to
+                          } else {
+                            self.element.triggerHandler('clickHandler',[event,this],self.getData('clickHandler'));
+                          }
+                      }
+                    });
+                },
+                toggle: function(e, elem) {
+                    $(elem)
+                      .toggleClass('expanded')
+                      .toggleClass('expandable')
+                      .siblings('ul').slideToggle("normal");
+                },
+                clickHandler: function(e,elem) {
+                    alert('e: ' + e + ', elem: ' + elem);
+                    var fred = 'fred';
+                },
+		off: function() {
+			this.element.css({background: 'none'});
+			this.destroy(); // use the predefined function
+		}
+	};
+	$.yi = $.yi || {}; // create the namespace
+	$.widget("yi.tree", Tree);
+	$.yi.tree.defaults = {
+            template: 'tree_template',
+            toggle: 'toggle',
+            clickHandler: 'clickHandler'
+	};
+})(jQuery);

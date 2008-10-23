@@ -184,6 +184,10 @@ class HardwareController < PoolController
   def move
     pre_modify
     @resource_type = params[:resource_type]
+    @id = params[:id]
+    @pools = HardwarePool.get_default_pool.full_set_nested(:method => :json_hash_element,
+                       :privilege => Permission::PRIV_MODIFY, :user => get_login_user, :current_id => @id,
+                       :type => :select_hardware_pools).to_json
     render :layout => 'popup'
   end
 

@@ -1,6 +1,3 @@
-<%= javascript_include_tag "trimpath-template-1.0.38.js" %>
-<%= javascript_include_tag "ovirt.tree.js" %>
-<%= stylesheet_link_tag 'ovirt-tree/tree' %>
 <script type="text/javascript">
     var treeTimer, urlObj;
     var processRecursive = true;
@@ -17,12 +14,12 @@
       tree_url = "<%=  url_for :controller =>"/tree", :action => "return_filtered_list" %>";
       processTree();
       treeTimer = setInterval(processTree,15000);
-      $('ul.ovirt-tree li').livequery(
+      $('#nav_tree_form ul.ovirt-tree li').livequery(
         function(){
           $(this)
           .children('div')
           .bind('click',function(){
-            $('ul.ovirt-tree li div').removeClass('current');
+            $('#nav_tree_form ul.ovirt-tree li div').removeClass('current');
             var thisHref = (urlObj[$(this).attr('class')] !=null) ? urlObj[$(this).attr('class')] + '/' + this.id :null;
             $(this).toggleClass('current');
             currentNode = this.id;
@@ -50,7 +47,7 @@
           .unbind('click');
         }
       );
-      $('ul.ovirt-tree li:has(ul)').livequery(
+      $('#nav_tree_form ul.ovirt-tree li:has(ul)').livequery(
         function(){
           $(this)
             .children('span.hitarea')
