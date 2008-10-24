@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -56,7 +56,7 @@ class Vm < ActiveRecord::Base
   HD_OPTION_LABEL        = "Boot from HD"
   HD_OPTION_VALUE        = "hd"
 
-  NEEDS_RESTART_FIELDS = [:uuid, 
+  NEEDS_RESTART_FIELDS = [:uuid,
                           :num_vcpus_allocated,
                           :memory_allocated,
                           :vnic_mac_addr]
@@ -101,7 +101,7 @@ class Vm < ActiveRecord::Base
 
   EFFECTIVE_STATE = {  STATE_PENDING       => STATE_PENDING,
                        STATE_UNREACHABLE   => STATE_UNREACHABLE,
-                       STATE_CREATING      => STATE_STOPPED, 
+                       STATE_CREATING      => STATE_STOPPED,
                        STATE_RUNNING       => STATE_RUNNING,
                        STATE_STOPPING      => STATE_STOPPED,
                        STATE_STOPPED       => STATE_STOPPED,

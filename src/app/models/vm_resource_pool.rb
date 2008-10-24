@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -24,7 +24,7 @@ class VmResourcePool < Pool
     "Virtual Machine Pool"
   end
   def get_controller
-    return 'resources' 
+    return 'resources'
   end
 
   # gets the hardware pool that this vm_resource_pool is associated with
@@ -106,8 +106,8 @@ class VmResourcePool < Pool
     resources[:memory] = host_mem_limit if resources[:memory].nil? or host_mem_limit < resources[:memory]
     resources[:cpus] = host_cpu_limit if resources[:cpus].nil? or host_cpu_limit < resources[:cpus]
     # update mb/gb values
-    return Quota.get_resource_hash(resources[:cpus], resources[:memory], 
-                             resources[:nics], resources[:vms], 
+    return Quota.get_resource_hash(resources[:cpus], resources[:memory],
+                             resources[:nics], resources[:vms],
                              resources[:storage])
   end
 
@@ -124,8 +124,8 @@ class VmResourcePool < Pool
     # host at this point as new hosts may be added before starting VM
 
     # update mb/gb values
-    return Quota.get_resource_hash(resources[:cpus], resources[:memory], 
-                             resources[:nics], resources[:vms], 
+    return Quota.get_resource_hash(resources[:cpus], resources[:memory],
+                             resources[:nics], resources[:vms],
                              resources[:storage])
   end
 end
