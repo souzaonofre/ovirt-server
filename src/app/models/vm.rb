@@ -277,6 +277,12 @@ class Vm < ActiveRecord::Base
     end
   end
 
+  # Returns the system name in Cobbler for this VM.
+  #
+  def cobbler_system_name
+    self.uuid
+  end
+
   # whether this VM may be validly deleted. running VMs should not be
   # allowed to be deleted. Currently we restrict deletion to VMs that
   # are currently stopped, pending (new without any create_vm tasks having

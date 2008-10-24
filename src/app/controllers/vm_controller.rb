@@ -144,6 +144,7 @@ class VmController < ApplicationController
         vms = Vm.find(:all, :conditions => "id in (#{vm_ids.join(', ')})")
         vms.each do |vm|
           if vm.is_destroyable?
+            destroy_cobbler_system(vm)
             vm.destroy
           else
             failure_list << vm.description
@@ -166,6 +167,7 @@ class VmController < ApplicationController
   def destroy
     vm_resource_pool = @vm.vm_resource_pool_id
     if (@vm.is_destroyable?)
+      destroy_cobbler_system(@vm)
       @vm.destroy
       render :json => { :object => "vm", :success => true,
         :alert => "Virtual Machine was successfully deleted." }
@@ -348,5 +350,15 @@ class VmController < ApplicationController
   def pre_vm_action
     pre_edit
     authorize_user
+  end
+
+  private
+
+  def destroy_cobbler_system(vm)
+    # Destroy the Cobbler system first if it's defined
+    if vm.uses_cobbler?
+      system = Cobbler::System.find_one(vm.cobbler_system_name)
+      system.remove if system
+    end
   end
 end

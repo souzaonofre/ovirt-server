@@ -76,4 +76,16 @@ class VmTest < Test::Unit::TestCase
       vm.cobbler_name,
       "Wrong name reported."
   end
+
+  # Ensures that the right value is used when requesting the cobbler system
+  # name for a VM backed by Cobbler.
+  #
+  def test_cobbler_system_name
+    @vm = Vm.new
+    @vm.provisioning_and_boot_settings = @cobbler_profile_provisioning
+    @vm.uuid = "oicu812"
+
+    assert_equal @vm.cobbler_system_name, @vm.uuid,
+      "VMs should be using the UUID as their Cobbler system name."
+  end
 end
