@@ -25,7 +25,7 @@ gem 'cobbler'
 require 'cobbler'
 
 def create_vm_xml(name, uuid, memAllocated, memUsed, vcpus, bootDevice,
-                  macAddr, bridge, diskDevices, bootdrive)
+                  macAddr, bridge, diskDevices)
   doc = Document.new
 
   doc.add_element("domain", {"type" => "kvm"})
@@ -313,7 +313,7 @@ def start_vm(task)
     # FIXME: get rid of the hardcoded bridge
     xml = create_vm_xml(vm.description, vm.uuid, vm.memory_allocated,
                         vm.memory_used, vm.num_vcpus_allocated, vm.boot_device,
-                        vm.vnic_mac_addr, "ovirtbr0", storagedevs, bootdrive)
+                        vm.vnic_mac_addr, "ovirtbr0", storagedevs)
 
     dom = conn.define_domain_xml(xml.to_s)
     dom.create
