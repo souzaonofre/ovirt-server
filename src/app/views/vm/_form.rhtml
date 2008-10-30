@@ -29,7 +29,7 @@
     <div class="clear_row"></div>
     <div class="field_title">Storage: </div>
     <div style="height:150px; overflow:auto; border:#CCCCCC solid 1px;">
-      <table id="storage_volumes_grid" style="display:none"></table>
+      <ul id="storage_volumes_tree" class="ovirt-tree"></ul>
     </div>
 
     <!-- FIXME: fill in total here -->
@@ -55,35 +55,38 @@
    <%= check_box_tag_with_label "Restart VM Now? (pending current resource availability)", "restart_now", nil if @vm.state == Vm::STATE_RUNNING %>
 
 <!--[eoform:vm]-->
+
+<textarea id="tree_template" style="display:none;">
+{macro htmlList(list, isFullList)}
+  {if isFullList}
+  <ul style="display:none;">
+  {/if}
+    {for item in list}
+      <li>
+        <span class="hitarea {if item.children.length > 0} expandable{/if}">&nbsp;</span>
+        <div id="move-${item.id}" class="{if !item.available} unclickable{/if}">
+          <input type="checkbox" name="vm[storage_volume_ids][]" value="${item.id}"
+            {if !item.available}disabled="disabled" style="display:none"{/if}
+            {if item.selected}checked="checked"{/if}/> ${item.name} {if item.size}(${item.size} GB){/if}
+        </div>
+        {if item.children.length > 0}
+          ${htmlList(item.children, true)}
+        {/if}
+      </li>
+    {/for}
+  {if isFullList}
+  </ul>
+  {/if}
+{/macro}
+
+${htmlList(pools)}
+</textarea>
 <script type="text/javascript">
-	$("#storage_volumes_grid").flexigrid
-	(
-	{
-	url: '<%=  url_for :controller => "vm", 
-                           :action => "storage_volumes_for_vm_json", 
-                           :id => @vm, :vm_pool_id => @vm.vm_resource_pool %>',
-	dataType: 'json',
-        width: 700,
-	colModel : [
-		{display: '', name : 'id', width : 20, sortable : false, align: 'left', process: storage_volumes_grid_checkbox},
-		{display: 'Alias', name : 'display_name', width : 180, sortable : false, align: 'left'},
-	        {display: 'Size (Gb)', name : 'size', width : 80, sortable : true, align: 'left'},
-		{display: 'Type', name : 'type', width : 80, sortable : true, align: 'left'}
-		],
-	sortname: "size",
-	sortorder: "desc",
-	usepager: true,
-	useRp: true,
-	rp: 10,
-	showTableToggleBtn: true
-	}
-	);   
-
-	function storage_volumes_grid_checkbox(celDiv)
-	{
-	       $(celDiv).html('<input type="checkbox" name="vm[storage_volume_ids][]" value="'+$(celDiv).html()+'"/>');
-	} 
-
+    $(document).ready(function(){
+      $('#storage_volumes_tree').tree({
+        content: {"pools" : <%=  @storage_tree%>}
+      });
+    });
 </script>
 
 

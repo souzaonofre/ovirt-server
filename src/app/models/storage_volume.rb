@@ -81,6 +81,7 @@ class StorageVolume < ActiveRecord::Base
       :type => self[:type],
       :text => display_name,
       :name => display_name,
+      :size => size_in_gb,
       :available => ((vm_ids.empty?) or
                     (vm_to_include and vm_to_include.id and
                      vm_ids.include?(vm_to_include.id))),
@@ -100,6 +101,8 @@ class StorageVolume < ActiveRecord::Base
                                :conditions => condition).collect do |volume|
         volume.storage_tree_element(vm_to_include)
       end
+    else
+      return_hash[:children] = []
     end
     return_hash
   end

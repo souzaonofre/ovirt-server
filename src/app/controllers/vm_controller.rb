@@ -41,6 +41,7 @@ class VmController < ApplicationController
   end
 
   def new
+    @storage_tree = VmResourcePool.find(params[:vm_resource_pool_id]).get_hardware_pool.storage_tree.to_json
     render :layout => 'popup'
   end
 
@@ -80,6 +81,7 @@ class VmController < ApplicationController
   end
 
   def edit
+    @storage_tree = @vm.vm_resource_pool.get_hardware_pool.storage_tree(@vm).to_json
     render :layout => 'popup'
   end
 

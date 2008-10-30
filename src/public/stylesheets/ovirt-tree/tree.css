@@ -20,7 +20,7 @@
 .ovirt-tree div {
     background-repeat: no-repeat;
     background-position: left;
-    padding: 4px 0 4px 28px;
+    padding: 4px 0 4px 4px;
     cursor: pointer; /* maybe move this into a clickable class? */
 }
 
@@ -30,14 +30,17 @@
 }
 
 .HardwarePool {
+    padding: 4px 0 4px 28px !important;
     background-image: url('../../images/icon_hdwarepool.png');
 }
 
 .VmResourcePool {
+    padding: 4px 0 4px 28px !important;
     background-image: url('../../images/icon_vmpool.png');
 }
 
 .SmartPool {
+    padding: 4px 0 4px 28px !important;
     background-image: url('../../images/icon_smartpool.png');
 }
 
