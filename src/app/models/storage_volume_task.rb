@@ -20,7 +20,7 @@
 class StorageVolumeTask < Task
 
   ACTION_CREATE_VOLUME = "create_volume"
-  ACTION_EDIT_VOLUME = "edit_volume"
+  ACTION_DELETE_VOLUME = "delete_volume"
 
   def after_initialize
     self.hardware_pool = task_target.storage_pool.hardware_pool if self.task_target_type=="StorageVolume"
@@ -28,7 +28,6 @@ class StorageVolumeTask < Task
 
   def task_obj
     "StorageVolume;;;#{self.storage_volume.id};;;#{self.storage_volume.display_name}"
-  end
   end
   def host
     nil

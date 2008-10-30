@@ -117,7 +117,8 @@ class HardwareController < PoolController
   def show_tasks
     @task_types = [["VM Task", "VmTask"],
                    ["Host Task", "HostTask"],
-                   ["Storage Task", "StorageTask", "break"],
+                   ["Storage Task", "StorageTask"],
+                   ["Storage Volume Task", "StorageVolumeTask", "break"],
                    ["Show All", ""]]
     super
   end
@@ -162,7 +163,7 @@ class HardwareController < PoolController
     if params[:id]
       pre_show
       storage_pools = @pool.storage_pools
-      find_opts = {}
+      find_opts = {:conditions => "type != 'LvmStoragePool'"}
       include_pool = false
     else
       # FIXME: no permissions or usage checks here yet

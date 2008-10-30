@@ -24,6 +24,8 @@ class TaskController < ApplicationController
       set_perms(@task.vm.vm_resource_pool)
     elsif @task[:type] == StorageTask.name 
       set_perms(@task.storage_pool.hardware_pool)
+    elsif @task[:type] == StorageVolumeTask.name
+      set_perms(@task.storage_volume.storage_pool.hardware_pool)
     elsif @task[:type] == HostTask.name 
       set_perms(@task.host.hardware_pool)
     end

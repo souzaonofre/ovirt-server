@@ -18,24 +18,24 @@
 
     <div id="storage_selection_id" style="display:none"><%= @storage_pool.id %></div>
     <div class="selection_key">
-        IP address: </br>
+        IP address:<br/>
         <% if @storage_pool[:type] == "IscsiStoragePool" %>
-          Port:       </br>
-          Target:     </br>
+          Port:<br/>
+          Target:<br/>
         <% elsif @storage_pool[:type] == "NfsStoragePool" %>
-          Export path:</br>
+          Export path:<br/>
         <% end %>
-        Type:       </br>
+        Type:<br/>
     </div>
     <div class="selection_value">
-        <%=h @storage_pool.ip_addr %></br>
+        <%=h @storage_pool.ip_addr %><br/>
         <% if @storage_pool[:type] == "IscsiStoragePool" %>
-          <%=h @storage_pool.port %></br>
-          <%=h @storage_pool.target %></br>
+          <%=h @storage_pool.port %><br/>
+          <%=h @storage_pool.target %><br/>
         <% elsif @storage_pool[:type] == "NfsStoragePool" %>
-          <%=h @storage_pool.export_path %></br>
+          <%=h @storage_pool.export_path %><br/>
         <% end %>
-        <%=h @storage_pool.get_type_label %></br>
+        <%=h @storage_pool.get_type_label %><br/>
     </div>
 <%- content_for :right do -%>
   <div class="selection_right_title">Volumes</div>
@@ -54,24 +54,33 @@
 
 <%= confirmation_dialog("confirm_delete_storage", "Are you sure?", "delete_storage_pool()") %>
 <script type="text/javascript">
-	$("#storage_volumes_grid").flexigrid
-	(
-	{
-	url: '<%=  url_for :action => "storage_volumes_json", :id => @storage_pool.id %>',
-	dataType: 'json',
-	colModel : [
-		{display: 'Alias', name : 'display_name', width : 180, sortable : false, align: 'left'},
-	        {display: 'Size (Gb)', name : 'size', width : 80, sortable : true, align: 'left'},
-		{display: 'Type', name : 'type', width : 80, sortable : true, align: 'left'}
-		],
-	sortname: "size",
-	sortorder: "desc",
-	usepager: false,
-	useRp: true,
-	rp: 40,
-	showTableToggleBtn: true,
-	}
+    $("#storage_volumes_grid").flexigrid
+    (
+    {
+    url: '<%=  url_for :action => "storage_volumes_json", :id => @storage_pool.id %>',
+    dataType: 'json',
+    colModel : [
+        <%= "{display: '', width : 20, align: 'left', process: storage_volumes_gridcheckbox}," if (@storage_pool.user_subdividable and @can_modify) %>
+        {display: 'Alias', width : 180, sortable : false, align: 'left', process: storage_volume_details_link},
+        {display: 'Size (Gb)', name : 'size', width : 80, sortable : true, align: 'left'},
+        {display: 'Type', name : 'type', width : 80, sortable : true, align: 'left'}
+        ],
+    sortname: "size",
+    sortorder: "desc",
+    usepager: false,
+    useRp: true,
+    rp: 40,
+    showTableToggleBtn: true,
+    }
 	);   
+    function storage_volumes_gridcheckbox(celDiv)
+    {
+        $(celDiv).html('<input class="grid_checkbox" type="checkbox" name="grid_checkbox'+$(celDiv).html()+'" value="'+$(celDiv).html()+'"/>');
+    }
+    function storage_volume_details_link(celDiv,pid)
+    {
+        $(celDiv).html('<a href="<%= url_for :controller => 'storage', :action => 'show_volume' %>/'+ pid +'" rel="facebox[.bolder]">' + $(celDiv).html() + '</a>');
+    }
 </script>
 <script type="text/javascript">
       
