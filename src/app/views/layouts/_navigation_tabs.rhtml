@@ -19,7 +19,7 @@
   <script>
     $(document).ready(function(){
       $tabs = $("#resources_nav_tabs").tabs({
-          pool_type: "resources",
+          pool_type: "resource",
           selected: <%if params[:tab]%><%=params[:tab]%><%else%>1<%end%>
       });
     });
@@ -34,7 +34,7 @@
   <script>
     $(document).ready(function(){
       $tabs = $("#smart_pools_nav_tabs").tabs({
-          pool_type: "smart_pools",
+          pool_type: "smart",
           selected: <%if params[:tab]%><%=params[:tab]%><%else%>1<%end%>
       });
     });
