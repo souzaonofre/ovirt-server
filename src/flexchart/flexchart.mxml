@@ -1,20 +1,67 @@
 <?xml version="1.0"?>
-<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" applicationComplete="populate(flexChart)">
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" applicationComplete="myInit(); populate(mainChart);" styleName="plain" horizontalScrollPolicy="off" verticalScrollPolicy="off">
   <mx:Script>
     <![CDATA[
 
-      import mx.containers.Box;
-      import org.ovirt.*;
+    import mx.containers.VBox;
+    import mx.effects.Resize;
+    import org.ovirt.Constants;
+    import org.ovirt.charts.Chart;
+    import org.ovirt.charts.BarChart;
 
-      private function populate(chart:Box):void {
-        var chartLoader:ChartLoader = new ChartLoader(chart, parameters['flexchart_data']);
-        chartLoader.load();
-      }
+    private function populate(container:VBox):void {
+        var chart:Chart = new BarChart(container, parameters['flexchart_data']);
+        chart.load();
+    }
+
+    private var expandHistory:Resize = new Resize();
+    private var contractHistory:Resize = new Resize();
+
+    private var expandResources:Resize = new Resize();
+    private var contractResources:Resize = new Resize();
+
+    private function myInit():void {
+      mainChart.height = Constants.height;
+      mainChart.width = Constants.width;
+      hostsChart.width = Constants.width;
+
+      expandHistory.widthTo = Constants.width;
+      expandHistory.heightTo = Constants.height;
+      expandHistory.target = mainChart;
+
+      contractHistory.widthTo = Constants.width;
+      contractHistory.heightTo = Constants.height * .3333;
+      contractHistory.target = mainChart;
+
+      expandResources.widthTo = Constants.width;
+      expandResources.heightTo = Constants.height * .6666;
+      expandResources.target = hostsChart;
+      expandResources.duration = 500;
+
+      contractResources.widthTo = Constants.width;
+      contractResources.heightTo = 0;
+      contractResources.target = hostsChart;
+      contractResources.duration = 500;
+    }
+
+    private function zoomOutSeries(e:Event):void {
+      expandHistory.end(); expandHistory.play();
+      contractResources.end(); contractResources.play();
+      hostsChart.visible = false;
+    }
+
+    private function zoomIntoSeries(e:Event):void {
+      hostsChart.visible=true;
+      expandResources.end(); expandResources.play();
+      contractHistory.end(); contractHistory.play();
+    }
 
     ]]>
+
+
   </mx:Script>
-  <mx:Panel height="100%" width="100%" visible="true">
-    <mx:HBox id="flexChart"  height="100%" width="100%" visible="true" verticalAlign="bottom" opaqueBackground="0xFFFFFF" borderThickness="0">
-    </mx:HBox>
-  </mx:Panel>
+
+  <mx:VBox id="mainChart"  click="zoomIntoSeries(event)" />
+  <mx:VBox id="hostsChart" visible="false" opaqueBackground="0x00ff00" click="zoomOutSeries(event)"/>
+
 </mx:Application>

@@ -18,25 +18,30 @@
  also available at http://www.gnu.org/copyleft/gpl.html.
 */
 
-//class to encapsulate the json object representation of a data
-//series returned from stats package
+package org.ovirt.data {
 
-package org.ovirt {
+  public class DataPoint {
 
-  public class DataSeries {
+    private var timestamp:String;
+    private var value:Number;
+    private var description:String;
 
-    private var object:Object;
-
-    public function DataSeries (object:Object) {
-      this.object = object;
+    public function DataPoint (timestamp:String, value:Number, description:String) {
+      this.timestamp = timestamp;
+      this.value = value;
+      this.description = description;
     }
 
-    public function getPoints():Array {
-      return object["vectors"] as Array;
+    public function getTimestamp():String {
+      return timestamp;
     }
 
-    public function getMaxValue():Number {
-      return object["max_value"] as Number;
+    public function getValue():Number {
+      return value;
+    }
+
+    public function getDescription():String {
+      return description;
     }
   }
 }
