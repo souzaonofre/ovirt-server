@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -30,7 +30,7 @@ class HostController < ApplicationController
     end
   end
 
-  before_filter :pre_action, :only => [:host_action, :enable, :disable, :clear_vms]
+  before_filter :pre_action, :only => [:host_action, :enable, :disable, :clear_vms, :edit_network]
 
   # GETs should be safe (see http://www.w3.org/2001/tag/doc/whenToUseGet.html)
   verify :method => [:post, :put], :only => [ :create, :update ],
@@ -81,7 +81,7 @@ class HostController < ApplicationController
 
   def addhost
     @hardware_pool = Pool.find(params[:hardware_pool_id])
-    render :layout => 'popup'    
+    render :layout => 'popup'
   end
 
   def add_to_smart_pool
@@ -156,6 +156,14 @@ class HostController < ApplicationController
     render :json => @json_hash
   end
 
+  def edit_network
+    render :layout => 'popup'
+  end
+
+  def bondings_json
+    bondings = Host.find(params[:id]).bondings
+    render :json => bondings.collect{ |x| {:id => x.id, :name => x.name} }
+  end
 
   private
   #filter methods

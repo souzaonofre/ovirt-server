@@ -13,6 +13,13 @@
             </table>
           </div>
 
+         <% if @can_modify %>
+          <h3>Networks</h3>
+          <a href="<%= url_for :controller => 'network', :action => 'list' %>">
+             View / Edit
+          </a>
+         <% end %>
+
           </div> <!-- end #tools -->
   </td>
 

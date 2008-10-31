@@ -1,0 +1,50 @@
+<div id="select_ip_address" class="popup-content-selection">
+<%= select_with_label "IP Addresses", "ip_address", "id", [] %>
+</div>
+
+<div id="selected_ip_address" class="selected_popup_content"></div>
+
+<script type="text/javascript">
+function reset_selected_ip_address(){
+   var data='Select IP Address<br/>';
+
+   $("#selected_ip_address").html(data);
+   $("#ip_addresses_footer").show();
+};
+
+reset_selected_ip_address(); // run it once for inital content
+
+function reset_ip_address_select(){
+  // incase of new additions / deletions, repopulate select box
+  $.getJSON(
+     "<%= url_for :action => 'ip_addresses_json', :id => parent_id, :parent_type => parent_type %>",
+      {},
+      function(j){
+        var options = "<option value=''></option>" +
+                      "<option value='New'>New</option>";
+        for(var i = 0; i < j.length; i++){
+          options += '<option value="' + j[i].id + '">' + j[i].name +
+                     '</option>';
+        }
+        $("#ip_address_id").html(options);
+      });
+
+  $("#ip_address_id option:first").attr("selected", true);
+};
+
+reset_ip_address_select(); // run it once for initial content
+
+$("#ip_address_id").change(function () {
+  if($('#ip_address_id').val() == "New"){
+    $("#selected_ip_address").load("<%= url_for :action => 'new_ip_address', :id => parent_id, :parent_type => parent_type %>");
+    $("#ip_addresses_footer").hide();
+  }else if($('#ip_address_id').val() != ""){
+    $("#selected_ip_address").load("<%= url_for :action => 'edit_ip_address'%>/" + $('#ip_address_id').val() + "?parent_type=<%= parent_type %>");
+    $("#ip_addresses_footer").hide();
+  }else{
+     reset_selected_ip_address();
+  }
+});
+
+</script>
+

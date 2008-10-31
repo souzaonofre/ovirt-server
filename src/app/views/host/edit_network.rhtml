@@ -1,0 +1,85 @@
+<%- content_for :title do -%>
+  Edit <%= @host.hostname %> Network Devices
+<%- end -%>
+
+<%- content_for :description do -%>
+  Select and edit nics and bonded interfaces on <%= @host.hostname %>
+<%- end -%>
+
+<div id="select-host-nic" class="popup-content-selection">
+<%= select_with_label "NICs", "nic", "id",
+        @host.nics.
+          collect{ |nic| [nic.mac, nic.id] }.
+          insert(0, "") %>
+</div>
+
+<div id="select-host-bonding" class="popup-content-selection">
+<%= select_with_label "Bonded Interfaces", "bonding", "id", [] %>
+</div>
+
+<div style="clear: both;"></div>
+
+<div id="selected_nic_bonding" class="selected_popup_content"></div>
+
+<div id="host_network_footer" class="popup-content-footer">
+  <%= ok_footer %>
+</div>
+
+<script type="text/javascript">
+function reset_nics_bonding_detail(){
+   var data='Select NIC or Bonded Interface<br/>';
+
+   $("#selected_nic_bonding").html(data);
+   $("#host_network_footer").show();
+};
+
+reset_nics_bonding_detail(); // run it once for inital content
+
+function reset_nics_select(){
+  $("#nic_id option:first").attr("selected", true);
+};
+
+function reset_bonding_select(){
+  // incase of new additions / deletions, repopulate select box
+  $.getJSON(
+     "<%= url_for :action => 'bondings_json', :id => @host.id %>",
+      {},
+      function(j){
+        var options = "<option value=''></option>" +
+                      "<option value='New'>New</option>";
+        for(var i = 0; i < j.length; i++){
+          options += '<option value="' + j[i].id + '">' + j[i].name +
+                     '</option>';
+        }
+        $("#bonding_id").html(options);
+      });
+
+  $("#bonding_id option:first").attr("selected", true);
+};
+
+reset_bonding_select(); // run it once for initial content
+
+$("#nic_id").change(function () {
+  reset_bonding_select();
+  if($('#nic_id').val() != ""){
+    $("#selected_nic_bonding").load("<%= url_for :controller => 'network',
+        :action => 'edit_nic'%>/" + $('#nic_id').val());
+    $("#host_network_footer").hide();
+  }else{
+     reset_nics_bonding_detail();
+  }
+});
+
+$("#bonding_id").change(function () {
+  reset_nics_select();
+  if($('#bonding_id').val() == "New"){
+      $("#selected_nic_bonding").load("<%= url_for :controller => 'network', :action => 'new_bonding', :host_id => @host.id %>");
+    $("#host_network_footer").hide();
+  }else if($('#bonding_id').val() != ""){
+      $("#selected_nic_bonding").load("<%= url_for :controller => 'network', :action => 'edit_bonding'%>/" + $('#bonding_id').val());
+    $("#host_network_footer").hide();
+  }else{
+     reset_nics_bonding_detail();
+  }
+});
+</script>

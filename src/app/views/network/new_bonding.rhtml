@@ -1,0 +1,36 @@
+<form method="POST"
+      action="<%= url_for :action => 'create_bonding' %>" id="bonding_form" >
+
+  <div id="selected_popup_content_header">
+      Create Bonded Interface
+  </div>
+
+  <%= render :partial => 'bonding_form' %>
+</form>
+
+<%= multi_button_popup_footer({"Create Bonding" =>
+                                 "$('#bonding_form').submit()"}) %>
+
+<script type="text/javascript">
+$(function() {
+    var bonding_options = {
+        target:        '<%= url_for :action => 'create_bonding' %>',
+        dataType:      'json',
+        success:       function(response, status) {
+          ajax_validation(response, status);
+          if (response.success) {
+            reset_bonding_select();
+            reset_nics_bonding_detail();
+            refresh_summary('hosts_selection',
+                            '<%= url_for :controller => "host",
+                                         :action => "show" %>',
+                            <%= @host.id %>)
+          }
+        }
+    };
+
+    // bind forms using 'ajaxForm'
+    $('#bonding_form').ajaxForm(bonding_options);
+
+});
+</script>

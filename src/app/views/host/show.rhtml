@@ -6,17 +6,21 @@
     <%if @host.disabled?  -%>
       <a href="#" onClick="host_action('enable')">
         <%= image_tag "icon_start.png" %> Enable Host
-      </a> 
+      </a>
     <% else -%>
       <a href="#" onClick="host_action('disable')">
         <%= image_tag "icon_suspend.png" %> Disable Host
-      </a> 
+      </a>
     <% end -%>
     <%if @host.is_clear_task_valid? -%>
       <a href="#" onClick="host_action('clear_vms')">
         <%= image_tag "icon_x.png" %> Clear VMs
-      </a> 
+      </a>
     <% end -%>
+    <%= link_to image_tag("icon_edit.png") +"Edit Network",
+                 {:controller => 'host',
+                  :action => 'edit_network', :id => @host.id},
+                 :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
   <%- end -%>
 <%- end -%>
 <script type="text/javascript">
@@ -25,8 +29,8 @@
       $.post('<%= url_for :controller => "host", :action => 'host_action', :id => @host%>',
              { action_type: action },
               function(data,status){
-                refresh_summary('hosts_selection', 
-                            '<%= url_for :controller => "host", 
+                refresh_summary('hosts_selection',
+                            '<%= url_for :controller => "host",
                                          :action => "show" %>',
                             <%= @host.id %>)
                 $("#hosts_grid").flexReload()
@@ -39,14 +43,16 @@
 
     <div id="hosts_selection_id" style="display:none"><%= @host.id %></div>
     <div class="selection_key">
-        UUID:<br/>            
-	CPUs:<br/>        
-	Speed:<br/>       
-	Memory:<br/>          
-	Architecture:<br/>    
-	Hypervisor Type:<br/> 
+        UUID:<br/>
+	CPUs:<br/>
+	Speed:<br/>
+	Memory:<br/>
+	Architecture:<br/>
+	Hypervisor Type:<br/>
         Status:<br/>
         VMs:<br/>
+        NICs:<br/>
+        Bondings:<br/>
     </div>
     <div class="selection_value">
     	<%=h @host.uuid %><br/>
@@ -56,6 +62,8 @@
         <%=h @host.arch %><br/>
 	<%=h @host.hypervisor_type %><br/>
 	<%=h @host.status_str %><br/>
+	<%=  @host.nics.collect{ |n| n.mac }.join("<br/>") %><br/>
+	<%=  @host.bondings.collect { |n| n.name }.join("<br/>") %><br/>
     <%= @host.vms.collect{|x| x.uuid }.join(" <br/> ") %><br/>
 
 <!-- FIXME: need styling

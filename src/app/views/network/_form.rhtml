@@ -1,0 +1,46 @@
+<%= error_messages_for 'network' %>
+
+<!--[form:network]-->
+<%= hidden_field 'network', 'id' if @create %>
+
+<%= text_field_with_label "Name:", "network", "name",
+                          {:style=>"width:250px;"}  %>
+
+<%= select_with_label "Boot Type:", 'network', 'boot_type_id',
+                      @boot_types.collect{ |bt| [bt.label, bt.id] },
+                      :style=>"width:250px;" %>
+
+<% if create %>
+<%= select_with_label "Type", "network", "type",
+           [[ "Physical Network", "PhysicalNetwork" ],
+            [ "VLAN", "Vlan" ] ]  %>
+<% end %>
+
+
+<div class="field_title">Usage:</div>
+<div class="form_field">
+ <select id="network_usages_ids" name="network[usage_ids][]" multiple="true">
+ <%= options_from_collection_for_select @usage_types, "id", "label",
+          @network ? @network.usages.collect{ |x| x.id.to_i } : [] %>
+ </select>
+</div>
+
+<div id="vlan_options"
+     <% if @network && @network.type != 'Vlan' %>
+     style="display: none;"
+     <% end %>
+>
+<%= text_field_with_label "Number:", "network", "number",
+                          {:style=>"width:250px;"}  %>
+</div>
+
+
+<script type="text/javascript">
+$("#network_type").change(function () {
+  if($('#network_type').val() == "Vlan"){
+    $("#vlan_options").show();
+  }else{
+    $("#vlan_options").hide();
+  }
+}).trigger('change');
+</script>

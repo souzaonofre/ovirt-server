@@ -1,6 +1,5 @@
-#
 # Copyright (C) 2008 Red Hat, Inc.
-# Written by Scott Seago <sseago@redhat.com>
+# Written by Mohammed Morsi <mmorsi@redhat.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,24 +16,17 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
-class Nic < ActiveRecord::Base
-  belongs_to :host
-  belongs_to :physical_network
+class Network < ActiveRecord::Base
+  belongs_to :boot_type
   has_many :ip_addresses, :dependent => :destroy
 
-  has_and_belongs_to_many :bondings, :join_table => 'bondings_nics'
+  has_and_belongs_to_many :usages, :join_table => 'networks_usages'
 
-  validates_presence_of :host_id,
-    :message => 'A host must be specified.'
+  validates_presence_of :type,
+    :message => 'A type must be specified.'
+  validates_presence_of :name,
+    :message => 'A name must be specified.'
+  validates_presence_of :boot_type_id,
+    :message => 'A boot type must be specified.'
 
-  validates_presence_of :physical_network_id,
-    :message => 'A network must be specified.'
-
-  protected
-   def validate
-    if physical_network.boot_type.proto == 'static' and ip_addresses.size == 0
-           errors.add("physical_network_id",
-                      "is static. Must create at least one static ip")
-     end
-   end
 end

@@ -1,0 +1,37 @@
+<% networks_per_page = 40 unless (defined? networks_per_page) and !(networks_per_page.nil?) %>
+<% usepager = @networks.size > networks_per_page %>
+
+<div id="<%= table_id %>_div">
+<form id="<%= table_id %>_form">
+<table id="<%= table_id %>" style="display:none"></table>
+</form>
+</div>
+<script type="text/javascript">
+    $("#<%= table_id %>").flexigrid
+    (
+    {
+    url: '<%=  url_for :action => "networks_json" %>',
+    dataType: 'json',
+    colModel : [
+        {display: '', width : 20, align: 'left', process: <%= table_id %>checkbox},
+        {display: 'Name', name: 'name', width : 180, align: 'left'},
+        {display: 'Type', name: 'type', width : 180, align: 'left'},
+        {display: 'Boot Type', name: 'boot_type', width : 180, align: 'left'}
+    ],
+    sortname: "name",
+    sortorder: "asc",
+    usepager: <%= usepager %>,
+    useRp: <%= usepager %>,
+    rp: <%= networks_per_page %>,
+    showTableToggleBtn: true,
+    onSelect: <%= on_select %>
+    }
+    );
+    function <%= table_id %>checkbox(celDiv)
+    {
+        $(celDiv).html('<input type="checkbox" name="grid_checkbox'+$(celDiv).html()+'" class="grid_checkbox" value="'+$(celDiv).html()+'"/>');
+    }
+
+</script>
+
+

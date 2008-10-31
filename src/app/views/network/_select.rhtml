@@ -1,0 +1,32 @@
+<% target = 'nic' unless target
+   network_id = 'physical_network_id' if target == 'nic'
+   network_id = 'vlan_id' if target == 'bonding'
+
+ %>
+
+<div class="selected_popup_content_left">Network:</div>
+<div class="selected_popup_content_right">
+    <%= select_with_label "", target, network_id,
+    @networks.collect { |n| [n.name + ' - ' + n.boot_type.label, n.id ] } %>
+
+</div>
+
+<script type="text/javascript">
+  var static_network_ids=<%= static_network_ids = '['
+    @networks.each { |n|
+     static_network_ids += ',' if static_network_ids != '['
+     static_network_ids += n.id.to_s if n.boot_type_id == @static_boot_type.id
+    }
+    static_network_ids += ']'
+    static_network_ids %>;
+
+  $("#<%=target %>_<%= network_id %>").change(function () {
+    $("#static_ip_options").hide();
+    for(i=0; i<static_network_ids.length; ++i){
+     if($("#<%= target %>_<%= network_id %>").val() == static_network_ids[i]){
+          $("#static_ip_options").show();
+          break;
+     }
+    };
+  });
+</script>

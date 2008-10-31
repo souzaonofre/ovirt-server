@@ -1,0 +1,46 @@
+ <%= error_messages_for 'bonding' %>
+ <%= error_messages_for 'ip_address' %>
+
+<div id="selected_popup_content_expanded" class="dialog_form">
+  <%= hidden_field_tag 'bonding[host_id]', @host.id %>
+
+  <div class="selected_popup_content_left">Name</div>
+  <div class="selected_popup_content_right">
+    <%= text_field_with_label "", "bonding", "name" %>
+  </div>
+
+  <div class="selected_popup_content_left">Interface Name</div>
+  <div class="selected_popup_content_right">
+    <%= text_field_with_label "", "bonding", "interface_name" %>
+  </div>
+
+  <div class="selected_popup_content_left">Bonding Type</div>
+  <div class="selected_popup_content_right">
+      <%= select "bonding", "bonding_type_id",
+             @bonding_types.collect { |bt| [bt.label, bt.id ] } %>
+  </div>
+
+  <% if @host.nics.size != 0 %>
+    <div class="selected_popup_content_left">NICs</div>
+    <div class="selected_popup_content_right">
+       <select id="bonding_nic_ids" name="bonding[nic_ids][]" multiple="true">
+        <%= options_from_collection_for_select @host.nics, "id", "mac",
+                    @bonding ? @bonding.nics.collect{ |x| x.nic_id.to_i } : [] %>
+       </select>
+    </div>
+  <% end %>
+
+  <%= render :partial => 'select', :locals => { :target => 'bonding' } %>
+
+<div id="static_ip_options"
+ style="<% unless ((@network && @network.boot_type_id == @static_boot_type.id) ||
+                   (!@network && @networks.size > 0 &&
+                     @networks[0].boot_type_id == @static_boot_type.id)) %>
+          display: none;<%end %>">
+  <%= render :partial => 'ip_addresses_form',
+             :locals => { :parent_type => 'bonding',
+                          :parent_id => @bonding ? @bonding.id : nil } %>
+</div>
+
+
+</div>

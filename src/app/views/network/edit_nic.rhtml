@@ -1,0 +1,62 @@
+<form method="POST"
+      action="<%= url_for :action => 'update_nic' %>" id="nic_form" >
+ <div id="selected_popup_content_header">
+      Editing NIC
+ </div>
+
+ <%= error_messages_for 'nic' %>
+
+ <div id="selected_popup_content_expanded" class="dialog_form">
+  <%= hidden_field_tag 'id', @nic.id %>
+  <%= hidden_field_tag 'nic_host_id', @nic.host.id %>
+  <%= hidden_field_tag 'nic_network_id', @nic.physical_network.id %>
+
+  <div class="selected_popup_content_left">MAC:</div>
+  <div class="selected_popup_content_right"><%= @nic.mac %></div>
+
+  <% if @nic.host.bondings.size != 0 %>
+    <div class="selected_popup_content_left">Bonded Interfaces</div>
+    <div class="selected_popup_content_right">
+       <select id="nic_bonding_ids" name="nic[bonding_ids][]">
+         <option value="" />
+         <%= options_from_collection_for_select @nic.host.bondings,
+                           "id", "name",
+                           @nic.bondings.size > 0 ? @nic.bondings[0].bonding_id.to_i : "" %>
+       </select>
+    </div>
+  <% end %>
+
+
+  <%= render :partial => 'select' %>
+
+  <div id="static_ip_options"
+    style="<% if @network.boot_type_id != @static_boot_type.id %>
+            display: none;<%end %>">
+    <%= render :partial => 'ip_addresses_form',
+               :locals => { :parent_type => 'nic',
+                            :parent_id => @nic.id } %>
+  </div>
+
+
+ </div>
+ <%= popup_footer("$('#nic_form').submit()", "Edit NIC") %>
+</form>
+
+<script type="text/javascript">
+$(function() {
+    var nicoptions = {
+        target:        '<%= url_for :action => 'update_nic' %>',
+        dataType:      'json',
+        success:       function(response, status) {
+          ajax_validation(response, status);
+          if (response.success) {
+            reset_nics_select();
+            reset_nics_bonding_detail();
+          }
+        }
+    };
+
+    // bind form using 'ajaxForm'
+    $('#nic_form').ajaxForm(nicoptions);
+});
+</script>
