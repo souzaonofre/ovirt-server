@@ -67,10 +67,11 @@ class ManagedNodeConfiguration
     host.bondings.each do |bonding|
       entry = "ifcfg=none|#{bonding.interface_name}|BONDING_OPTS=\"mode=#{bonding.bonding_type.mode} miimon=100\""
 
-      if bonding.ip_addr == nil || bonding.ip_addr.empty?
+      if bonding.ip_addresses.empty?
         entry += "|BOOTPROTO=dhcp"
       else
-        entry += "|BOOTPROTO=static|IPADDR=#{bonding.ip_addr}|NETMASK=#{bonding.netmask}|BROADCAST=#{bonding.broadcast}"
+        ip = bonding.ip_addresses[0]
+        entry += "|BOOTPROTO=static|IPADDR=#{ip.address}|NETMASK=#{ip.netmask}|BROADCAST=#{ip.broadcast}"
       end
 
       result.puts "#{entry}|ONBOOT=yes"
@@ -84,7 +85,7 @@ class ManagedNodeConfiguration
     host.nics.each do |nic|
       # only process this nic if it doesn't have a bonding
       # TODO remove the hack to force a bridge into the picture
-      if nic.bonding.empty?
+      if nic.bondings.empty?
         process_nic result, nic, macs, nil, false, true
 
 	# TODO remove this when bridges are properly supported
@@ -110,8 +111,11 @@ class ManagedNodeConfiguration
       if bonding
         entry += "|MASTER=#{bonding.interface_name}|SLAVE=yes"
       else
-        entry += "|BOOTPROTO=#{nic.boot_type.proto}"
-        entry += "|IPADDR=#{nic.ip_addr}|NETMASK=#{nic.netmask}|BROADCAST=#{nic.broadcast}" if nic.boot_type.proto == 'static'
+        entry += "|BOOTPROTO=#{nic.physical_network.boot_type.proto}"
+        if nic.physical_network.boot_type.proto == 'static'
+          ip = nic.ip_addresses[0]
+          entry += "|IPADDR=#{ip.address}|NETMASK=#{ip.netmask}|BROADCAST=#{ip.broadcast}"
+        end
         entry += "|BRIDGE=#{nic.bridge}" if nic.bridge && !is_bridge
         entry += "|BRIDGE=ovirtbr0" if !nic.bridge && !is_bridge
         entry += "|TYPE=bridge" if is_bridge

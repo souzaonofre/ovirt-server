@@ -30,6 +30,8 @@ class ManagedNodeConfigurationTest < Test::Unit::TestCase
   fixtures :boot_types
   fixtures :hosts
   fixtures :nics
+  fixtures :networks
+  fixtures :ip_addresses
 
   def setup
     @host_with_dhcp_card = hosts(:fileserver_managed_node)
@@ -65,8 +67,8 @@ ifcfg=#{nic.mac}|ovirtbr0|BOOTPROTO=dhcp|TYPE=bridge|ONBOOT=yes
 
     expected = <<-HERE
 # THIS FILE IS GENERATED!
-ifcfg=#{nic.mac}|eth0|BOOTPROTO=#{nic.boot_type.proto}|IPADDR=#{nic.ip_addr}|NETMASK=#{nic.netmask}|BROADCAST=#{nic.broadcast}|BRIDGE=#{nic.bridge}|ONBOOT=yes
-ifcfg=#{nic.mac}|ovirtbr0|BOOTPROTO=#{nic.boot_type.proto}|IPADDR=#{nic.ip_addr}|NETMASK=|BROADCAST=#{nic.netmask}|TYPE=bridge|ONBOOT=yes
+ifcfg=#{nic.mac}|eth0|BOOTPROTO=#{nic.physical_network.boot_type.proto}|IPADDR=#{nic.ip_addresses.first.address}|NETMASK=#{nic.ip_addresses.first.netmask}|BROADCAST=#{nic.ip_addresses.first.broadcast}|BRIDGE=#{nic.bridge}|ONBOOT=yes
+ifcfg=#{nic.mac}|ovirtbr0|BOOTPROTO=#{nic.physical_network.boot_type.proto}|IPADDR=#{nic.ip_addresses.first.address}|NETMASK=|BROADCAST=#{nic.ip_addresses.first.netmask}|TYPE=bridge|ONBOOT=yes
     HERE
 
     result = ManagedNodeConfiguration.generate(
@@ -85,9 +87,9 @@ ifcfg=#{nic.mac}|ovirtbr0|BOOTPROTO=#{nic.boot_type.proto}|IPADDR=#{nic.ip_addr}
 
     expected = <<-HERE
 # THIS FILE IS GENERATED!
-ifcfg=#{nic1.mac}|eth0|BOOTPROTO=#{nic1.boot_type.proto}|IPADDR=#{nic1.ip_addr}|NETMASK=#{nic1.netmask}|BROADCAST=#{nic1.broadcast}|BRIDGE=ovirtbr0|ONBOOT=yes
-ifcfg=#{nic1.mac}|ovirtbr0|BOOTPROTO=#{nic1.boot_type.proto}|IPADDR=#{nic1.ip_addr}|NETMASK=#{nic1.netmask}|BROADCAST=#{nic1.broadcast}|TYPE=bridge|ONBOOT=yes
-ifcfg=#{nic2.mac}|eth1|BOOTPROTO=#{nic2.boot_type.proto}|BRIDGE=ovirtbr0|ONBOOT=yes
+ifcfg=#{nic1.mac}|eth0|BOOTPROTO=#{nic1.physical_network.boot_type.proto}|IPADDR=#{nic1.ip_addresses.first.address}|NETMASK=#{nic1.ip_addresses.first.netmask}|BROADCAST=#{nic1.ip_addresses.first.broadcast}|BRIDGE=ovirtbr0|ONBOOT=yes
+ifcfg=#{nic1.mac}|ovirtbr0|BOOTPROTO=#{nic1.physical_network.boot_type.proto}|IPADDR=#{nic1.ip_addresses.first.address}|NETMASK=#{nic1.ip_addresses.first.netmask}|BROADCAST=#{nic1.ip_addresses.first.broadcast}|TYPE=bridge|ONBOOT=yes
+ifcfg=#{nic2.mac}|eth1|BOOTPROTO=#{nic2.physical_network.boot_type.proto}|BRIDGE=ovirtbr0|ONBOOT=yes
     HERE
 
     result = ManagedNodeConfiguration.generate(
@@ -112,7 +114,7 @@ ifcfg=#{nic2.mac}|eth1|BOOTPROTO=#{nic2.boot_type.proto}|BRIDGE=ovirtbr0|ONBOOT=
     expected = <<-HERE
 # THIS FILE IS GENERATED!
 bonding=#{bonding.interface_name}
-ifcfg=none|#{bonding.interface_name}|BONDING_OPTS="mode=#{bonding.bonding_type.mode} miimon=100"|BOOTPROTO=static|IPADDR=#{bonding.ip_addr}|NETMASK=#{bonding.netmask}|BROADCAST=#{bonding.broadcast}|ONBOOT=yes
+ifcfg=none|#{bonding.interface_name}|BONDING_OPTS="mode=#{bonding.bonding_type.mode} miimon=100"|BOOTPROTO=static|IPADDR=#{bonding.ip_addresses.first.address}|NETMASK=#{bonding.ip_addresses.first.netmask}|BROADCAST=#{bonding.ip_addresses.first.broadcast}|ONBOOT=yes
 ifcfg=#{nic1.mac}|eth0|MASTER=#{bonding.interface_name}|SLAVE=yes|ONBOOT=yes
 ifcfg=#{nic2.mac}|eth1|MASTER=#{bonding.interface_name}|SLAVE=yes|ONBOOT=yes
 HERE
@@ -132,7 +134,6 @@ HERE
   def test_generate_with_dhcp_bonding
     bonding = @host_with_dhcp_bondings.bondings.first
 
-    bonding.ip_addr=nil
     nic1 = bonding.nics[0]
     nic2 = bonding.nics[1]
 

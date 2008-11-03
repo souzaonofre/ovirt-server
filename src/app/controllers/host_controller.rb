@@ -57,10 +57,11 @@ class HostController < ApplicationController
       flash[:notice] = 'You do not have permission to view this host: redirecting to top level'
       #perm errors for ajax should be done differently
       redirect_to :controller => 'dashboard', :action => 'list'
-    end
-    respond_to do |format|
-      format.html { render :layout => 'selection' }
-      format.xml { render :xml => @host.to_xml }
+    else
+      respond_to do |format|
+        format.html { render :layout => 'selection' }
+        format.xml { render :xml => @host.to_xml }
+      end
     end
   end
 

@@ -89,3 +89,11 @@ require 'models/lvm_storage_volume.rb'
 require 'models/smart_pool.rb'
 require 'models/smart_pool_tag.rb'
 
+require 'models/ip_address.rb'
+require 'models/ip_v4_address.rb'
+require 'models/ip_v6_address.rb'
+require 'models/network.rb'
+require 'models/physical_network.rb'
+require 'models/usage.rb'
+require 'models/vlan.rb'
+

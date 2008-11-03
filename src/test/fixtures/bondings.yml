@@ -3,15 +3,13 @@ mailservers_managed_node_bonding:
     interface_name: mailbonding0
     bonding_type_id: <%= Fixtures.identify(:link_aggregation_bonding_type) %>
     host_id: <%= Fixtures.identify(:mailservers_managed_node) %>
-    boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
-    ip_addr: 172.31.0.15
-    netmask: 255.255.255.
-    broadcast: 172.31.0.255
     arp_ping_address: 172.31.0.100
     arp_interval: 0
+    vlan_id: <%= Fixtures.identify(:dhcp_vlan_one) %>
 
 mediaserver_managed_node_bonding:
     name: Fileserver Network
     interface_name: mediabonding0
     bonding_type_id: <%= Fixtures.identify(:link_aggregation_bonding_type) %>
     host_id: <%= Fixtures.identify(:mediaserver_managed_node) %>
+    vlan_id: <%= Fixtures.identify(:dhcp_vlan_one) %>
