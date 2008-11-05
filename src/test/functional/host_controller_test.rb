@@ -24,7 +24,7 @@ require 'host_controller'
 class HostController; def rescue_action(e) raise e end; end
 
 class HostControllerTest < Test::Unit::TestCase
-  fixtures :hosts, :pools
+  fixtures :hosts, :pools, :permissions
 
   def setup
     @controller = HostController.new

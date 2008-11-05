@@ -24,7 +24,7 @@ require 'nic_controller'
 class NicController; def rescue_action(e) raise e end; end
 
 class NicControllerTest < Test::Unit::TestCase
-  fixtures :nics
+  fixtures :nics, :permissions
 
   def setup
     @controller = NicController.new
