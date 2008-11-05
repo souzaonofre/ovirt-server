@@ -21,4 +21,8 @@ class NfsStorageVolume < StorageVolume
   def label_components
     "#{storage_pool.export_path}/#{filename}"
   end
+
+  def volume_name
+    "filename"
+  end
 end

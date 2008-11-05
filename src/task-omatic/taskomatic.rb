@@ -104,6 +104,8 @@ loop do
       when VmTask::ACTION_UPDATE_STATE_VM then update_state_vm(task)
       when VmTask::ACTION_MIGRATE_VM then migrate_vm(task)
       when StorageTask::ACTION_REFRESH_POOL then refresh_pool(task)
+      when StorageVolumeTask::ACTION_CREATE_VOLUME then create_volume(task)
+      when StorageVolumeTask::ACTION_DELETE_VOLUME then delete_volume(task)
       when HostTask::ACTION_CLEAR_VMS then clear_vms_host(task)
       else
         puts "unknown task " + task.action

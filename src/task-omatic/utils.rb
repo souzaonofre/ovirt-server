@@ -1,40 +1,6 @@
 require 'rexml/document'
 include REXML
 
-def findHostSLA(vm)
-  host = nil
-
-  vm.vm_resource_pool.get_hardware_pool.hosts.each do |curr|
-    # FIXME: we probably need to add in some notion of "load" into this check
-    if curr.num_cpus >= vm.num_vcpus_allocated \
-      and curr.memory >= vm.memory_allocated \
-      and not curr.is_disabled.nil? and curr.is_disabled == 0 \
-      and curr.state == Host::STATE_AVAILABLE \
-      and (vm.host_id.nil? or (not vm.host_id.nil? and vm.host_id != curr.id))
-      host = curr
-      break
-    end
-  end
-
-  if host == nil
-    # we couldn't find a host that matches this criteria
-    raise "No host matching VM parameters could be found"
-  end
-
-  return host
-end
-
-def findHost(host_id)
-  host = Host.find(:first, :conditions => [ "id = ?", host_id])
-
-  if host == nil
-    # Hm, we didn't find the host_id.  Seems odd.  Return a failure
-    raise "Could not find host_id " + host_id.to_s
-  end
-
-  return host
-end
-
 def String.random_alphanumeric(size=16)
   s = ""
   size.times { s << (i = Kernel.rand(62); i += ((i < 10) ? 48 : ((i < 36) ? 55 : 61 ))).chr }
@@ -47,156 +13,166 @@ def all_storage_pools(conn)
   return all_pools
 end
 
-def teardown_storage_pools(conn)
-  # FIXME: this needs to get a *lot* smarter.  In particular, we want to make
-  # sure we can tear down unused pools even when there are other guests running
-  if conn.list_domains.empty?
-    # OK, there are no running guests on this host anymore.  We can teardown
-    # any storage pools that are there without fear
-    all_storage_pools(conn).each do |remote_pool_name|
-      begin
-        pool = conn.lookup_storage_pool_by_name(remote_pool_name)
-        pool.destroy
-        pool.undefine
-      rescue
-        # do nothing if any of this failed; the worst that happens is that
-        # we leave a pool configured
-        puts "Could not teardown pool " + remote_pool_name + "; skipping"
-      end
-    end
-  end
+def get_libvirt_pool_from_volume(db_volume)
+  phys_volume = StorageVolume.find(:first, :conditions =>
+                                   [ "lvm_pool_id = ?", db_volume.storage_pool_id])
+
+  return LibvirtPool.factory(phys_volume.storage_pool)
 end
 
-def connect_storage_pools(conn, storage_volumes)
-  # here, build up a list of already defined pools.  We'll use it
-  # later to see if we need to define new pools for the storage or just
-  # keep using existing ones
+class LibvirtPool
+  def initialize(type, name = nil)
+    @remote_pool = nil
+    @build_on_start = true
+    @remote_pool_defined = false
+    @remote_pool_started = false
 
-  defined_pools = []
-  all_storage_pools(conn).each do |remote_pool_name|
-    defined_pools << conn.lookup_storage_pool_by_name(remote_pool_name)
+    if name == nil
+      @name = type + "-" + String.random_alphanumeric
+    else
+      @name = name
+    end
+
+    @xml = Document.new
+    @xml.add_element("pool", {"type" => type})
+
+    @xml.root.add_element("name").add_text(@name)
+
+    @xml.root.add_element("source")
+
+    @xml.root.add_element("target")
+    @xml.root.elements["target"].add_element("path")
   end
 
-  storagedevs = []
-  storage_volumes.each do |volume|
-    # here, we need to iterate through each volume and possibly attach it
-    # to the host we are going to be using
-    storage_pool = volume.storage_pool
+  def connect(conn)
+    all_storage_pools(conn).each do |remote_pool_name|
+      tmppool = conn.lookup_storage_pool_by_name(remote_pool_name)
 
-    if storage_pool == nil
-      # Hum.  Specified by the VM description, but not in the storage pool?
-      # continue on and hope for the best
-      # FIXME: probably want a print to the logs here
-      next
-    end
-
-    if storage_pool[:type] == "IscsiStoragePool"
-      thisstorage = Iscsi.new(storage_pool.ip_addr, storage_pool[:target])
-    elsif storage_pool[:type] == "NfsStoragePool"
-      thisstorage = NFS.new(storage_pool.ip_addr, storage_pool.export_path)
-    else
-      # Hm, a storage type we don't understand; skip it
-      puts "Storage type " + storage_pool[:type] + " is not understood; skipping"
-      next
-    end
-
-    thepool = nil
-    defined_pools.each do |pool|
-      doc = Document.new(pool.xml_desc)
-      root = doc.root
-
-      if thisstorage.xmlequal?(doc.root)
-        thepool = pool
+      if self.xmlequal?(Document.new(tmppool.xml_desc).root)
+        @remote_pool = tmppool
         break
       end
     end
 
-    if thepool == nil
-      thepool = conn.define_storage_pool_xml(thisstorage.getxml)
-      thepool.build
-      thepool.create
-    elsif thepool.info.state == Libvirt::StoragePool::INACTIVE
-      # only try to start the pool if it is currently inactive; in all other
-      # states, assume it is already running
-      thepool.create
+    if @remote_pool == nil
+      @remote_pool = conn.define_storage_pool_xml(@xml.to_s)
+      # we need this because we don't want to "build" LVM pools, which would
+      # destroy existing data
+      if @build_on_start
+        @remote_pool.build
+      end
+      @remote_pool_defined = true
     end
 
-    storagedevs << thepool.lookup_volume_by_name(volume.read_attribute(thisstorage.db_column)).path
+    if @remote_pool.info.state == Libvirt::StoragePool::INACTIVE
+      # only try to start the pool if it is currently inactive; in all other
+      # states, assume it is already running
+      @remote_pool.create
+      @remote_pool_started = true
+    end
   end
 
-  return storagedevs
-end
+  def list_volumes
+    return @remote_pool.list_volumes
+  end
 
-class StorageType
-  attr_reader :db_column
+  def lookup_vol_by_path(dev)
+    return @remote_pool.lookup_volume_by_path(dev)
+  end
+
+  def lookup_vol_by_name(name)
+    return @remote_pool.lookup_volume_by_name(name)
+  end
+
+  def create_vol_xml(xml)
+    return @remote_pool.create_vol_xml(xml)
+  end
+
+  def shutdown
+    if @remote_pool_started
+      @remote_pool.destroy
+    end
+    if @remote_pool_defined
+      @remote_pool.undefine
+    end
+  end
 
   def xmlequal?(docroot)
     return false
   end
 
-  def getxml
-    return @xml.to_s
+  def self.factory(pool)
+    if pool[:type] == "IscsiStoragePool"
+      return IscsiLibvirtPool.new(pool.ip_addr, pool[:target])
+    elsif pool[:type] == "NfsStoragePool"
+      return NFSLibvirtPool.new(pool.ip_addr, pool.export_path)
+    elsif pool[:type] == "LvmStoragePool"
+      return LVMLibvirtPool.new(pool.vg_name)
+    else
+      raise "Unknown storage pool type " + pool[:type].to_s
+    end
   end
 end
 
-class Iscsi < StorageType
-  def initialize(ipaddr, target)
+class IscsiLibvirtPool < LibvirtPool
+  def initialize(ip_addr, target)
+    super('iscsi')
+
     @type = 'iscsi'
-    @ipaddr = ipaddr
+    @ipaddr = ip_addr
     @target = target
-    @db_column = 'lun'
 
-    @xml = Document.new
-    @xml.add_element("pool", {"type" => @type})
-
-    @xml.root.add_element("name")
-
-    @xml.root.elements["name"].text = String.random_alphanumeric
-
-    @xml.root.add_element("source")
     @xml.root.elements["source"].add_element("host", {"name" => @ipaddr})
     @xml.root.elements["source"].add_element("device", {"path" => @target})
 
-    @xml.root.add_element("target")
-    @xml.root.elements["target"].add_element("path")
     @xml.root.elements["target"].elements["path"].text = "/dev/disk/by-id"
   end
 
   def xmlequal?(docroot)
     return (docroot.attributes['type'] == @type and
-      docroot.elements['source'].elements['host'].attributes['name'] == @ipaddr and
-      docroot.elements['source'].elements['device'].attributes['path'] == @target)
+            docroot.elements['source'].elements['host'].attributes['name'] == @ipaddr and
+            docroot.elements['source'].elements['device'].attributes['path'] == @target)
   end
 end
 
-class NFS < StorageType
-  def initialize(host, remote_path)
+class NFSLibvirtPool < LibvirtPool
+  def initialize(ip_addr, export_path)
+    super('netfs')
+
     @type = 'netfs'
-    @host = host
-    @remote_path = remote_path
+    @host = ip_addr
+    @remote_path = export_path
     @name = String.random_alphanumeric
-    @db_column = 'filename'
 
-    @xml = Document.new
-    @xml.add_element("pool", {"type" => @type})
-
-    @xml.root.add_element("name")
-
-    @xml.root.elements["name"].text = @name
-
-    @xml.root.add_element("source")
     @xml.root.elements["source"].add_element("host", {"name" => @host})
     @xml.root.elements["source"].add_element("dir", {"path" => @remote_path})
     @xml.root.elements["source"].add_element("format", {"type" => "nfs"})
 
-    @xml.root.add_element("target")
-    @xml.root.elements["target"].add_element("path")
     @xml.root.elements["target"].elements["path"].text = "/mnt/" + @name
   end
 
   def xmlequal?(docroot)
     return (docroot.attributes['type'] == @type and
-      docroot.elements['source'].elements['host'].attributes['name'] == @host and
-      docroot.elements['source'].elements['dir'].attributes['path'] == @remote_path)
+            docroot.elements['source'].elements['host'].attributes['name'] == @host and
+            docroot.elements['source'].elements['dir'].attributes['path'] == @remote_path)
+  end
+end
+
+class LVMLibvirtPool < LibvirtPool
+  def initialize(vg_name)
+    super('logical', vg_name)
+
+    @type = 'logical'
+    @build_on_start = false
+
+    @xml.root.elements["source"].add_element("name").add_text(@name)
+
+    @xml.root.elements["target"].elements["path"].text = "/dev/" + @name
+  end
+
+  def xmlequal?(docroot)
+    return (docroot.attributes['type'] == @type and
+            docroot.elements['name'].text == @name and
+            docroot.elements['source'].elements['name'] == @name)
   end
 end

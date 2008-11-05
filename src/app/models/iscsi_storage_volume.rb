@@ -22,6 +22,10 @@ class IscsiStorageVolume < StorageVolume
     "#{storage_pool[:target]}:#{lun}"
   end
 
+  def volume_name
+    "lun"
+  end
+
   #FIXME: should also take available free space into account
   def supports_lvm_subdivision
     return true
