@@ -96,6 +96,7 @@ loop do
       case task.action
       when VmTask::ACTION_CREATE_VM then create_vm(task)
       when VmTask::ACTION_SHUTDOWN_VM then shutdown_vm(task)
+      when VmTask::ACTION_POWEROFF_VM then poweroff_vm(task)
       when VmTask::ACTION_START_VM then start_vm(task)
       when VmTask::ACTION_SUSPEND_VM then suspend_vm(task)
       when VmTask::ACTION_RESUME_VM then resume_vm(task)

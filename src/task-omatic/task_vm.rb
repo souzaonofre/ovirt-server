@@ -267,9 +267,7 @@ def create_vm(task)
   end
 end
 
-def shutdown_vm(task)
-  puts "shutdown_vm"
-
+def shut_or_destroy_vm(task, which)
   # here, we are given an id for a VM to shutdown; we have to lookup which
   # physical host it is running on
 
@@ -291,13 +289,7 @@ def shutdown_vm(task)
   begin
     conn = Libvirt::open("qemu+tcp://" + vm.host.hostname + "/system")
     dom = conn.lookup_domain_by_uuid(vm.uuid)
-    # FIXME: crappy.  Right now we destroy the domain to make sure it
-    # really went away.  We really want to shutdown the domain to make
-    # sure it gets a chance to cleanly go down, but how can we tell when
-    # it is truly shut off?  And then we probably need a timeout in case
-    # of problems.  Needs more thought
-    #dom.shutdown
-    dom.destroy
+    dom.send(which)
 
     begin
       dom.undefine
@@ -319,6 +311,16 @@ def shutdown_vm(task)
   end
 
   setVmShutdown(vm)
+end
+
+def shutdown_vm(task)
+  puts "shutdown_vm"
+  shut_or_destroy_vm(task, "shutdown")
+end
+
+def poweroff_vm(task)
+  puts "poweroff_vm"
+  shut_or_destroy_vm(task, "destroy")
 end
 
 def start_vm(task)
