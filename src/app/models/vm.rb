@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -22,7 +22,7 @@ require 'util/ovirt'
 class Vm < ActiveRecord::Base
   belongs_to :vm_resource_pool
   belongs_to :host
-  has_many :tasks, :class_name => "VmTask", :dependent => :destroy, :order => "id ASC" do
+  has_many :tasks, :as => :task_target, :dependent => :destroy, :order => "id ASC" do
     def queued
       find(:all, :conditions=>{:state=>Task::STATE_QUEUED})
     end
@@ -37,7 +37,8 @@ class Vm < ActiveRecord::Base
                         :memory_allocated, :vnic_mac_addr
 
   acts_as_xapian :texts => [ :uuid, :description, :vnic_mac_addr, :state ],
-                 :terms => [ [ :search_users, 'U', "search_users" ] ]
+                 :terms => [ [ :search_users, 'U', "search_users" ] ],
+                 :eager_load => :smart_pools
 
   BOOT_DEV_HD            = "hd"
   BOOT_DEV_NETWORK       = "network"
@@ -56,7 +57,7 @@ class Vm < ActiveRecord::Base
   HD_OPTION_LABEL        = "Boot from HD"
   HD_OPTION_VALUE        = "hd"
 
-  NEEDS_RESTART_FIELDS = [:uuid, 
+  NEEDS_RESTART_FIELDS = [:uuid,
                           :num_vcpus_allocated,
                           :memory_allocated,
                           :vnic_mac_addr]
@@ -101,7 +102,7 @@ class Vm < ActiveRecord::Base
 
   EFFECTIVE_STATE = {  STATE_PENDING       => STATE_PENDING,
                        STATE_UNREACHABLE   => STATE_UNREACHABLE,
-                       STATE_CREATING      => STATE_STOPPED, 
+                       STATE_CREATING      => STATE_STOPPED,
                        STATE_RUNNING       => STATE_RUNNING,
                        STATE_STOPPING      => STATE_STOPPED,
                        STATE_STOPPED       => STATE_STOPPED,
@@ -231,11 +232,11 @@ class Vm < ActiveRecord::Base
 
   def queue_action(user, action, data = nil)
     return false unless get_action_list.include?(action)
-    task = VmTask.new({ :user    => user,
-                        :vm_id   => id,
-                        :action  => action,
-                        :args    => data,
-                        :state   => Task::STATE_QUEUED})
+    task = VmTask.new({ :user        => user,
+                        :task_target => self,
+                        :action      => action,
+                        :args        => data,
+                        :state       => Task::STATE_QUEUED})
     task.save!
     return true
   end
@@ -275,6 +276,12 @@ class Vm < ActiveRecord::Base
     if self.uses_cobbler?
       self.provisioning[/^.*@.*:(.*)/,1]
     end
+  end
+
+  # Returns the system name in Cobbler for this VM.
+  #
+  def cobbler_system_name
+    self.uuid
   end
 
   # whether this VM may be validly deleted. running VMs should not be

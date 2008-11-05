@@ -1,0 +1,34 @@
+<%- content_for :title do -%>
+  Edit Network
+<%- end -%>
+<%- content_for :description do -%>
+<%- end -%>
+
+  <!-- DIALOG  BODY -->
+  <form method="POST" action="<%= url_for :action => 'update' %>" id="network_form" >
+  <div class="dialog_form">
+    <%= hidden_field_tag 'id', @network.id %>
+    <%= render :partial => 'form', :locals => { :create => false }  %>
+  </div>
+  <!-- DIALOG  FOOTER -->
+  <%= popup_footer("$('#network_form').submit()", "Edit Network") %>
+  </form>
+
+<script type="text/javascript">
+$(function() {
+    var networkoptions = {
+        target:        '<%= url_for :action => 'update' %>',
+	dataType:      'json',
+        success: function(response, status) {
+           afterNetwork(response, status);
+           refresh_summary_static('networks_selection',
+            '<div class="selection_left"><div>Select a network.</div></div>');
+        }
+    };
+
+    // bind form using 'ajaxForm'
+    $('#network_form').ajaxForm(networkoptions);
+});
+</script>
+
+

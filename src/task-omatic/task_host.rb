@@ -25,7 +25,7 @@ require 'task_vm'
 def clear_vms_host(task)
   puts "clear_vms_host"
 
-  src_host = findHost(task.host_id)
+  src_host = task.host
 
   src_host.vms.each do |vm|
     migrate(vm)

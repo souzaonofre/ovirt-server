@@ -16,6 +16,7 @@
   <%= stylesheet_link_tag 'flexigrid/flexigrid.css' %>
   <%= stylesheet_link_tag 'facebox' %>
   <%= stylesheet_link_tag 'jquery.jgrowl.css' %>
+  <%= stylesheet_link_tag 'ovirt-tree/tree' %>
 
   <%= javascript_include_tag "jquery-1.2.6.min.js" -%>
   <%= javascript_include_tag "jquery-treeview/jquery.treeview.js" -%>
@@ -33,6 +34,8 @@
 
   <%= javascript_include_tag "jquery.ui-1.5.2/ui/packed/ui.core.packed.js" -%>
   <%= javascript_include_tag "jquery.ui-1.5.2/ui/packed/ui.tabs.packed.js" -%>
+  <%= javascript_include_tag "trimpath-template-1.0.38.js" %>
+  <%= javascript_include_tag "ovirt.tree.js" %>
 
   <!-- ovirt-specific functions defined here -->
   <%= javascript_include_tag "ovirt.js" -%>
@@ -88,7 +91,7 @@
           <div id="help-div">
                 <%= link_to image_tag("icon_help.png"),
                 {:controller => 'help', :action => @help_section, :anchor => @anchor},
-                :id=>"help-link", :popup => true %>
+                :id=>"help-link", :popup => true, :title => "Help" %>
           </div>
           <%= yield  %> <%# the rest of the center and right hand side %>
         </div>

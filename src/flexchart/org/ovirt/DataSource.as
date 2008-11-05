@@ -25,19 +25,21 @@ package org.ovirt {
   import com.adobe.serialization.json.JSON;
   import flash.events.Event;
   import flash.events.IOErrorEvent;
+  import org.ovirt.data.DataSeries;
+  import org.ovirt.charts.Chart;
 
   public class DataSource {
 
-    private var chartLoader:ChartLoader;
+    private var chart:Chart;
 
-    public function DataSource(chartLoader:ChartLoader) {
-      this.chartLoader = chartLoader;
+    public function DataSource(chart:Chart) {
+      this.chart = chart;
     }
 
     public function retrieveData(url:String):void {
       var loader:URLLoader = new URLLoader();
-      loader.addEventListener( IOErrorEvent.IO_ERROR, this.ioError );
-      loader.addEventListener( Event.COMPLETE, dataLoaded );
+      loader.addEventListener(IOErrorEvent.IO_ERROR, this.ioError);
+      loader.addEventListener(Event.COMPLETE, dataLoaded);
       var request:URLRequest = new URLRequest(url);
       loader.load(request);
     }
@@ -46,7 +48,7 @@ package org.ovirt {
       var loader:URLLoader = URLLoader(event.target);
       var object:Object = JSON.decode(loader.data);
       var series:DataSeries = new DataSeries(object);
-      chartLoader.addData(series);
+      chart.addData(series);
     }
 
     private function ioError( e:IOErrorEvent ):void {

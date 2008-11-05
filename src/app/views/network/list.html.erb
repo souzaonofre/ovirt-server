@@ -1,0 +1,72 @@
+<div id="toolbar_nav">
+<ul>
+    <li><a href="<%= url_for :action => 'new' %>" rel="facebox[.bolder]"><%= image_tag "icon_addstorage.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Add Network</a></li>
+    <li>
+      <a href="#" onClick="delete_networks();" >
+        <%= image_tag "icon_remove.png", :style=>"vertical-align:middle;" %>
+            &nbsp;&nbsp;Remove
+       </a>
+    </li>
+  </ul>
+</div>
+
+<script type="text/javascript">
+  function delete_networks(){
+    var networks = get_selected_networks();
+    if (validate_selected(get_selected_networks(), 'networks')) {
+      $.post('<%= url_for :action => 'delete' %>',
+             { network_ids: networks.toString() },
+             function(data,status){
+                if (data.alert) {
+                  $.jGrowl(data.alert);
+                }
+               grid = $("#networks_grid");
+               if (grid.size()>0 && grid != null) {
+                  grid.flexReload();
+               }
+               empty_summary('networks_selection', 'Network');
+             }, 'json');
+    }
+  }
+
+  function networks_select(selected_rows)
+  {
+    var selected_ids = new Array();
+    for(i=0; i<selected_rows.length; i++) {
+      selected_ids[i] = selected_rows[i].id;
+    }
+    if (selected_ids.length == 1)
+    {
+      $('#networks_selection').load('<%= url_for :action => "show" %>',
+                { id: parseInt(selected_ids[0].substring(3))});
+    }
+  }
+
+</script>
+
+<div class="panel_header"></div>
+<% if @networks.size != 0 %>
+  <div class="data_section">
+       <%= render :partial => "grid", :locals => { :table_id => "networks_grid",
+                                                   :networks => @networks,
+                                                   :on_select => "networks_select"} %>
+  </div>
+
+  <div class="selection_detail" id="networks_selection">
+    <div class="selection_left">
+      <div>Select a network.</div>
+    </div>
+  </div>
+<% else %>
+   <div class="data_section">
+       <div class="no-grid-items">
+          <%= image_tag 'no-grid-items.png', :style => 'float: left;' %>
+
+          <div class="no-grid-items-text">
+            No networks found. <br/><br/>
+            <%= image_tag "icon_addhost.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;
+            <a href="<%= url_for :action => 'new' %>" rel="facebox[.bolder]">Add first network</a>
+          </div>
+       </div>
+   </div>
+<% end %>

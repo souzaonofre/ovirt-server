@@ -31,7 +31,7 @@ class NicControllerTest < Test::Unit::TestCase
     @request    = ActionController::TestRequest.new
     @response   = ActionController::TestResponse.new
 
-    @first_id = nics(:one).id
+    @first_id = nics(:nic_one).id
   end
 
   def test_show

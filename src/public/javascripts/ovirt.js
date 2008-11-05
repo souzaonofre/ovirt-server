@@ -298,3 +298,22 @@ function delete_pool(delete_url, id)
             }
            }, 'json');
 }
+
+
+function get_selected_networks()
+{
+    return get_selected_checkboxes("networks_grid_form");
+}
+
+function afterNetwork(response, status){
+    ajax_validation(response, status);
+    if (response.success) {
+      $(document).trigger('close.facebox');
+      grid = $("#networks_grid");
+      if (grid.size()>0 && grid != null) {
+        grid.flexReload();
+      } else {
+        $tabs.tabs("load",$tabs.data('selected.tabs'));
+      }
+    }
+}

@@ -30,6 +30,16 @@
 # interface. They can be ignored if not used.
 #
 class Bonding < ActiveRecord::Base
+  belongs_to :host
+  belongs_to :bonding_type
+  belongs_to :vlan
+  has_many :ip_addresses, :dependent => :destroy
+
+  has_and_belongs_to_many :nics,
+    :join_table  => 'bondings_nics',
+    :foreign_key => :bonding_id
+
+
   validates_presence_of :name,
     :message => 'A name is required.'
 
@@ -42,11 +52,20 @@ class Bonding < ActiveRecord::Base
   validates_presence_of :interface_name,
     :message => 'An interface name is required.'
 
-  belongs_to :host
-  belongs_to :bonding_type
+  validates_presence_of :bonding_type_id,
+    :message => 'A bonding type must be specified.'
 
-  has_and_belongs_to_many :nics,
-    :join_table  => 'bondings_nics',
-    :foreign_key => :bonding_id
+  validates_presence_of :vlan_id,
+    :message => 'A vlan must be specified.'
+
+ protected
+  def validate
+    if vlan.boot_type.proto == 'static' and ip_addresses.size == 0
+           errors.add("vlan_id",
+                      "is static. Must create at least one static ip")
+     end
+
+  end
+
 
 end

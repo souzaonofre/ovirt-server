@@ -110,7 +110,9 @@ class PoolController < ApplicationController
     attr_list = [:id, :description, :uuid,
                  :num_vcpus_allocated, :memory_allocated_in_mb,
                  :vnic_mac_addr, :state, :id]
-    attr_list.insert(3, [:host, :hostname]) if @pool.get_hardware_pool.can_view(@user)
+    if (@pool.is_a? VmResourcePool) and @pool.get_hardware_pool.can_view(@user)
+      attr_list.insert(3, [:host, :hostname])
+    end
     json_list(args[:full_items], attr_list, [:all], args[:find_opts])
   end
 

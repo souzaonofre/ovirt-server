@@ -17,7 +17,7 @@ Requires: rubygem(activeldap) >= 0.10.0
 Requires: rubygem(rails) >= 2.1.1
 Requires: rubygem(mongrel) >= 1.0.1
 Requires: rubygem(krb5-auth) >= 0.6
-Requires: rubygem(cobbler) >= 0.0.2
+Requires: rubygem(cobbler) >= 0.1.2
 Requires: rubygem(gettext)
 Requires: ruby-flexmock
 Requires: postgresql-server

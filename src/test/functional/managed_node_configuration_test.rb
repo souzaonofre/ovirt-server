@@ -30,12 +30,15 @@ class ManagedNodeConfigurationTest < Test::Unit::TestCase
   fixtures :boot_types
   fixtures :hosts
   fixtures :nics
+  fixtures :networks
+  fixtures :ip_addresses
 
   def setup
     @host_with_dhcp_card = hosts(:fileserver_managed_node)
     @host_with_ip_address = hosts(:ldapserver_managed_node)
     @host_with_multiple_nics = hosts(:buildserver_managed_node)
     @host_with_bondings = hosts(:mailservers_managed_node)
+    @host_with_dhcp_bondings = hosts(:mediaserver_managed_node)
   end
 
   # Ensures that network interfaces uses DHCP when no IP address is specified.
@@ -44,23 +47,9 @@ class ManagedNodeConfigurationTest < Test::Unit::TestCase
     nic = @host_with_dhcp_card.nics.first
 
     expected = <<-HERE
-#!/bin/bash
 # THIS FILE IS GENERATED!
-cat <<\EOF > /var/tmp/node-augtool
-rm /files/etc/sysconfig/network-scripts/ifcfg-eth0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/DEVICE eth0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BOOTPROTO #{nic.boot_type.proto}
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BRIDGE ovirtbr0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/ONBOOT yes
-rm /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/DEVICE ovirtbr0
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/BOOTPROTO #{nic.boot_type.proto}
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/TYPE bridge
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/PEERNTP yes
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/DELAY 0
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/ONBOOT yes
-save
-EOF
+ifcfg=#{nic.mac}|eth0|BOOTPROTO=dhcp|BRIDGE=ovirtbr0|ONBOOT=yes
+ifcfg=#{nic.mac}|ovirtbr0|BOOTPROTO=dhcp|TYPE=bridge|ONBOOT=yes
     HERE
 
     result = ManagedNodeConfiguration.generate(
@@ -77,29 +66,9 @@ EOF
     nic = @host_with_ip_address.nics.first
 
     expected = <<-HERE
-#!/bin/bash
 # THIS FILE IS GENERATED!
-cat <<\EOF > /var/tmp/node-augtool
-rm /files/etc/sysconfig/network-scripts/ifcfg-eth0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/DEVICE eth0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BOOTPROTO #{nic.boot_type.proto}
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/IPADDR #{nic.ip_addr}
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/NETMASK #{nic.netmask}
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BROADCAST #{nic.broadcast}
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BRIDGE ovirtbr0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/ONBOOT yes
-rm /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/DEVICE ovirtbr0
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/BOOTPROTO #{nic.boot_type.proto}
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/IPADDR #{nic.ip_addr}
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/NETMASK #{nic.netmask}
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/BROADCAST #{nic.broadcast}
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/TYPE bridge
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/PEERNTP yes
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/DELAY 0
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/ONBOOT yes
-save
-EOF
+ifcfg=#{nic.mac}|eth0|BOOTPROTO=#{nic.physical_network.boot_type.proto}|IPADDR=#{nic.ip_addresses.first.address}|NETMASK=#{nic.ip_addresses.first.netmask}|BROADCAST=#{nic.ip_addresses.first.broadcast}|BRIDGE=#{nic.bridge}|ONBOOT=yes
+ifcfg=#{nic.mac}|ovirtbr0|BOOTPROTO=#{nic.physical_network.boot_type.proto}|IPADDR=#{nic.ip_addresses.first.address}|NETMASK=|BROADCAST=#{nic.ip_addresses.first.netmask}|TYPE=bridge|ONBOOT=yes
     HERE
 
     result = ManagedNodeConfiguration.generate(
@@ -117,34 +86,10 @@ EOF
     nic2 = @host_with_multiple_nics.nics[1]
 
     expected = <<-HERE
-#!/bin/bash
 # THIS FILE IS GENERATED!
-cat <<\EOF > /var/tmp/node-augtool
-rm /files/etc/sysconfig/network-scripts/ifcfg-eth0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/DEVICE eth0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BOOTPROTO #{nic1.boot_type.proto}
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/IPADDR #{nic1.ip_addr}
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/NETMASK #{nic1.netmask}
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BROADCAST #{nic1.broadcast}
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/BRIDGE ovirtbr0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/ONBOOT yes
-rm /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/DEVICE ovirtbr0
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/BOOTPROTO #{nic1.boot_type.proto}
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/IPADDR #{nic1.ip_addr}
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/NETMASK #{nic1.netmask}
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/BROADCAST #{nic1.broadcast}
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/TYPE bridge
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/PEERNTP yes
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/DELAY 0
-set /files/etc/sysconfig/network-scripts/ifcfg-ovirtbr0/ONBOOT yes
-rm /files/etc/sysconfig/network-scripts/ifcfg-eth1
-set /files/etc/sysconfig/network-scripts/ifcfg-eth1/DEVICE eth1
-set /files/etc/sysconfig/network-scripts/ifcfg-eth1/BOOTPROTO #{nic2.boot_type.proto}
-set /files/etc/sysconfig/network-scripts/ifcfg-eth1/BRIDGE ovirtbr0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth1/ONBOOT yes
-save
-EOF
+ifcfg=#{nic1.mac}|eth0|BOOTPROTO=#{nic1.physical_network.boot_type.proto}|IPADDR=#{nic1.ip_addresses.first.address}|NETMASK=#{nic1.ip_addresses.first.netmask}|BROADCAST=#{nic1.ip_addresses.first.broadcast}|BRIDGE=ovirtbr0|ONBOOT=yes
+ifcfg=#{nic1.mac}|ovirtbr0|BOOTPROTO=#{nic1.physical_network.boot_type.proto}|IPADDR=#{nic1.ip_addresses.first.address}|NETMASK=#{nic1.ip_addresses.first.netmask}|BROADCAST=#{nic1.ip_addresses.first.broadcast}|TYPE=bridge|ONBOOT=yes
+ifcfg=#{nic2.mac}|eth1|BOOTPROTO=#{nic2.physical_network.boot_type.proto}|BRIDGE=ovirtbr0|ONBOOT=yes
     HERE
 
     result = ManagedNodeConfiguration.generate(
@@ -167,34 +112,41 @@ EOF
     nic2 = bonding.nics[1]
 
     expected = <<-HERE
-#!/bin/bash
 # THIS FILE IS GENERATED!
-cat <<\EOF > /var/tmp/pre-config-script
-#!/bin/bash
-# THIS FILE IS GENERATED!
-/sbin/modprobe bonding mode=#{bonding.bonding_type.mode}
-EOF
-cat <<\EOF > /var/tmp/node-augtool
-rm /files/etc/sysconfig/network-scripts/ifcfg-#{bonding.interface_name}
-set /files/etc/sysconfig/network-scripts/ifcfg-#{bonding.interface_name}/DEVICE #{bonding.interface_name}
-set /files/etc/sysconfig/network-scripts/ifcfg-#{bonding.interface_name}/IPADDR 172.31.0.15
-set /files/etc/sysconfig/network-scripts/ifcfg-#{bonding.interface_name}/ONBOOT yes
-rm /files/etc/sysconfig/network-scripts/ifcfg-eth0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/DEVICE eth0
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/MASTER #{bonding.interface_name}
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/SLAVE yes
-set /files/etc/sysconfig/network-scripts/ifcfg-eth0/ONBOOT yes
-rm /files/etc/sysconfig/network-scripts/ifcfg-eth1
-set /files/etc/sysconfig/network-scripts/ifcfg-eth1/DEVICE eth1
-set /files/etc/sysconfig/network-scripts/ifcfg-eth1/MASTER #{bonding.interface_name}
-set /files/etc/sysconfig/network-scripts/ifcfg-eth1/SLAVE yes
-set /files/etc/sysconfig/network-scripts/ifcfg-eth1/ONBOOT yes
-save
-EOF
+bonding=#{bonding.interface_name}
+ifcfg=none|#{bonding.interface_name}|BONDING_OPTS="mode=#{bonding.bonding_type.mode} miimon=100"|BOOTPROTO=static|IPADDR=#{bonding.ip_addresses.first.address}|NETMASK=#{bonding.ip_addresses.first.netmask}|BROADCAST=#{bonding.ip_addresses.first.broadcast}|ONBOOT=yes
+ifcfg=#{nic1.mac}|eth0|MASTER=#{bonding.interface_name}|SLAVE=yes|ONBOOT=yes
+ifcfg=#{nic2.mac}|eth1|MASTER=#{bonding.interface_name}|SLAVE=yes|ONBOOT=yes
 HERE
 
     result = ManagedNodeConfiguration.generate(
       @host_with_bondings,
+      {
+        "#{nic1.mac}" => 'eth0',
+        "#{nic2.mac}" => 'eth1'
+      })
+
+    assert_equal expected, result
+  end
+
+  # Ensures that the generated bonding supports DHCP boot protocol.
+  #
+  def test_generate_with_dhcp_bonding
+    bonding = @host_with_dhcp_bondings.bondings.first
+
+    nic1 = bonding.nics[0]
+    nic2 = bonding.nics[1]
+
+    expected = <<-HERE
+# THIS FILE IS GENERATED!
+bonding=#{bonding.interface_name}
+ifcfg=none|#{bonding.interface_name}|BONDING_OPTS="mode=#{bonding.bonding_type.mode} miimon=100"|BOOTPROTO=dhcp|ONBOOT=yes
+ifcfg=#{nic1.mac}|eth0|MASTER=#{bonding.interface_name}|SLAVE=yes|ONBOOT=yes
+ifcfg=#{nic2.mac}|eth1|MASTER=#{bonding.interface_name}|SLAVE=yes|ONBOOT=yes
+HERE
+
+    result = ManagedNodeConfiguration.generate(
+      @host_with_dhcp_bondings,
       {
         "#{nic1.mac}" => 'eth0',
         "#{nic2.mac}" => 'eth1'

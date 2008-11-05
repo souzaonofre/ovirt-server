@@ -15,7 +15,8 @@ class GraphController < ApplicationController
                    :values => graph_obj[:dataset][2][:values].last(40) }
     my_data = graph_data[:labels].zip(graph_data[:values])
     graph = { :vectors => my_data,
-              :max_value => graph_obj[:total_peak]
+              :max_value => graph_obj[:total_peak],
+              :description => params[:target]
             }
     render :json => graph
   end

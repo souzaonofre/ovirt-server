@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -30,7 +30,7 @@ class HostController < ApplicationController
     end
   end
 
-  before_filter :pre_action, :only => [:host_action, :enable, :disable, :clear_vms]
+  before_filter :pre_action, :only => [:host_action, :enable, :disable, :clear_vms, :edit_network]
 
   # GETs should be safe (see http://www.w3.org/2001/tag/doc/whenToUseGet.html)
   verify :method => [:post, :put], :only => [ :create, :update ],
@@ -57,10 +57,11 @@ class HostController < ApplicationController
       flash[:notice] = 'You do not have permission to view this host: redirecting to top level'
       #perm errors for ajax should be done differently
       redirect_to :controller => 'dashboard', :action => 'list'
-    end
-    respond_to do |format|
-      format.html { render :layout => 'selection' }
-      format.xml { render :xml => @host.to_xml }
+    else
+      respond_to do |format|
+        format.html { render :layout => 'selection' }
+        format.xml { render :xml => @host.to_xml }
+      end
     end
   end
 
@@ -81,7 +82,7 @@ class HostController < ApplicationController
 
   def addhost
     @hardware_pool = Pool.find(params[:hardware_pool_id])
-    render :layout => 'popup'    
+    render :layout => 'popup'
   end
 
   def add_to_smart_pool
@@ -139,10 +140,10 @@ class HostController < ApplicationController
   def clear_vms
     begin
       Host.transaction do
-        task = HostTask.new({ :user    => get_login_user,
-                              :host_id   => @host.id,
-                              :action  => HostTask::ACTION_CLEAR_VMS,
-                              :state   => Task::STATE_QUEUED})
+        task = HostTask.new({ :user        => get_login_user,
+                              :task_target => @host,
+                              :action      => HostTask::ACTION_CLEAR_VMS,
+                              :state       => Task::STATE_QUEUED})
         task.save!
         @host.is_disabled = true
         @host.save!
@@ -156,6 +157,14 @@ class HostController < ApplicationController
     render :json => @json_hash
   end
 
+  def edit_network
+    render :layout => 'popup'
+  end
+
+  def bondings_json
+    bondings = Host.find(params[:id]).bondings
+    render :json => bondings.collect{ |x| {:id => x.id, :name => x.name} }
+  end
 
   private
   #filter methods

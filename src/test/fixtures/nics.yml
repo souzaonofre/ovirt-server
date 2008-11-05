@@ -1,80 +1,84 @@
-one:
+nic_one:
   id: 1
   mac: '00:11:22:33:44:55'
-  ip_addr: '1.2.3.4'
-  usage_type: '1'
   bandwidth: 100
   host_id: 10
-  boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
-two:
+  physical_network_id: <%= Fixtures.identify(:dhcp_physical_network_one) %>
+nic_two:
   id: 2
   mac: 'AA:BB:CC:DD:EE:FF'
-  ip_addr: '2.3.4.5'
   usage_type: '2'
   bandwidth: 1000
   host_id: 10
-  boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
-three:
+  physical_network_id: <%= Fixtures.identify(:dhcp_physical_network_one) %>
+nic_three:
   id: 3
   mac: '00:FF:11:EE:22:DD'
-  ip_addr: '3.4.5.6'
   usage_type: '1'
   bandwidth: 10
   host_id: 10
-  boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
-four:
+  physical_network_id: <%= Fixtures.identify(:dhcp_physical_network_one) %>
+nic_four:
   id: 4
   mac: '00:FF:11:EE:22:DD'
-  ip_addr: '3.4.5.6'
   usage_type: '1'
   bandwidth: 10
   host_id: 10
-  boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
+  physical_network_id: <%= Fixtures.identify(:dhcp_physical_network_one) %>
 
 mailserver_nic_one:
-    mac: '00:11:22:33:44:55'
-    usage_type: '1'
-    bandwidth: 100
-    ip_addr: '172.31.0.15'
-    host_id: <%= Fixtures.identify(:mailservers_managed_node) %>
-    boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
+  mac: '00:11:22:33:44:55'
+  usage_type: '1'
+  bandwidth: 100
+  host_id: <%= Fixtures.identify(:mailservers_managed_node) %>
+  physical_network_id: <%= Fixtures.identify(:dhcp_physical_network_one) %>
 
 mailserver_nic_two:
-    mac: '22:11:33:66:44:55'
-    usage_type: '1'
-    bandwidth: 100
-    host_id: <%= Fixtures.identify(:mailservers_managed_node) %>
-    boot_type_id: <%= Fixtures.identify(:boot_type_dhcp) %>
+  mac: '22:11:33:66:44:55'
+  usage_type: '1'
+  bandwidth: 100
+  host_id: <%= Fixtures.identify(:mailservers_managed_node) %>
+  physical_network_id: <%= Fixtures.identify(:dhcp_physical_network_one) %>
 
 fileserver_nic_one:
-    mac: '00:99:00:99:13:07'
-    usage_type: '1'
-    bandwidth: 100
-    host_id: <%= Fixtures.identify(:fileserver_managed_node) %>
-    boot_type_id: <%= Fixtures.identify(:boot_type_dhcp) %>
+  mac: '00:99:00:99:13:07'
+  usage_type: '1'
+  bandwidth: 100
+  host_id: <%= Fixtures.identify(:fileserver_managed_node) %>
+  physical_network_id: <%= Fixtures.identify(:dhcp_physical_network_one) %>
 
 ldapserver_nic_one:
-    mac: '00:03:02:00:09:06'
-    usage_type: '1'
-    bandwidth: 100
-    bridge: 'ovirtbr0'
-    ip_addr: '172.31.0.25'
-    host_id: <%= Fixtures.identify(:ldapserver_managed_node) %>
-    boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
+  mac: '00:03:02:00:09:06'
+  usage_type: '1'
+  bandwidth: 100
+  bridge: 'ovirtbr0'
+  host_id: <%= Fixtures.identify(:ldapserver_managed_node) %>
+  physical_network_id: <%= Fixtures.identify(:static_physical_network_one) %>
 
 buildserver_nic_one:
-    mac: '07:17:19:65:03:38'
-    usage_type: '1'
-    bandwidth: 100
-    host_id: <%= Fixtures.identify(:buildserver_managed_node) %>
-    boot_type_id: <%= Fixtures.identify(:boot_type_dhcp) %>
+  mac: '07:17:19:65:03:38'
+  usage_type: '1'
+  bandwidth: 100
+  host_id: <%= Fixtures.identify(:buildserver_managed_node) %>
+  physical_network_id: <%= Fixtures.identify(:dhcp_physical_network_one) %>
 
 buildserver_nic_two:
-    mac: '07:17:19:65:03:39'
-    usage_type: '1'
-    bandwidth: 100
-    ip_addr: '172.31.0.31'
-    netmask: '255.255.255.0'
-    broadcast: '172.31.0.255'
-    host_id: <%= Fixtures.identify(:buildserver_managed_node) %>
-    boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
+  mac: '07:17:19:65:03:39'
+  usage_type: '1'
+  bandwidth: 100
+  host_id: <%= Fixtures.identify(:buildserver_managed_node) %>
+  physical_network_id: <%= Fixtures.identify(:static_physical_network_one) %>
+
+mediaserver_nic_one:
+  mac: '07:17:19:65:03:32'
+  usage_type: '1'
+  bandwidth: 100
+  host_id: <%= Fixtures.identify(:mediaserver_managed_node) %>
+  physical_network_id: <%= Fixtures.identify(:dhcp_physical_network_one) %>
+
+mediaserver_nic_two:
+  mac: '07:17:19:65:03:31'
+  usage_type: '1'
+  bandwidth: 100
+  host_id: <%= Fixtures.identify(:mediaserver_managed_node) %>
+  physical_network_id: <%= Fixtures.identify(:dhcp_physical_network_one) %>

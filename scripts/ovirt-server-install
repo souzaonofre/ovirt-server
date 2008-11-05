@@ -186,7 +186,7 @@ touch $EXISTS_FILE
 
 cd ${OVIRT_DIR}
 mkdir -p log
-rake db:migrate
+export RAILS_ENV="production" && rake db:migrate
 cd -
 
 ${OVIRT_DIR}/script/grant_admin_privileges ovirtadmin

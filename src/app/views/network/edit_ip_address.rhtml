@@ -1,0 +1,76 @@
+<% if @parent_type == 'network' %>
+<form method="POST"
+      action="<%= url_for :action => 'update_ip_address' %>"
+      id="edit_ip_address_form" >
+<% end %>
+
+  <div id="selected_popup_content_header">
+      Editing IP Address
+  </div>
+
+  <% if @parent_type != 'network' %>
+     <a href="#" onClick="$('#delete_ip_address_form').submit()" style="color: blue;">Delete</a>
+  <% end %>
+
+  <%= hidden_field_tag('id', @ip_address.id) %>
+  <%= render :partial => 'ip_address_form' %>
+
+<% if @parent_type == 'network' %>
+</form>
+<% end %>
+
+<form method="POST"
+      action="<%= url_for :action => 'destroy_ip_address' %>"
+      id="delete_ip_address_form" >
+  <%= hidden_field_tag('id', @ip_address.id) %>
+</form>
+
+<% if @parent_type == 'network' %>
+<%= multi_button_popup_footer({" Edit IP Address" =>
+                                 "$('#edit_ip_address_form').submit()",
+                               "Delete IP Address" =>
+                                 "$('#delete_ip_address_form').submit()"}) %>
+<% end %>
+
+<script type="text/javascript">
+$(function() {
+    var edit_ip_address_options = {
+        target:        '<%= url_for :action => 'update_ip_address' %>',   // target element to update
+        dataType:      'json',
+        success:       function(response, status) {
+          ajax_validation(response, status);
+          if (response.success) {
+            reset_selected_ip_address();
+            reset_ip_address_select();
+           <% if @parent_type == 'network' %>
+            refresh_summary('networks_selection',
+                '<%= url_for :controller => "network", :action => "show" %>',
+                 <%= @network.id %>);
+           <% end %>
+          }
+        }
+    };
+
+    var delete_ip_address_options = {
+        target:        '<%= url_for :action => 'delete_ip_address' %>',   // target element to update
+        dataType:      'json',
+        success:       function(response, status) {
+          ajax_validation(response, status);
+          if (response.success) {
+            reset_selected_ip_address();
+            reset_ip_address_select();
+           <% if @parent_type == 'network' %>
+            refresh_summary('networks_selection',
+                '<%= url_for :controller => "network", :action => "show" %>',
+                 <%= @network.id %>);
+           <% end %>
+          }
+        }
+    };
+
+    // bind forms using 'ajaxForm'
+    $('#edit_ip_address_form').ajaxForm(edit_ip_address_options);
+    $('#delete_ip_address_form').ajaxForm(delete_ip_address_options);
+
+});
+</script>

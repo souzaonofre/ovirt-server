@@ -16,6 +16,21 @@
         <% } %>
        </ul>
     </li>
+    <li>
+       <%= image_tag "icon_smartpool.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Add to Smart Pool &nbsp;&nbsp;&nbsp;<%= image_tag "icon_toolbar_arrow.gif", :style => "vertical-align:middle;" %>
+       <ul>
+        <% smart_pools = SmartPool.smart_pools_for_user(@user) %>
+        <% smart_pools.each_index { |index| %>
+            <li onClick="add_vms_to_smart_pool(<%=smart_pools[index][1]%>)"
+            <% if (index == smart_pools.length - 1) or smart_pools[index].length == 3 %>
+                style="border-bottom: 1px solid #CCCCCC;"
+            <% end %>
+               >
+                 <%=smart_pools[index][0]%>
+            </li>
+        <% } %>
+       </ul>
+    </li>
     <li><a href="#" onClick="delete_vms()"><%= image_tag "icon_delete_white.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Delete</a></li>
 </ul>
 </div>
@@ -23,6 +38,20 @@
   function get_selected_vms()
   {
     return get_selected_checkboxes("vms_grid_form");
+  }
+  function add_vms_to_smart_pool(smart_pool)
+  {
+    var vms = get_selected_vms();
+    if (validate_selected(vms, "vm")) {
+      $.post('<%= url_for :controller => "smart_pools", :action => "add_vms" %>',
+             { resource_ids: vms.toString(), id: smart_pool },
+             function(data,status){
+               $('#vms_grid').flexReload();
+               if (data.alert) {
+                 $.jGrowl(data.alert);
+               }
+             }, 'json');
+    }
   }
   function delete_vms()
   {

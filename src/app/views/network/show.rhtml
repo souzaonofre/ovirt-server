@@ -1,0 +1,31 @@
+<%- content_for :title do -%>
+  <%=h @network.name %>
+<%- end -%>
+
+<%- content_for :action_links do -%>
+  <%= link_to image_tag("icon_edit.png") + "Edit",
+        {:action => 'edit', :id => @network.id },
+         :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
+
+  <%= link_to image_tag("icon_edit.png") + "Edit IP Addresses",
+        {:action => 'edit_network_ip_addresses', :id => @network.id },
+         :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
+<%- end -%>
+
+<div id="hosts_selection_id" style="display:none"><%= @host.id %></div>
+<div class="selection_key">
+    Name:<br/>
+    Type:<br/>
+    Boot Type:<br/>
+    IP Addresses:<br/>
+</div>
+<div class="selection_value">
+    <%=h @network.name %><br/>
+    <%=h @network.type %><br/>
+    <%=h @network.boot_type.label %><br/>
+    <%=@network.ip_addresses.collect{ |ip|
+         ip.address}.join("<br/>") %>
+</div>
+
+<%- content_for :right do -%>
+<%- end -%>

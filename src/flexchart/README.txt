@@ -5,4 +5,4 @@ Once you have mxmlc on your system, run:
 
 mxmlc flexchart.mxml
 
-in this directory, and copy the resulting file flexchart.swf to /usr/share/ovirt-server/public on your appliance.
+in this directory, and copy the resulting file flexchart.swf to /usr/share/ovirt-server/public/swfs on your appliance.

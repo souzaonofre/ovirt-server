@@ -1,0 +1,60 @@
+<form method="POST"
+      action="<%= url_for :action => 'update_bonding' %>" id="edit_bonding_form" >
+  <div id="selected_popup_content_header">
+      Editing Bonded Interface
+  </div>
+
+  <%= hidden_field_tag('id', @bonding.id) %>
+  <%= render :partial => 'bonding_form' %>
+
+</form>
+
+<form method="POST" action="<%= url_for :action => 'destroy_bonding' %>" id="delete_bonding_form" >
+  <%= hidden_field_tag('id', @bonding.id) %>
+</form>
+
+<%= multi_button_popup_footer({"Edit Bonding" =>
+                                 "$('#edit_bonding_form').submit()",
+                               "Delete Bonding" =>
+                                 "$('#delete_bonding_form').submit()"}) %>
+
+<script type="text/javascript">
+$(function() {
+    var edit_bonding_options = {
+        target:        '<%= url_for :action => 'update_bonding' %>',
+        dataType:      'json',
+        success:       function(response, status) {
+          ajax_validation(response, status);
+          if (response.success) {
+            reset_bonding_select();
+            reset_nics_bonding_detail();
+            refresh_summary('hosts_selection',
+                            '<%= url_for :controller => "host",
+                                         :action => "show" %>',
+                            <%= @host.id %>)
+          }
+        }
+    };
+
+    var delete_bonding_options = {
+        target:        '<%= url_for :action => 'destroy_bonding' %>',
+        dataType:      'json',
+        success:       function(response, status) {
+          ajax_validation(response, status);
+          if (response.success) {
+            reset_bonding_select();
+            reset_nics_bonding_detail();
+            refresh_summary('hosts_selection',
+                            '<%= url_for :controller => "host",
+                                         :action => "show" %>',
+                            <%= @host.id %>)
+          }
+        }
+    };
+
+    // bind forms using 'ajaxForm'
+    $('#edit_bonding_form').ajaxForm(edit_bonding_options);
+    $('#delete_bonding_form').ajaxForm(delete_bonding_options);
+
+});
+</script>

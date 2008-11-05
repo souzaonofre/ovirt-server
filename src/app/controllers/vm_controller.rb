@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -32,7 +32,7 @@ class VmController < ApplicationController
       flash[:notice] = 'You do not have permission to view this vm: redirecting to top level'
       redirect_to :controller => 'resources', :controller => 'dashboard'
     end
-    render :layout => 'selection'    
+    render :layout => 'selection'
   end
 
   def add_to_smart_pool
@@ -41,7 +41,7 @@ class VmController < ApplicationController
   end
 
   def new
-    render :layout => 'popup'    
+    render :layout => 'popup'
   end
 
   def create
@@ -49,19 +49,19 @@ class VmController < ApplicationController
       Vm.transaction do
         @vm.save!
         _setup_vm_provision(params)
-        @task = VmTask.new({ :user    => @user,
-                             :vm_id   => @vm.id,
-                             :action  => VmTask::ACTION_CREATE_VM,
-                             :state   => Task::STATE_QUEUED})
+        @task = VmTask.new({ :user        => @user,
+                             :task_target => @vm,
+                             :action      => VmTask::ACTION_CREATE_VM,
+                             :state       => Task::STATE_QUEUED})
         @task.save!
       end
       start_now = params[:start_now]
       if (start_now)
         if @vm.get_action_list.include?(VmTask::ACTION_START_VM)
-          @task = VmTask.new({ :user    => @user,
-                               :vm_id   => @vm.id,
-                               :action  => VmTask::ACTION_START_VM,
-                               :state   => Task::STATE_QUEUED})
+          @task = VmTask.new({ :user        => @user,
+                               :task_target => @vm,
+                               :action      => VmTask::ACTION_START_VM,
+                               :state       => Task::STATE_QUEUED})
           @task.save!
           alert = "VM was successfully created. VM Start action queued."
         else
@@ -73,14 +73,14 @@ class VmController < ApplicationController
       render :json => { :object => "vm", :success => true, :alert => alert  }
     rescue Exception => error
       # FIXME: need to distinguish vm vs. task save errors (but should mostly be vm)
-      render :json => { :object => "vm", :success => false, 
+      render :json => { :object => "vm", :success => false,
                         :errors => @vm.errors.localize_error_messages.to_a }
     end
 
   end
 
   def edit
-    render :layout => 'popup'    
+    render :layout => 'popup'
   end
 
   def update
@@ -105,35 +105,35 @@ class VmController < ApplicationController
       _setup_vm_provision(params)
 
       if (params[:start_now] and @vm.get_action_list.include?(VmTask::ACTION_START_VM) )
-        @task = VmTask.new({ :user    => @user,
-                             :vm_id   => @vm.id,
-                             :action  => VmTask::ACTION_START_VM,
-                             :state   => Task::STATE_QUEUED})
+        @task = VmTask.new({ :user        => @user,
+                             :task_target => @vm,
+                             :action      => VmTask::ACTION_START_VM,
+                             :state       => Task::STATE_QUEUED})
         @task.save!
       elsif ( params[:restart_now] and @vm.get_action_list.include?(VmTask::ACTION_SHUTDOWN_VM) )
-        @task = VmTask.new({ :user    => @user,
-                             :vm_id   => @vm.id,
-                             :action  => VmTask::ACTION_SHUTDOWN_VM,
-                             :state   => Task::STATE_QUEUED})
+        @task = VmTask.new({ :user        => @user,
+                             :task_target => @vm,
+                             :action      => VmTask::ACTION_SHUTDOWN_VM,
+                             :state       => Task::STATE_QUEUED})
         @task.save!
         @task = VmTask.new({ :user    => @user,
-                             :vm_id   => @vm.id,
+                             :task_target => @vm,
                              :action  => VmTask::ACTION_START_VM,
                              :state   => Task::STATE_QUEUED})
         @task.save!
       end
 
 
-      render :json => { :object => "vm", :success => true, 
+      render :json => { :object => "vm", :success => true,
                         :alert => 'Vm was successfully updated.'  }
     rescue
       # FIXME: need to distinguish vm vs. task save errors (but should mostly be vm)
-      render :json => { :object => "vm", :success => false, 
+      render :json => { :object => "vm", :success => false,
                         :errors => @vm.errors.localize_error_messages.to_a }
     end
   end
 
-  #FIXME: we need permissions checks. user must have permission. Also state checks 
+  #FIXME: we need permissions checks. user must have permission. Also state checks
   def delete
     vm_ids_str = params[:vm_ids]
     vm_ids = vm_ids_str.split(",").collect {|x| x.to_i}
@@ -144,6 +144,7 @@ class VmController < ApplicationController
         vms = Vm.find(:all, :conditions => "id in (#{vm_ids.join(', ')})")
         vms.each do |vm|
           if vm.is_destroyable?
+            destroy_cobbler_system(vm)
             vm.destroy
           else
             failure_list << vm.description
@@ -166,11 +167,12 @@ class VmController < ApplicationController
   def destroy
     vm_resource_pool = @vm.vm_resource_pool_id
     if (@vm.is_destroyable?)
+      destroy_cobbler_system(@vm)
       @vm.destroy
-      render :json => { :object => "vm", :success => true, 
+      render :json => { :object => "vm", :success => true,
         :alert => "Virtual Machine was successfully deleted." }
     else
-      render :json => { :object => "vm", :success => false, 
+      render :json => { :object => "vm", :success => false,
         :alert => "Vm must be stopped to delete it." }
     end
   end
@@ -180,7 +182,7 @@ class VmController < ApplicationController
     vm_pool_id = params[:vm_pool_id]
     @vm = id ? Vm.find(id) : nil
     @vm_pool = vm_pool_id ? VmResourcePool.find(vm_pool_id) : nil
-      
+
     json_list(StorageVolume.find_for_vm(@vm, @vm_pool),
               [:id, :display_name, :size_in_gb, :get_type_label])
   end
@@ -302,9 +304,9 @@ class VmController < ApplicationController
     # random MAC
     mac = [ 0x00, 0x16, 0x3e, rand(0x7f), rand(0xff), rand(0xff) ]
     # random uuid
-    uuid = ["%02x" * 4, "%02x" * 2, "%02x" * 2, "%02x" * 2, "%02x" * 6].join("-") % 
+    uuid = ["%02x" * 4, "%02x" * 2, "%02x" * 2, "%02x" * 2, "%02x" * 6].join("-") %
       Array.new(16) {|x| rand(0xff) }
-    newargs = { 
+    newargs = {
       :vm_resource_pool_id => params[:vm_resource_pool_id],
       :vnic_mac_addr => mac.collect {|x| "%02x" % x}.join(":"),
       :uuid => uuid
@@ -348,5 +350,15 @@ class VmController < ApplicationController
   def pre_vm_action
     pre_edit
     authorize_user
+  end
+
+  private
+
+  def destroy_cobbler_system(vm)
+    # Destroy the Cobbler system first if it's defined
+    if vm.uses_cobbler?
+      system = Cobbler::System.find_one(vm.cobbler_system_name)
+      system.remove if system
+    end
   end
 end

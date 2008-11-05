@@ -264,6 +264,13 @@ class HostBrowser
             host.cpus << detail
          end
 
+        # Create a new network for the host
+        boot_type = BootType.find_by_proto('dhcp')
+        network_name = (host.uuid ? host.uuid : "") + ' Physical Network'
+        network = PhysicalNetwork.create(
+                               :name => network_name,
+                               :boot_type_id => boot_type.id)
+
         # Update the NIC details for this host:
         # -if the NIC exists, then update the IP address
         # -if the NIC does not exist, create it
@@ -284,9 +291,6 @@ class HostBrowser
                     updated_nic = Nic.find_by_id(nic.id)
 
                     updated_nic.bandwidth = detail['BANDWIDTH']
-                    updated_nic.ip_addr   = detail['IP_ADDRESS']
-                    updated_nic.netmask   = detail['NETMASK']
-                    updated_nic.broadcast = detail['BROADCAST']
 
                     updated_nic.save!
                     found=true
@@ -302,18 +306,13 @@ class HostBrowser
         end
 
         # iterate over any nics left and create new records for them.
-        boot_type = BootType.find_by_proto('dhcp')
-
         nic_info.collect do |nic|
             puts "Creating a new nic..."
             detail = Nic.new(
                 'mac'          => nic['MAC'].upcase,
                 'bandwidth'    => nic['BANDWIDTH'],
-                'usage_type'   => 1,
-                'ip_addr'      => nic['IP_ADDRESS'],
-                'netmask'      => nic['NETMASK'],
-                'broadcast'    => nic['BROADCAST'],
-                'boot_type_id' => boot_type.id)
+                'usage_type'   => 1)
+            detail.physical_network = network
 
             host.nics << detail
         end

@@ -23,8 +23,10 @@ class BondingTest < ActiveSupport::TestCase
   fixtures :bondings
   fixtures :bonding_types
   fixtures :bondings_nics
+  fixtures :boot_types
   fixtures :hosts
   fixtures :nics
+  fixtures :networks
 
   def setup
     @bonding = Bonding.new(
@@ -32,6 +34,7 @@ class BondingTest < ActiveSupport::TestCase
       :interface_name  => 'bond0',
       :bonding_type_id => bonding_types(:failover_bonding_type),
       :host_id         => hosts(:mailservers_managed_node))
+    @bonding.vlan = networks(:dhcp_vlan_one)
   end
 
   # Ensures that the name is required.

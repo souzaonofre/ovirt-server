@@ -1,0 +1,13 @@
+<%- content_for :title do -%>
+  Edit Network IP Addresses
+<%- end -%>
+<%- content_for :description do -%>
+<%- end -%>
+
+<%= render :partial => 'ip_addresses_form',
+           :locals  => { :parent_type => 'network',
+                         :parent_id   =>  @network.id } %>
+
+<div id="ip_addresses_footer" class="popup-content-footer">
+  <%= ok_footer %>
+</div>

@@ -39,8 +39,13 @@ class SmartPool < Pool
   end
 
   def add_item(item)
-    tag = SmartPoolTag.new(:smart_pool => self, :tagged => item)
-    tag.save!
+    begin
+      tag = SmartPoolTag.new(:smart_pool => self, :tagged => item)
+      tag.save!
+    rescue ActiveRecord::RecordInvalid
+      # this is thrown if the tagged item already belongs to the smart pool
+      # this operation should be a no-op rather than an error
+    end
   end
   def remove_item(item)
     smart_pool_tags.find(:first, :conditions=> {
@@ -67,4 +72,29 @@ class SmartPool < Pool
       end
   end
 
+  def self.smart_pools_for_user(user)
+    nested_pools = DirectoryPool.get_smart_root.full_set_nested(
+                       :privilege => Permission::PRIV_MODIFY, :user => user,
+                       :smart_pool_set => true)
+    user_pools = []
+    other_pools = []
+    nested_pools.each do |pool_element|
+      pool = pool_element[:obj]
+      if pool.hasChildren
+        if pool.name == user
+            pool_element[:children].each do |child_element|
+              child_pool = child_element[:obj]
+              user_pools <<[child_pool.name, child_pool.id]
+            end
+        else
+          pool_element[:children].each do |child_element|
+            child_pool = child_element[:obj]
+            other_pools << [pool.name + " > " + child_pool.name, child_pool.id]
+          end
+        end
+      end
+    end
+    user_pools[-1] << "break" unless user_pools.empty?
+    user_pools + other_pools
+  end
 end

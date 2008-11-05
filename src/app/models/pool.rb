@@ -89,7 +89,8 @@ class Pool < ActiveRecord::Base
   end
 
   acts_as_xapian :texts => [ :name ],
-                 :terms => [ [ :search_users, 'U', "search_users" ] ]
+                 :terms => [ [ :search_users, 'U', "search_users" ] ],
+                 :eager_load => :smart_pools
 
   # this method lists pools with direct permission grants, but by default does
   #  not include implied permissions (i.e. subtrees)
@@ -230,6 +231,7 @@ class Pool < ActiveRecord::Base
     method = opts.delete(:method) {:hash_element}
     privilege = opts.delete(:privilege)
     user = opts.delete(:user)
+    type = opts.delete(:type)
     smart_pool_set = opts.delete(:smart_pool_set)
     if privilege and user
       opts[:include] = "permissions"
@@ -241,6 +243,7 @@ class Pool < ActiveRecord::Base
     opts.delete(:order)
     subtree_list = full_set(opts)
     subtree_list -= [self] if smart_pool_set
+    subtree_list = Pool.send(type, subtree_list) if type
     return_tree_list = []
     ref_hash = {}
     subtree_list.each do |pool|
@@ -264,7 +267,10 @@ class Pool < ActiveRecord::Base
         end
       end
     end
-    ref_hash[current_id][:selected] = true if current_id
+#   FIXME: right now, we have inserted the pool id into the hash as an
+#   integer (database value type.  Rather than converting the current_id
+#   param to an integer, we may want to use a symbol for both identifiers
+    ref_hash[current_id.to_i][:selected] = true if current_id
     return_tree_list
   end
 

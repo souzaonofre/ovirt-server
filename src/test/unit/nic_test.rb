@@ -20,6 +20,7 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class NicTest < Test::Unit::TestCase
+  fixtures :ip_addresses
   fixtures :nics
 
   # Replace this with your real tests.

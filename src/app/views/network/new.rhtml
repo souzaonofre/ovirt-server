@@ -1,0 +1,28 @@
+<%- content_for :title do -%>
+  Add Network
+<%- end -%>
+<%- content_for :description do -%>
+<%- end -%>
+
+  <!-- DIALOG  BODY -->
+  <form method="POST" action="<%= url_for :action => 'create' %>" id="network_form" >
+  <div class="dialog_form">
+    <%= render :partial => 'form', :locals => { :create => true }  %>
+  </div>
+  <!-- DIALOG  FOOTER -->
+  <%= popup_footer("$('#network_form').submit()", "Add Network") %>
+  </form>
+
+<script type="text/javascript">
+$(function() {
+    var networkoptions = {
+        target:        '<%= url_for :action => 'create' %>',
+	dataType:      'json',
+        success:       afterNetwork  // post-submit callback
+    };
+
+    // bind form using 'ajaxForm'
+    $('#network_form').ajaxForm(networkoptions);
+});
+</script>
+

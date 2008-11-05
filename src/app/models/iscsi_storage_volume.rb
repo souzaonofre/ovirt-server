@@ -21,4 +21,10 @@ class IscsiStorageVolume < StorageVolume
   def label_components
     "#{storage_pool[:target]}:#{lun}"
   end
+
+  #FIXME: should also take available free space into account
+  def supports_lvm_subdivision
+    return true
+  end
+
 end

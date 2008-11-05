@@ -19,7 +19,7 @@
 
 class StoragePool < ActiveRecord::Base
   belongs_to              :hardware_pool
-  has_many :tasks, :class_name => "StorageTask", :dependent => :destroy, :order => "id DESC" do
+  has_many :tasks, :as => :task_target, :dependent => :destroy, :order => "id ASC" do
     def queued
       find(:all, :conditions=>{:state=>Task::STATE_QUEUED})
     end
@@ -28,19 +28,27 @@ class StoragePool < ActiveRecord::Base
     def total_size_in_gb
       find(:all).inject(0){ |sum, sv| sum + sv.size_in_gb }
     end
+    def full_vm_list
+      find(:all).inject([]){ |list, sv| list + sv.vms }
+    end
   end
 
   has_many :smart_pool_tags, :as => :tagged, :dependent => :destroy
   has_many :smart_pools, :through => :smart_pool_tags
 
-  validates_presence_of :ip_addr, :hardware_pool_id
+
+  validates_presence_of :hardware_pool_id
 
   acts_as_xapian :texts => [ :ip_addr, :target, :export_path, :type ],
-                 :terms => [ [ :search_users, 'U', "search_users" ] ]
+                 :terms => [ [ :search_users, 'U', "search_users" ] ],
+                 :eager_load => :smart_pools
   ISCSI = "iSCSI"
   NFS   = "NFS"
+  LVM   = "LVM"
   STORAGE_TYPES = { ISCSI => "Iscsi",
-                    NFS   => "Nfs" }
+                    NFS   => "Nfs",
+                    LVM   => "Lvm" }
+  STORAGE_TYPE_PICKLIST = STORAGE_TYPES.keys - [LVM]
 
   def self.factory(type, params = nil)
     case type
@@ -48,6 +56,8 @@ class StoragePool < ActiveRecord::Base
       return IscsiStoragePool.new(params)
     when NFS
       return NfsStoragePool.new(params)
+    when LVM
+      return LvmStoragePool.new(params)
     else
       return nil
     end
@@ -66,5 +76,29 @@ class StoragePool < ActiveRecord::Base
 
   def search_users
     hardware_pool.search_users
+  end
+
+  def user_subdividable
+    false
+  end
+
+  def storage_tree_element(vm_to_include=nil)
+    return_hash = { :id => id,
+      :type => self[:type],
+      :text => display_name,
+      :name => display_name,
+      :available => false,
+      :create_volume => user_subdividable,
+      :selected => false}
+    condition = "vms.id is null"
+    if (vm_to_include and vm_to_include.id)
+      condition +=" or vms.id=#{vm_to_include.id}"
+    end
+    return_hash[:children] = storage_volumes.find(:all,
+                               :include => :vms,
+                               :conditions => condition).collect do |volume|
+      volume.storage_tree_element(vm_to_include)
+    end
+    return_hash
   end
 end

@@ -6,21 +6,15 @@
 <%- end -%>
 
 <script type="text/javascript">
-      $(document).ready(function(){         
-        $("#move_tree").asynch_treeview({
-            //animated: "normal",
-            current_pool_id:  <%=@current_pool_id%>,
-            url: "<%=  url_for :controller =>'/hardware', :action => 'json_move_tree' %>",
-            current: "disabled",
-            hardware_url: "#",
-            resource_url: "#",
-            onclick: "move_<%= @resource_type %>",
-            action_type: "javascript"
-	    })
-	}); 
-  function move_<%= @resource_type %>(target_pool_id)
-  {
-    $.post('<%= url_for :controller => "hardware", :action => "move_#{@resource_type}", :id => @pool %>',
+      $(document).ready(function(){
+        $('#move_tree').tree({
+          content: {"pools" : <%=  @pools %>},
+          clickHandler: move_<%= @resource_type %>
+        });
+      });
+  function move_<%= @resource_type %>(e, elem) {
+    var target_pool_id = elem.id.substring(elem.id.indexOf('-') +1);
+    $.post('<%= url_for :controller => "hardware", :action => "move_#{@resource_type}", :id => @id %>',
            { resource_ids: get_selected_<%= @resource_type %>().toString(), 
 	     target_pool_id: target_pool_id },
             function(data,status){
@@ -37,24 +31,38 @@
 $('#move_to_new_pool').click(function(){
 		$('#window').fadeOut('fast'); 
         $("#window").empty().load("<%= url_for :controller => 'hardware', :action => 'new' %>",
-	{ parent_id: <%=@pool.id%>, 
+	{ parent_id: <%=@id%>,
 	  resource_ids: get_selected_<%= @resource_type %>().toString(),
           resource_type: '<%=@resource_type%>'});
 		$('#window').fadeIn('fast'); 
 });
 </script>
+<ul id="move_tree" class="ovirt-tree"></ul>
 
+<textarea id="tree_template" style="display:none;">
+{macro htmlList(list, optionalListType)}
+  {var listType = optionalListType != null ? optionalListType : "ul"}
+  <${listType} style="display:none;">
+    {for item in list}
+      <li>
+        <span class="hitarea {if item.children} expandable{/if}">&nbsp;</span><div id="move-${item.id}" class="${item.type} {if item.selected} unclickable{/if}">${item.name}</div>
+        {if item.children}
+          ${htmlList(item.children)}
+        {/if}
+      </li>
+    {/for}
+  </${listType}>
+{/macro}
 
-
-<div class="dialog_tree">
-  <ul id="move_tree" class="filetree treeview-famfamfam treeview"></ul>
-
-  <!--  <div style="clear:both;"></div>
-  <div style=" float:left; padding:0 0 0 5px;"><%= image_tag "icon_unassignedhost.gif" %></div>
-  <div style=" float:left; padding:5px 0 0 5px;">Unassigned Hosts</div>-->
-</div>
-
-
+{for item in pools}
+  <li>
+    <span class="hitarea {if item.children} expandable{/if}">&nbsp;</span><div id="move-${item.id}" class="${item.type} {if item.selected} unclickable{/if}">${item.name}</div>
+    {if item.children}
+      ${htmlList(item.children)}
+    {/if}
+  </li>
+{/for}
+</textarea>
 
 <div class="facebox_timfooter">
         <div class="button">

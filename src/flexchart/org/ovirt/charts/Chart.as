@@ -18,42 +18,24 @@
  also available at http://www.gnu.org/copyleft/gpl.html.
 */
 
-package org.ovirt {
+package org.ovirt.charts {
 
-  import mx.containers.Box;
-  import mx.containers.HBox;
-  import mx.controls.Text;
+  public class Chart {
 
-  public class ChartLoader {
+    import org.ovirt.DataSource;
+    import mx.containers.Box;
+    import org.ovirt.data.DataSeries;
 
-    private var element:Box;
-    private var datasourceUrl:String;
+    protected var container:Box;
+    protected var datasourceUrl:String;
 
-    public function ChartLoader(element:Box, datasourceUrl:String) {
-      this.element = element;
+    public function Chart(container:Box, datasourceUrl:String) {
+      this.container = container;
       this.datasourceUrl = datasourceUrl;
     }
 
     public function addData(dataSeries:DataSeries):void {
-      var points:Array = dataSeries.getPoints();
-      var maxValue:Number = dataSeries.getMaxValue();
-      var scale:Number = maxValue;
-      if (scale == 0) { scale = 1; }
-      var size:int = points.length;
-      element.removeAllChildren();
-      element.setStyle("horizontalGap","2");
-      for (var i:int = 0; i < size; i++) {
-        var value:Number = (points[i] as Array)[1];
-        var bar:HBox = new HBox();
-        bar.percentHeight = ((value / scale) * 90);
-        bar.percentWidth = (100 / size);
-        bar.setStyle("backgroundColor","0x0000FF");
-        bar.setStyle("left","1");
-        bar.setStyle("right","1");
-        bar.visible = true;
-        bar.setVisible(true);
-        element.addChild(bar);
-      }
+      //override me!
     }
 
     public function load():void {

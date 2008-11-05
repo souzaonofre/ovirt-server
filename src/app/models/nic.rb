@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -19,7 +19,22 @@
 
 class Nic < ActiveRecord::Base
   belongs_to :host
-  belongs_to :boot_type
+  belongs_to :physical_network
+  has_many :ip_addresses, :dependent => :destroy
 
-  has_and_belongs_to_many :bonding, :join_table => 'bondings_nics'
+  has_and_belongs_to_many :bondings, :join_table => 'bondings_nics'
+
+  validates_presence_of :host_id,
+    :message => 'A host must be specified.'
+
+  validates_presence_of :physical_network_id,
+    :message => 'A network must be specified.'
+
+  protected
+   def validate
+    if physical_network.boot_type.proto == 'static' and ip_addresses.size == 0
+           errors.add("physical_network_id",
+                      "is static. Must create at least one static ip")
+     end
+   end
 end

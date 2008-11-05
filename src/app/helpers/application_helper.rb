@@ -84,21 +84,31 @@ module ApplicationHelper
      }
   end
 
-  def popup_footer(action, label)
-    %{ 
-      <div style="background: url(#{image_path "fb_footer.jpg"}) repeat-x; height: 37px; text-align:right; padding: 9px 9px 0 0;">
+  # expects hash of labels => actions
+  def multi_button_popup_footer(buttons = {})
+      buttons_html = ""
+      buttons.each{ |label, action|
+       buttons_html+="<div class=\"button\">" +
+                     " <div class=\"button_left_blue\"></div>" +
+                     " <div class=\"button_middle_blue\"><a href=\"#\" onclick=\"#{action}\">#{label}</a></div>" +
+                     " <div class=\"button_right_blue\"></div>" +
+                     "</div>"
+      }
+
+   %{
+      <div style="background: url(#{image_path "fb_footer.jpg"}) repeat-x; height: 37px; text-align:right; padding: 9px 9px 0 0; float: left; width: 97%;">
         <div class="button">
           <div class="button_left_grey"></div>
           <div class="button_middle_grey"><a href="#" onclick="$(document).trigger('close.facebox')">Cancel</a></div>
           <div class="button_right_grey"></div>
         </div>
-        <div class="button">
-          <div class="button_left_blue"></div>
-          <div class="button_middle_blue"><a href="#" onclick="#{action}">#{label}</a></div>
-          <div class="button_right_blue"></div>
-        </div> 
+        #{buttons_html}
       </div>
-     }
+    }
+  end
+
+  def popup_footer(action, label)
+    multi_button_popup_footer({label => action})
   end
 
   def ok_footer

@@ -1,0 +1,62 @@
+<%= error_messages_for 'ip_address' %>
+
+<div id="selected_popup_content_expanded" class="dialog_form">
+ <%= hidden_field_tag 'parent_type', @parent_type%>
+ <%= hidden_field_tag 'ip_address[id]', @ip_address.id if @ip_address%>
+ <%= hidden_field_tag 'ip_address[network_id]', @network.id if @network %>
+ <%= hidden_field_tag 'ip_address[nic_id]', @nic.id if @nic %>
+ <%= hidden_field_tag 'ip_address[bonding_id]', @bonding.id if @bonding %>
+
+   <div class="selected_nic_bonding_left">Type:</div>
+   <div class="selected_nic_bonding_right">
+       <%= select_with_label "", "ip_address", "type",
+                          [[ "ipv4", "IpV4Address" ], [ "ipv6", "IpV6Address" ] ]  %>
+   </div>
+
+
+   <div class="static_ip_common_options">
+     <div class="selected_nic_bonding_left">IP Address</div>
+     <div class="selected_nic_bonding_right">
+       <%= text_field_with_label "", "ip_address", "address" %>
+     </div>
+   </div>
+
+   <div id="static_ip_v4_options">
+     <div class="selected_nic_bonding_left">Netmask</div>
+     <div class="selected_nic_bonding_right">
+        <%= text_field_with_label "", "ip_address", "netmask" %>
+     </div>
+
+     <div class="selected_nic_bonding_left">Broadcast</div>
+     <div class="selected_nic_bonding_right">
+         <%= text_field_with_label "", "ip_address", "broadcast" %>
+     </div>
+  </div>
+
+  <div id="static_ip_v6_options" style="display: none;">
+     <div class="selected_nic_bonding_left">Prefix</div>
+     <div class="selected_nic_bonding_right">
+         <%= text_field_with_label "", "ip_address", "prefix" %>
+     </div>
+  </div>
+
+  <div class="static_ip_common_options">
+     <div class="selected_nic_bonding_left">Gateway</div>
+     <div class="selected_nic_bonding_right">
+         <%= text_field_with_label "", "ip_address", "gateway" %>
+     </div>
+  </div>
+
+</div>
+
+<script type="text/javascript">
+  $("#ip_address_type").change(function () {
+    if($("#ip_address_type").val() == 'IpV4Address'){
+        $("#static_ip_v4_options").show();
+        $("#static_ip_v6_options").hide();
+    }else{
+        $("#static_ip_v4_options").hide();
+        $("#static_ip_v6_options").show();
+    }
+  }).trigger('change');
+</script>

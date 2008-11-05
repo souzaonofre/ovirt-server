@@ -21,7 +21,12 @@
     background-repeat: no-repeat;
     background-position: left;
     padding: 4px 0 4px 28px;
-    cursor: pointer;
+    cursor: pointer; /* maybe move this into a clickable class? */
+}
+
+.unclickable {
+    color: grey;
+    cursor: default !important;
 }
 
 .HardwarePool {
