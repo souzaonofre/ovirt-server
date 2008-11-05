@@ -1,7 +1,6 @@
-#!/usr/bin/ruby
 #
 # Copyright (C) 2008 Red Hat, Inc.
-# Written by Scott Seago <sseago@redhat.com>
+# Written by Jason Guiditta <jguiditt@redhat.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,22 +17,15 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
-$: << File.join(File.dirname(__FILE__), "../app")
-#$: << File.join(File.dirname(__FILE__), "../vendor/plugins/betternestedset/lib")
+require File.dirname(__FILE__) + '/../test_helper'
+require File.dirname(__FILE__) + '/../../dutils/active_record_env'
 
-require 'rubygems'
+class ActiveRecordEnvTest < Test::Unit::TestCase
+  fixtures :pools, :storage_pools, :hosts, :cpus, :vms, :tasks
 
-$LOAD_PATH << File.expand_path(File.dirname(__FILE__))
-
-ENV['RAILS_ENV'] = 'production' || ENV['RAILS_ENV']
-
-require File.dirname(__FILE__) + '/../config/boot'
-require "#{RAILS_ROOT}/config/environment"
-
-def database_connect(environment)
-  conf = YAML::load(File.open(File.dirname(__FILE__) + '/../config/database.yml'))
-  ActiveRecord::Base.establish_connection(conf[environment])
+  def test_can_find_hosts
+    database_connect(ENV["RAILS_ENV"])
+    hosts = Host.find(:all, :limit => 2)
+    assert_not_nil hosts, 'you have no hosts list!'
+  end
 end
-
-# Open ActiveRecord connection
-database_connect(ENV['RAILS_ENV'])
