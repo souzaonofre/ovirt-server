@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -18,8 +18,20 @@
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
 require File.dirname(__FILE__) + '/../test_helper'
+require 'resources_controller'
+
+# Re-raise errors caught by the controller.
+class ResourcesController; def rescue_action(e) raise e end; end
 
 class ResourcesControllerTest < ActionController::TestCase
+  fixtures :permissions, :pools
+
+  def setup
+    @controller = ResourcesController.new
+    @request    = ActionController::TestRequest.new
+    @response   = ActionController::TestResponse.new
+  end
+
   def test_index
     get :index
     assert_response :success
@@ -27,45 +39,39 @@ class ResourcesControllerTest < ActionController::TestCase
   end
 
   def test_new
-    get :new, :parent_id => 1
+    get :new, :parent_id => pools(:default).id
     assert_response :success
   end
 
   def test_create
     assert_difference('VmResourcePool.count') do
-      post :create, :vm_resource_pool => { :name => 'foo_resource_pool' }, :parent_id => 1
+      post :create, :vm_resource_pool => { :name => 'foo_resource_pool' }, :parent_id => pools(:default).id
     end
 
     assert_response :success
   end
 
   def test_show
-    get :show, :id => 2
+    get :show, :id => pools(:corp_com_production_vmpool).id
     assert_response :success
   end
 
-  def test_get
-    get :edit, :id => 2
+  def test_edit
+    get :edit, :id => pools(:corp_com_production_vmpool).id
     assert_response :success
   end
 
   def test_update
-    put :update, :id => 2, :vm_resource_pool => { }
+    put :update, :id => pools(:corp_com_production_vmpool).id, :vm_resource_pool => { }
     assert_response :redirect
     assert_redirected_to :action => 'list'
   end
 
-  def test_destroy
-    pool = nil
-    assert_nothing_raised {
-        pool = VmResourcePool.find(10).parent.id
-    }
-
-    post :destroy, :id => 10
+  def test_destroy_valid_pool
+    post :destroy, :id => pools(:corp_com_production_vmpool).id
     assert_response :success
-
-    assert_raise(ActiveRecord::RecordNotFound) {
-      VmResourcePool.find(10)
-    }
+    json = ActiveSupport::JSON.decode(@response.body)
+    assert_equal 'Virtual Machine Pool was successfully deleted.', json['alert']
   end
+
 end

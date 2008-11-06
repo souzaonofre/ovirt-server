@@ -24,18 +24,19 @@ require 'vm_controller'
 class VmController; def rescue_action(e) raise e end; end
 
 class VmControllerTest < Test::Unit::TestCase
-  fixtures :vms
+  fixtures :permissions, :pools, :vms
 
   def setup
     @controller = VmController.new
     @request    = ActionController::TestRequest.new
     @response   = ActionController::TestResponse.new
 
-    @first_id = vms(:one).id
+    @vm_id = vms(:production_httpd_vm).id
+    @default_pool = pools(:default)
   end
 
   def test_show
-    get :show, :id => @first_id
+    get :show, :id => @vm_id
 
     assert_response :success
     assert_template 'show'
@@ -45,7 +46,7 @@ class VmControllerTest < Test::Unit::TestCase
   end
 
   def test_new
-    get :new, :hardware_pool_id => 1
+    get :new, :hardware_pool_id => @default_pool.id
 
     assert_response :redirect
     assert_redirected_to :controller => 'resources', :action => 'show'
@@ -56,7 +57,14 @@ class VmControllerTest < Test::Unit::TestCase
   def test_create
     num_vms = Vm.count
 
-    post :create, :vm_resource_pool_name => 'foobar', :hardware_pool_id => 1, :vm => { :uuid => 'f43b298c-1e65-46fa-965f-0f6fb9ffaa10', :description =>     'descript', :num_vcpus_allocated => 4, :memory_allocated => 262144, :vnic_mac_addr => 'AA:BB:CC:DD:EE:FF', :boot_device => 'network' }
+    post :create, :vm_resource_pool_name => 'foobar',
+      :hardware_pool_id => @default_pool.id,
+      :vm => { :uuid => 'f43b298c-1e65-46fa-965f-0f6fb9ffaa10',
+                :description =>     'descript',
+                :num_vcpus_allocated => 4,
+                :memory_allocated => 262144,
+                :vnic_mac_addr => 'AA:BB:CC:DD:EE:FF',
+                :boot_device => 'network' }
 
     assert_response :success
 
@@ -64,31 +72,30 @@ class VmControllerTest < Test::Unit::TestCase
   end
 
   def test_edit
-    get :edit, :id => @first_id
+    get :edit, :id => @vm_id
 
     assert_response :success
     assert_template 'edit'
 
     assert_not_nil assigns(:vm)
-    assert assigns(:vm).valid?
+    assert assigns(:vm).valid?, assigns(:vm).errors.inspect
   end
 
   def test_update
-    post :update, :id => @first_id, :vm => {}
+    post :update, :id => @vm_id, :vm => {}
     assert_response :success
   end
 
   def test_destroy
-    pool = nil
-    assert_nothing_raised {
-      pool = Vm.find(@first_id).vm_resource_pool_id
-    }
-
-    post :destroy, :id => @first_id
+    assert_difference 'Vm.count', -1 do
+      post :destroy, :id => @vm_id
+    end
     assert_response :success
+    json = ActiveSupport::JSON.decode(@response.body)
+    assert_equal 'Virtual Machine was successfully deleted.', json['alert']
+  end
 
-    assert_raise(ActiveRecord::RecordNotFound) {
-      Vm.find(@first_id)
-    }
+  def test_not_destroyed
+    assert true
   end
 end

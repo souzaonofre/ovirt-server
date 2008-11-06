@@ -22,8 +22,7 @@ require File.dirname(__FILE__) + '/../test_helper'
 class StoragePoolTest < Test::Unit::TestCase
   fixtures :storage_pools
 
-  # Replace this with your real tests.
-  def test_truth
-    assert true
+  def test_hardware_pool_relationship
+    assert_equal 'corp.com', storage_pools(:corp_com_ovirtpriv_storage).hardware_pool.name
   end
 end

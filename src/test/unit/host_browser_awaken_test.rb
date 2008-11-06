@@ -22,8 +22,7 @@ $: << File.join(File.dirname(__FILE__), "../../dutils")
 $: << File.join(File.dirname(__FILE__), "../../host-browser")
 
 require File.dirname(__FILE__) + '/../test_helper'
-require 'test/unit'
-require 'flexmock/test_unit'
+require 'flexmock/test_unit' #probably should move this into test_helper
 
 TESTING=true
 

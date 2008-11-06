@@ -24,14 +24,14 @@ require 'nic_controller'
 class NicController; def rescue_action(e) raise e end; end
 
 class NicControllerTest < Test::Unit::TestCase
-  fixtures :nics, :permissions
+  fixtures :permissions, :pools, :nics
 
   def setup
     @controller = NicController.new
     @request    = ActionController::TestRequest.new
     @response   = ActionController::TestResponse.new
 
-    @first_id = nics(:nic_one).id
+    @first_id = nics(:fileserver_nic_one).id
   end
 
   def test_show
@@ -45,10 +45,10 @@ class NicControllerTest < Test::Unit::TestCase
   end
 
   def test_new
-    get :new, :host_id => 1
+    get :new, :host_id => pools(:default).id
 
     assert_response :redirect
-    assert_redirected_to :controller => 'host', :action => 'show', :id => 1
+    assert_redirected_to :controller => 'host', :action => 'show', :id => pools(:default).id
 
   end
 end

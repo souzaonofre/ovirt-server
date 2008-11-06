@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -23,7 +23,13 @@ class PermissionTest < Test::Unit::TestCase
   fixtures :permissions
 
   # Replace this with your real tests.
-  def test_truth
-    assert true
+  def test_simple_permission
+    assert_equal permissions(:ovirtadmin_root).user_role, 'Super Admin'
+    assert_equal permissions(:ovirtadmin_root).pool.name, 'root'
+  end
+
+  def test_permission_with_parent
+    assert_equal permissions(:ovirtadmin_default).inherited_from_id, permissions(:ovirtadmin_root).id
+    assert_equal permissions(:ovirtadmin_default).parent_permission, permissions(:ovirtadmin_root)
   end
 end

@@ -1,4 +1,4 @@
- 
+
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -24,18 +24,18 @@ require 'permission_controller'
 class PermissionController; def rescue_action(e) raise e end; end
 
 class PermissionControllerTest < Test::Unit::TestCase
-  fixtures :permissions
+  fixtures :permissions, :pools
 
   def setup
     @controller = PermissionController.new
     @request    = ActionController::TestRequest.new
     @response   = ActionController::TestResponse.new
 
-    @first_id = permissions(:one).id
+    @permission_id = permissions(:ovirtadmin_default).id
   end
 
   def test_show
-    get :show, :id => @first_id
+    get :show, :id => @permission_id
 
     assert_response :success
     assert_template 'show'
@@ -45,7 +45,7 @@ class PermissionControllerTest < Test::Unit::TestCase
   end
 
   def test_new
-    get :new, :pool_id => 1
+    get :new, :pool_id => pools(:default).id
 
     assert_response :success
     assert_template 'new'
@@ -55,26 +55,32 @@ class PermissionControllerTest < Test::Unit::TestCase
 
   def test_create
     num_permissions = Permission.count
-
-    post :create, :permission => { :user_role => 'Administrator', :uid => 'admin', :pool_id => 2}
-
+    post :create, :permission => { :user_role => 'Administrator',
+                                    :uid => 'admin',
+                                    :pool_id => pools(:corp_com_production_vmpool).id}
     assert_response :success
-
     assert_equal num_permissions + 1, Permission.count
   end
 
   def test_destroy
-    assert_nothing_raised {
-      Permission.find(@first_id)
-    }
-
-    post :destroy, :id => @first_id
+    post :destroy, :id => @permission_id
     assert_response :redirect
-    assert_redirected_to :controller => 'hardware', :action => 'show', :id => 1
+    assert_redirected_to :controller => 'hardware', :action => 'show', :id => pools(:default).id
+    assert_equal "<strong>ovirtadmin</strong> permissions were revoked successfully" , flash[:notice]
+  end
 
+  def test_no_perms_to_destroy
+    post :destroy, :id => permissions(:ovirtadmin_corp_com_qa_pool).id
+    assert_response :redirect
+    assert_redirected_to :controller => 'hardware', :action => 'show', :id => pools(:corp_com_qa).id
+    assert_equal "You do not have permission to delete this permission record" , flash[:notice]
+  end
 
-    assert_raise(ActiveRecord::RecordNotFound) {
-      Permission.find(@first_id)
-    }
+  #FIXME: write the code to make this a real test!
+  def test_bad_id_on_destroy
+#    post :destroy, :id => bad_id
+#    assert_response :success
+#    The controller needs to gracefully handle ActiveRecord::RecordNotFound,
+#    which it does not right now.
   end
 end

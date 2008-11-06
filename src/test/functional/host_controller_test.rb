@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -31,7 +31,7 @@ class HostControllerTest < Test::Unit::TestCase
     @request    = ActionController::TestRequest.new
     @response   = ActionController::TestResponse.new
 
-    @first_id = hosts(:one).id
+    @host_id = hosts(:prod_corp_com).id
   end
 
   def test_index
@@ -50,7 +50,7 @@ class HostControllerTest < Test::Unit::TestCase
   end
 
   def test_show
-    get :show, :id => @first_id
+    get :show, :id => @host_id
 
     assert_response :success
     assert_template 'show'
@@ -60,10 +60,10 @@ class HostControllerTest < Test::Unit::TestCase
   end
 
   def test_new
-    get :new, :hardware_pool_id => 1
+    get :new, :hardware_pool_id => pools(:default).id
 
     assert_response :redirect
-    assert_redirected_to :controller => 'hardware', :action => 'show', :id => 1
+    assert_redirected_to :controller => 'hardware', :action => 'show', :id => pools(:default).id
   end
 
   def test_create
@@ -78,32 +78,32 @@ class HostControllerTest < Test::Unit::TestCase
   end
 
   def test_edit
-    get :edit, :id => @first_id
+    get :edit, :id => @host_id
 
     assert_response :redirect
-    assert_redirected_to :action => 'show', :id => @first_id
+    assert_redirected_to :action => 'show', :id => @host_id
 
     assert_not_nil assigns(:host)
     assert assigns(:host).valid?
   end
 
   def test_update
-    post :update, :id => @first_id
+    post :update, :id => @host_id
     assert_response :redirect
-    assert_redirected_to :action => 'show', :id => @first_id
+    assert_redirected_to :action => 'show', :id => @host_id
   end
 
   def test_destroy
-    assert_nothing_raised {
-      Host.find(@first_id)
-    }
-
-    post :destroy, :id => @first_id
+    #FIXME: this controller method does nothing, do we even need it or a test?
+    post :destroy, :id => @host_id
     assert_response :redirect
-    assert_redirected_to :action => 'show', :id => @first_id
+    assert_redirected_to :action => 'show', :id => @host_id
+  end
 
-    assert_nothing_raised {
-      Host.find(@first_id)
-    }
+  def test_disable_host
+    post :host_action, :action_type => 'disable', :id => @host_id
+    assert_response :success
+    json = ActiveSupport::JSON.decode(@response.body)
+    assert_equal 'Host was successfully disabled', json['alert']
   end
 end

@@ -21,11 +21,19 @@ require File.dirname(__FILE__) + '/../test_helper'
 require File.dirname(__FILE__) + '/../../dutils/active_record_env'
 
 class ActiveRecordEnvTest < Test::Unit::TestCase
-  fixtures :pools, :storage_pools, :hosts, :cpus, :vms, :tasks
+  fixtures :pools, :hosts, :vms, :boot_types,
+    :networks, :nics, :ip_addresses, :permissions, :quotas,
+    :storage_pools, :storage_volumes, :tasks
 
   def test_can_find_hosts
     database_connect
     hosts = Host.find(:all, :limit => 2)
     assert_not_nil hosts, 'you have no hosts list!'
   end
+
+#  def test_can_get_nested_set
+#    pools = HardwarePool.get_default_pool.full_set_nested(:method => :json_hash_element,
+#                       :privilege => Permission::PRIV_VIEW, :user => get_login_user)
+#    flunk 'pools contains: ' << pools.inspect
+#  end
 end
