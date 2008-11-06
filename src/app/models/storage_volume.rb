@@ -32,7 +32,12 @@ class StorageVolume < ActiveRecord::Base
     end
   end
 
-  def self.factory(type, params = nil)
+  STATE_PENDING_SETUP    = "pending_setup"
+  STATE_PENDING_DELETION = "pending_deletion"
+  STATE_AVAILABLE        = "available"
+
+  def self.factory(type, params = {})
+    params[:state] = STATE_PENDING_SETUP unless params[:state]
     case type
     when StoragePool::ISCSI
       return IscsiStorageVolume.new(params)
@@ -75,7 +80,10 @@ class StorageVolume < ActiveRecord::Base
     return false
   end
 
-  def storage_tree_element(vm_to_include=nil)
+  def storage_tree_element(params = {})
+    vm_to_include=params.fetch(:vm_to_include, nil)
+    filter_unavailable = params.fetch(:filter_unavailable, true)
+    include_used = params.fetch(:include_used, false)
     vm_ids = vms.collect {|vm| vm.id}
     return_hash = { :id => id,
       :type => self[:type],
@@ -92,14 +100,25 @@ class StorageVolume < ActiveRecord::Base
       if return_hash[:available]
         return_hash[:available] = lvm_storage_pool.storage_volumes.full_vm_list.empty?
       end
-      condition = "vms.id is null"
-      if (vm_to_include and vm_to_include.id)
-        condition +=" or vms.id=#{vm_to_include.id}"
+      conditions = nil
+      unless include_used
+        conditions = "vms.id is null"
+        if (vm_to_include and vm_to_include.id)
+          conditions +=" or vms.id=#{vm_to_include.id}"
+        end
+      end
+      if filter_unavailable
+        availability_conditions = "storage_volumes.state = '#{StoragePool::STATE_AVAILABLE}'"
+        if conditions.nil?
+          conditions = availability_conditions
+        else
+          conditions ="(#{conditions}) and (#{availability_conditions})"
+        end
       end
       return_hash[:children] = lvm_storage_pool.storage_volumes.find(:all,
                                :include => :vms,
-                               :conditions => condition).collect do |volume|
-        volume.storage_tree_element(vm_to_include)
+                               :conditions => conditions).collect do |volume|
+        volume.storage_tree_element(params)
       end
     else
       return_hash[:children] = []

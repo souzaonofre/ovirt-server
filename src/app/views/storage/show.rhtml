@@ -26,6 +26,7 @@
           Export path:<br/>
         <% end %>
         Type:<br/>
+        State:<br/>
     </div>
     <div class="selection_value">
         <%=h @storage_pool.ip_addr %><br/>
@@ -36,6 +37,7 @@
           <%=h @storage_pool.export_path %><br/>
         <% end %>
         <%=h @storage_pool.get_type_label %><br/>
+        <%=h @storage_pool.state %><br/>
     </div>
 <%- content_for :right do -%>
   <div class="selection_right_title">Volumes</div>

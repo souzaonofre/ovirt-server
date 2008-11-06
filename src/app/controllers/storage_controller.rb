@@ -442,9 +442,9 @@ class StorageController < ApplicationController
         vm_list = volume.vms.collect {|vm| vm.description}.join(", ")
         ["Storage Volume #{name} must be unattached from VMs (#{vm_list}) before deleting it.",
          false]
-        #FIXME: create delete volume task. include metadata in task
       else
-        #FIXME: need to set volume to 'unavailable' state once we have states
+        volume.state=StorageVolume::STATE_PENDING_DELETION
+        volume.save!
         @task = StorageVolumeTask.new({ :user        => @user,
                               :task_target => volume,
                               :action      => StorageVolumeTask::ACTION_DELETE_VOLUME,

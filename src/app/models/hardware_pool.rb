@@ -101,10 +101,21 @@ class HardwarePool < Pool
     return {:total => total, :labels => labels}
   end
 
-  def storage_tree(vm_to_include=nil)
+  # params accepted:
+  # :vm_to_include - if specified, storage used by this VM is included in the tree
+  # :filter_unavailable - if true, don't include Storage not currently available
+  # :include_used - include all storage pools/volumes, even those in use
+  def storage_tree(params = {})
+    vm_to_include=params.fetch(:vm_to_include, nil)
+    filter_unavailable = params.fetch(:filter_unavailable, true)
+    include_used = params.fetch(:include_used, false)
+    conditions = "type != 'LvmStoragePool'"
+    if filter_unavailable
+      conditions = "(#{conditions}) and (storage_pools.state = '#{StoragePool::STATE_AVAILABLE}')"
+    end
     storage_pools.find(:all,
-                    :conditions => "type != 'LvmStoragePool'").collect do |pool|
-      pool.storage_tree_element(vm_to_include)
+                    :conditions => conditions).collect do |pool|
+      pool.storage_tree_element(params)
     end
   end
 end

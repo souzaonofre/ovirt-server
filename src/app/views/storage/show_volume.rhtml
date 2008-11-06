@@ -28,6 +28,7 @@
       Export path:<br/>
     <% end %>
     Type:<br/>
+    State:<br/>
     Path:<br/>
     <% if @storage_volume[:type] == "IscsiStorageVolume" %>
       LUN:<br/>
@@ -45,6 +46,7 @@
       <%=h @storage_volume.storage_pool.export_path %><br/>
     <% end %>
     <%=h @storage_volume.storage_pool.get_type_label %><br/>
+    <%=h @storage_volume.state %><br/>
     <%=h @storage_volume.path %><br/>
     <% if @storage_volume[:type] == "IscsiStorageVolume" %>
       <%=h @storage_volume.lun %><br/>

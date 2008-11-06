@@ -6,6 +6,7 @@ one:
   path: '/tmp/foobar'
   storage_pool_id: 1
   type: 'IscsiStorageVolume'
+  state: 'available'
 two:
   id: 2
   size: '20485760'
@@ -13,6 +14,7 @@ two:
   storage_pool_id: 2
   type: 'NfsStorageVolume'
   filename: 'secretstuff'
+  state: 'available'
 three:
   id: 3
   lun: 'abcd'
@@ -20,21 +22,25 @@ three:
   path: 
   storage_pool_id: 1
   type: 'IscsiStorageVolume'
+  state: 'available'
 four:
   id: 4
   lun: '49723e4d-32e6-469e-8019-913a3dc1bb5d'
   size: '01223542'
   storage_pool_id: 4
   type: 'IscsiStorageVolume'
+  state: 'available'
 five:
   id: 5
   size: '42424242'
   storage_pool_id: 2
   type: 'NfsStorageVolume'
   filename: 'foobar'
+  state: 'available'
 six:
   id: 6
   size: '007007'
   storage_pool_id: 6
   type: 'NfsStorageVolume'
   filename: 'barfoo'
+  state: 'available'
