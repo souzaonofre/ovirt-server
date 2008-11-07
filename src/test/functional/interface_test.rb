@@ -35,7 +35,7 @@ if File.exists? File.dirname(__FILE__) + '/../selenium.rb'
                         @site_url,
 		          15000)
         @browser.start
-        #@browser.set_speed(1500) # ms delay between operations
+        @browser.set_speed(50) # ms delay between operations
         @browser.open(@site_url)
      end
 
@@ -48,31 +48,32 @@ if File.exists? File.dirname(__FILE__) + '/../selenium.rb'
         assert_equal("Dashboard", @browser.get_title())
      end
 
-	 def test_view_pool
-         @browser.open("http://192.168.50.2/ovirt/")
-         @browser.wait_for_condition(
-              "selenium.isElementPresent(\"//div[@id='side']/ul/li/span/a\")",
-              10000)
-         @browser.click(
-              "//div[@id='side']/ul/li/span/a")  # click 'default pool' link
-         @browser.wait_for_condition(
-              "selenium.isElementPresent(\"//div[@class='summary_title']\")",
-               10000)
+     def test_view_pool
+      @browser.open("http://192.168.50.2/ovirt/")
+      @browser.wait_for_condition(
+            "selenium.isElementPresent(\"//ul[@id='nav_tree']/li/div\")",
+            10000)
+      @browser.click(
+            "//ul[@id='nav_tree']/li/div")  # click 'default pool' link
+      @browser.wait_for_condition(
+           "selenium.isElementPresent(\"//div[@class='summary_title']\")",
+            10000)
 
-         # verify the title of the pool
-	     assert_equal("default",
-                      @browser.get_text("//div[@class='summary_title']"))
-	 end
+      # verify the title of the pool
+      assert_equal("default",
+                  @browser.get_text("//div[@class='summary_title']"))
+     end
 
      def test_create_start_stop_vm
+        pool_link="//ul[@id='nav_tree']/li/ul/li[1]/div"
         @browser.open("http://192.168.50.2/ovirt/")
         @browser.wait_for_condition(
-              "selenium.isElementPresent(\"//div[@id='side']/ul/li/ul/li[1]/span/a\")",
+              "selenium.isElementPresent(\""+ pool_link +"\")",
                10000)
         # click on 'foobar' vm resource pool  link:
-        @browser.click "//div[@id='side']/ul/li/ul/li[1]/span/a"
+        @browser.click pool_link
         @browser.wait_for_condition(
-              "selenium.isElementPresent(\"//li[@id='nav_vmpool']/a\")",
+             "selenium.isElementPresent(\"//li[@id='nav_vmpool']/a\")",
               10000)
         # click on virtual machines tab
         @browser.click "//li[@id='nav_vmpool']/a"
@@ -115,7 +116,12 @@ if File.exists? File.dirname(__FILE__) + '/../selenium.rb'
               10000)
         @browser.click "//div[@id='vm_action_results']/div[3]/div/div[2]/a"
         sleep 5 # give vm time to start
-        @browser.click "//div[@id='side']/ul/li/ul/li[1]/span/a"
+        @browser.click pool_link
+        @browser.wait_for_condition(
+             "selenium.isElementPresent(\"//li[@id='nav_vmpool']/a\")",
+              10000)
+        # click on virtual machines tab
+        @browser.click "//li[@id='nav_vmpool']/a"
         @browser.wait_for_condition(
              "selenium.isElementPresent(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") && " +
              "selenium.getText(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") == \"running\"",
@@ -131,7 +137,7 @@ if File.exists? File.dirname(__FILE__) + '/../selenium.rb'
               10000)
         @browser.click "//div[@id='vm_action_results']/div[3]/div/div[2]/a"
         sleep 5 # give vm time to stop
-        @browser.click "//div[@id='side']/ul/li/ul/li[1]/span/a"
+        @browser.click pool_link
         @browser.wait_for_condition(
              "selenium.isElementPresent(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") && " +
              "selenium.getText(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") == \"stopped\"",
