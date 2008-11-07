@@ -121,7 +121,7 @@ loop do
 
     task.state = state
     task.time_ended = Time.now
-    task.save
+    task.save!
   end
   
   # we could destroy credentials, but another process might be using them (in

@@ -197,7 +197,7 @@ end
 
 def setVmState(vm, state)
   vm.state = state
-  vm.save
+  vm.save!
 end
 
 def setVmVncPort(vm, domain)
@@ -206,7 +206,7 @@ def setVmVncPort(vm, domain)
   if not attrib.empty?:
     vm.vnc_port = attrib.to_s.to_i
   end
-  vm.save
+  vm.save!
 end
 
 def findVM(task, fail_on_nil_host_id = true)
@@ -241,7 +241,7 @@ def setVmShutdown(vm)
   vm.state = Vm::STATE_STOPPED
   vm.needs_restart = nil
   vm.vnc_port = nil
-  vm.save
+  vm.save!
 end
 
 def create_vm(task)
@@ -424,7 +424,7 @@ def start_vm(task)
   vm.memory_used = vm.memory_allocated
   vm.num_vcpus_used = vm.num_vcpus_allocated
   vm.boot_device = Vm::BOOT_DEV_HD
-  vm.save
+  vm.save!
 end
 
 def save_vm(task)
@@ -601,7 +601,7 @@ def update_state_vm(task)
     if task_effective_state == Vm::STATE_STOPPED
       setVmShutdown(vm)
     end
-    vm.save
+    vm.save!
     puts "Updated state to " + new_vm_state
   end
 end
@@ -663,7 +663,7 @@ def migrate(vm, dest = nil)
 
   setVmState(vm, Vm::STATE_RUNNING)
   vm.host_id = dst_host.id
-  vm.save
+  vm.save!
 end
 
 def migrate_vm(task)

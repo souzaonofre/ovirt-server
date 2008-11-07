@@ -71,7 +71,7 @@ def add_volumes_to_db(db_pool, libvirt_pool, owner = nil, group = nil, mode = ni
     storage_volume.lv_owner_perms = owner
     storage_volume.lv_group_perms = group
     storage_volume.lv_mode_perms = mode
-    storage_volume.save
+    storage_volume.save!
   end
 end
 
@@ -173,7 +173,7 @@ def refresh_pool(task)
           # set the LVM pool to the same hardware pool as the underlying storage
           lvm_db_pool.hardware_pool_id = phys_db_pool.hardware_pool_id
           lvm_db_pool.vg_name = vgname
-          lvm_db_pool.save
+          lvm_db_pool.save!
         end
 
         source.elements.each("device") do |device|
@@ -188,7 +188,7 @@ def refresh_pool(task)
 
           # OK, put the right lvm_pool_id in place
           physical_vol.lvm_pool_id = lvm_db_pool.id
-          physical_vol.save
+          physical_vol.save!
         end
 
         lvm_libvirt_pool = LibvirtPool.factory(lvm_db_pool)
