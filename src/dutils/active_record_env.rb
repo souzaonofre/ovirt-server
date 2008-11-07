@@ -29,10 +29,10 @@ ENV['RAILS_ENV'] = 'production' || ENV['RAILS_ENV']
 require File.dirname(__FILE__) + '/../config/boot'
 require "#{RAILS_ROOT}/config/environment"
 
-def database_connect(environment)
+def database_connect
   conf = YAML::load(File.open(File.dirname(__FILE__) + '/../config/database.yml'))
-  ActiveRecord::Base.establish_connection(conf[environment])
+  ActiveRecord::Base.establish_connection(conf[ENV['RAILS_ENV']])
 end
 
 # Open ActiveRecord connection
-database_connect(ENV['RAILS_ENV'])
+database_connect
