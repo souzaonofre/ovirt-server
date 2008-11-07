@@ -24,7 +24,7 @@ class ActiveRecordEnvTest < Test::Unit::TestCase
   fixtures :pools, :storage_pools, :hosts, :cpus, :vms, :tasks
 
   def test_can_find_hosts
-    database_connect(ENV["RAILS_ENV"])
+    database_connect
     hosts = Host.find(:all, :limit => 2)
     assert_not_nil hosts, 'you have no hosts list!'
   end
