@@ -25,9 +25,8 @@ set -v
 
 test -f Makefile && make -k distclean || :
 
-# set ovirt to initialize / use test db
-sed -i "s/DATABASE=ovirt/DATABASE=ovirt_test/" scripts/ovirt-server-install
-sed -i "s/rake/export RAILS_ENV=test\\nrake/" scripts/ovirt-server-install
+# put rails in development mode
+echo "RAILS_ENV=development" >> conf/ovirt-rails.sysconf
 
 ./autogen.sh --prefix=$AUTOBUILD_INSTALL_ROOT
 make dist
