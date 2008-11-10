@@ -5,6 +5,13 @@ OVIRT_CFG=/etc/ovirt-server
 
 DATABASE=ovirt
 USERNAME=ovirt
+[ -r /etc/sysconfig/ovirt-rails ] && . /etc/sysconfig/ovirt-rails
+if [ ! -z "$RAILS_ENV" ]; then
+   DATABASE="$DATABASE"_"$RAILS_ENV"
+   export RAILS_ENV
+else
+   export RAILS_ENV="production"
+fi
 
 EXISTS_FILE=${OVIRT_CFG}/db/exists
 PW_FILE=${OVIRT_CFG}/db/dbaccess
@@ -186,7 +193,7 @@ touch $EXISTS_FILE
 
 cd ${OVIRT_DIR}
 mkdir -p log
-export RAILS_ENV="production" && rake db:migrate
+rake db:migrate
 cd -
 
 ${OVIRT_DIR}/script/grant_admin_privileges ovirtadmin
