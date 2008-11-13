@@ -26,6 +26,7 @@ set -v
 test -f Makefile && make -k distclean || :
 
 # put rails in development mode
+cp conf/ovirt-rails.sysconf conf/ovirt-rails.sysconf.orig
 echo "RAILS_ENV=development" >> conf/ovirt-rails.sysconf
 
 ./autogen.sh --prefix=$AUTOBUILD_INSTALL_ROOT
@@ -41,3 +42,5 @@ if [ -f /usr/bin/rpmbuild ]; then
 
   rpmbuild --nodeps --define "extra_release $EXTRA_RELEASE" -ta --clean *.tar.gz
 fi
+
+mv conf/ovirt-rails.sysconf.orig conf/ovirt-rails.sysconf
