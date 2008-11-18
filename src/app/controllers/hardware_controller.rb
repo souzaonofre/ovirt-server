@@ -111,6 +111,7 @@ class HardwareController < PoolController
   end
 
   def show_storage
+    @storage_tree = @pool.storage_tree(:filter_unavailable => false, :include_used => true).to_json
     show
   end
 
@@ -171,7 +172,7 @@ class HardwareController < PoolController
       id = params[:exclude_pool]
       storage_pools = StoragePool
       find_opts = {:include => :hardware_pool,
-        :conditions => ["pools.id != ?", id]}
+        :conditions => ["(storage_pools.type != 'LvmStoragePool') and (pools.id != ?)", id]}
       include_pool = true
     end
     super(:full_items => storage_pools,:include_pool => include_pool,:find_opts => find_opts)

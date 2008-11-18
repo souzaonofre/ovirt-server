@@ -40,50 +40,10 @@
         <%=h @storage_pool.state %><br/>
     </div>
 <%- content_for :right do -%>
-  <div class="selection_right_title">Volumes</div>
-<!-- hide for now
-        	<ul class="selection_tab_nav">
-            	<li><a href="#"><%=image_tag "icon_selection_add.gif", :style=>"vertical-align:middle;" %>Add</a></li>
-            	<li><a href="#"><%=image_tag "icon_selection_showdetail.gif", :style=>"vertical-align:middle;" %>Show Detail</a></li>
-            	<li><a href="#"><%=image_tag "icon_selection_remove.gif", :style=>"vertical-align:middle;" %>Remove</a></li>
-            </ul>
--->
-  <div class="selection_right_table">
-    <table id="storage_volumes_grid" style="display:none"></table>
-  </div>
 
 <%- end -%>
 
 <%= confirmation_dialog("confirm_delete_storage", "Are you sure?", "delete_storage_pool()") %>
-<script type="text/javascript">
-    $("#storage_volumes_grid").flexigrid
-    (
-    {
-    url: '<%=  url_for :action => "storage_volumes_json", :id => @storage_pool.id %>',
-    dataType: 'json',
-    colModel : [
-        <%= "{display: '', width : 20, align: 'left', process: storage_volumes_gridcheckbox}," if (@storage_pool.user_subdividable and @can_modify) %>
-        {display: 'Alias', width : 180, sortable : false, align: 'left', process: storage_volume_details_link},
-        {display: 'Size (Gb)', name : 'size', width : 80, sortable : true, align: 'left'},
-        {display: 'Type', name : 'type', width : 80, sortable : true, align: 'left'}
-        ],
-    sortname: "size",
-    sortorder: "desc",
-    usepager: false,
-    useRp: true,
-    rp: 40,
-    showTableToggleBtn: true,
-    }
-	);   
-    function storage_volumes_gridcheckbox(celDiv)
-    {
-        $(celDiv).html('<input class="grid_checkbox" type="checkbox" name="grid_checkbox'+$(celDiv).html()+'" value="'+$(celDiv).html()+'"/>');
-    }
-    function storage_volume_details_link(celDiv,pid)
-    {
-        $(celDiv).html('<a href="<%= url_for :controller => 'storage', :action => 'show_volume' %>/'+ pid +'" rel="facebox[.bolder]">' + $(celDiv).html() + '</a>');
-    }
-</script>
 <script type="text/javascript">
       
   function refresh_storage_pool()

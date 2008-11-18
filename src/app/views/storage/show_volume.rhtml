@@ -1,26 +1,27 @@
 <%- content_for :title do -%>
   <%=h @storage_volume.display_name %>
 <%- end -%>
-<%- content_for :description do -%>
-  Details for Storage Volume <%=h @storage_volume.display_name %>
-<%- end -%>
 
-<% if @storage_volume.supports_lvm_subdivision %>
-  <div id="dialog-content-area">
-    <div id="toolbar_nav">
-      <ul>
-        <li><a href="#" id="new_lvm_volume_button"><%=image_tag "icon_addstorage.png", :style=>"vertical-align:middle;" %>Add</a></li>
-        <% if (@storage_volume.lvm_storage_pool and
-               !@storage_volume.lvm_storage_pool.storage_volumes.empty?) %>
-          <li><a href="#" onClick="return remove_lvm_volumes();"><%=image_tag "icon_remove.png" %>&nbsp;&nbsp;Remove</a></li>
-        <% end %>
-      </ul>
-     </div>
-   </div>
-<% end %>
-<div class="panel_header"></div>
+<%- content_for :action_links do -%>
+  <%if @can_modify -%>
+    <%if @storage_volume.supports_lvm_subdivision and @storage_volume.vms.empty? -%>
+      <%= link_to image_tag("icon_addstorage.png") + " Add new Volume",
+                            {:controller => 'storage', :action => 'new_lvm_volume', :source_volume_id => @storage_volume.id},
+                             :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
+    <% end %>
+    <%if @storage_volume.deletable -%>
+      <a href="#confirm_delete"  rel="facebox[.bolder]">
+        <%= image_tag "icon_x.png" %> Delete
+      </a>
+    <%- end -%>
+  <%- end -%>
+<%- end -%>
+<%= confirmation_dialog("confirm_delete", "Are you sure?", "delete_volume()") %>
+
   <div class="selection_key">
-    IP address:<br/>
+    <% unless @storage_volume.storage_pool[:type] == "LvmStoragePool" %>
+      IP address:<br/>
+    <% end %>
     <% if @storage_volume.storage_pool[:type] == "IscsiStoragePool" %>
       Port:<br/>
       Target:<br/>
@@ -34,12 +35,18 @@
       LUN:<br/>
     <% elsif @storage_volume[:type] == "NfsStorageVolume" %>
       Filename:<br/>
+    <% elsif @storage_volume[:type] == "LvmStorageVolume" %>
+      Volume Group:<br/>
+      Logical Volume:<br/>
+      Permissions (owner/group/mode):<br/>
     <% end %>
     Size:<br/>
   </div>
   <div class="selection_value">
-    <%=h @storage_volume.storage_pool.ip_addr %><br/>
-    <% if @storage_volume.storage_pool[:type] == "IscsiStoragePool" %>
+    <% unless @storage_volume.storage_pool[:type] == "LvmStoragePool" %>
+      <%=h @storage_volume.storage_pool.ip_addr %><br/>
+    <% end %>
+   <% if @storage_volume.storage_pool[:type] == "IscsiStoragePool" %>
       <%=h @storage_volume.storage_pool.port %><br/>
       <%=h @storage_volume.storage_pool[:target] %><br/>
     <% elsif @storage_volume.storage_pool[:type] == "NfsStoragePool" %>
@@ -52,74 +59,29 @@
       <%=h @storage_volume.lun %><br/>
     <% elsif @storage_volume[:type] == "NfsStorageVolume" %>
       <%=h @storage_volume.filename %><br/>
+    <% elsif @storage_volume[:type] == "LvmStorageVolume" %>
+      <%=h @storage_volume.storage_pool.vg_name %><br/>
+      <%=h @storage_volume.lv_name %><br/>
+      <%=h @storage_volume.lv_owner_perms %>/<%=h @storage_volume.lv_group_perms %>/<%=h @storage_volume.lv_mode_perms %><br/>
     <% end %>
     <%=h @storage_volume.size_in_gb %> GB<br/>
   </div>
-<% if @storage_volume.supports_lvm_subdivision %>
-  <div class="dialog_form">
-    <div class="form_heading">LVM Volumes</div>
-    <% if @storage_volume.lvm_storage_pool %>
-      <form id="lvm_storage_volumes_grid_form">
-        <table id="lvm_storage_volumes_grid" style="display:none"></table>
-      </form>
-    <% end %>
-  </div>
-<% end %>
+<%- content_for :right do -%>
 
-<div class="facebox_timfooter">
-        <div class="button">
-          <div class="button_left_grey"></div>
-          <div class="button_middle_grey"><a href="#" onclick="jQuery(document).trigger('close.facebox')">Close</a></div>
-          <div class="button_right_grey"></div>
-        </div>
-</div>
+<%- end -%>
+
 <script type="text/javascript">
-    $("#lvm_storage_volumes_grid").flexigrid
-    (
-    {
-    url: '<%=  url_for :action => "storage_volumes_json", :id => @storage_volume.lvm_storage_pool.id %>',
-    dataType: 'json',
-    colModel : [
-        <%= "{display: '', width : 20, align: 'left', process: lvm_storage_volumes_gridcheckbox}," if @can_modify %>
-        {display: 'Alias', width : 180, sortable : false, align: 'left'},
-        {display: 'Size (Gb)', name : 'size', width : 80, sortable : true, align: 'left'},
-        {display: 'Type', name : 'type', width : 80, sortable : true, align: 'left'}
-        ],
-    sortname: "size",
-    sortorder: "desc",
-    usepager: false,
-    useRp: true,
-    rp: 40,
-    showTableToggleBtn: true,
-    }
-    );
-    function lvm_storage_volumes_gridcheckbox(celDiv)
-    {
-        $(celDiv).html('<input class="grid_checkbox" type="checkbox" name="grid_checkbox'+$(celDiv).html()+'" value="'+$(celDiv).html()+'"/>');
-    }
-  function get_selected_lvm_volumes()
+  function delete_volume()
   {
-    return get_selected_checkboxes("lvm_storage_volumes_grid_form");
+    $(document).trigger('close.facebox');
+    $.post('<%= url_for :controller => "storage", :action => "delete_volumes" %>',
+           { storage_volume_ids: <%= @storage_volume.id %> },
+            function(data,status) {
+              // FIXME: reload tree
+              if (data.alert) {
+                $.jGrowl(data.alert);
+              }
+	      empty_summary('storage_selection', 'Storage Pool or Volume');
+            }, 'json');
   }
-  function remove_lvm_volumes()
-  {
-    var volumes = get_selected_lvm_volumes();
-    if (validate_selected(volumes, "storage volume")) {
-      $.post('<%= url_for :controller => "storage", :action => "delete_volumes" %>',
-             { storage_volume_ids: volumes.toString() },
-              function(data,status){
-                $("#lvm_storage_volumes_grid").flexReload();
-		if (data.alert) {
-		  $.jGrowl(data.alert);
-                }
-               }, 'json');
-    }
-  }
-$('#new_lvm_volume_button').click(function(){
-		$('#window').fadeOut('fast');
-        $("#window").empty().load("<%= url_for :controller => 'storage', :action => 'new_lvm_volume' %>",
-	{ source_volume_id: <%=@storage_volume.id%>,
-          return_facebox: '<%= url_for :controller => 'storage', :action => 'show_volume', :id => @storage_volume.id %>' });
-		$('#window').fadeIn('fast');
-});
 </script>

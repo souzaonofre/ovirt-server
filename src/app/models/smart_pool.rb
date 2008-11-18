@@ -97,4 +97,24 @@ class SmartPool < Pool
     user_pools[-1] << "break" unless user_pools.empty?
     user_pools + other_pools
   end
+
+  # params accepted:
+  # :vm_to_include - if specified, storage used by this VM is included in the tree
+  # :filter_unavailable - if true, don't include Storage not currently available
+  # :include_used - include all storage pools/volumes, even those in use
+  # for smart pools,  filter_unavailable defaults to false and include_used to true
+  def storage_tree(params = {})
+    vm_to_include=params.fetch(:vm_to_include, nil)
+    filter_unavailable = params.fetch(:filter_unavailable, false)
+    include_used = params.fetch(:include_used, true)
+    conditions = "type != 'LvmStoragePool'"
+    if filter_unavailable
+      conditions = "(#{conditions}) and (storage_pools.state = '#{StoragePool::STATE_AVAILABLE}')"
+    end
+    tagged_storage_pools.find(:all,
+                    :conditions => conditions).collect do |pool|
+      pool.storage_tree_element(params)
+    end
+  end
+
 end

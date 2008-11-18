@@ -80,6 +80,10 @@ class StorageVolume < ActiveRecord::Base
     return false
   end
 
+  def deletable
+    storage_pool.user_subdividable and vms.empty? and (lvm_storage_pool.nil? or lvm_storage_pool.storage_volumes.empty?)
+  end
+
   def storage_tree_element(params = {})
     vm_to_include=params.fetch(:vm_to_include, nil)
     filter_unavailable = params.fetch(:filter_unavailable, true)
@@ -95,7 +99,8 @@ class StorageVolume < ActiveRecord::Base
                      vm_ids.include?(vm_to_include.id))),
       :create_volume => supports_lvm_subdivision,
       :selected => (!vm_ids.empty? and vm_to_include and vm_to_include.id and
-                   (vm_ids.include?(vm_to_include.id)))}
+                   (vm_ids.include?(vm_to_include.id))),
+      :is_pool => false}
     if lvm_storage_pool
       if return_hash[:available]
         return_hash[:available] = lvm_storage_pool.storage_volumes.full_vm_list.empty?

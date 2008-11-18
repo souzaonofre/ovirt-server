@@ -97,7 +97,8 @@ class StoragePool < ActiveRecord::Base
       :name => display_name,
       :available => false,
       :create_volume => user_subdividable,
-      :selected => false}
+      :selected => false,
+      :is_pool => true}
     conditions = nil
     unless include_used
       conditions = "vms.id is null"

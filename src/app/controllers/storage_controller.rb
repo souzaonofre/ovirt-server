@@ -107,7 +107,7 @@ class StorageController < ApplicationController
       end
     else
       respond_to do |format|
-        format.html { render :layout => 'popup' }
+        format.html { render :layout => 'selection' }
         format.xml { render :xml => @storage_volume.to_xml }
       end
     end

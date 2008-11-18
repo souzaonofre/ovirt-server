@@ -38,6 +38,7 @@ class SmartPoolsController < PoolController
   end
 
   def show_storage
+    @storage_tree = @pool.storage_tree(:filter_unavailable => false, :include_used => true).to_json
     show
   end
 
@@ -74,7 +75,10 @@ class SmartPoolsController < PoolController
   end
 
   def storage_pools_json
-    super(items_json_internal(StoragePool, :tagged_storage_pools))
+    args = items_json_internal(StoragePool, :tagged_storage_pools)
+    conditions = args[:find_opts][:conditions]
+    conditions[0] = "(storage_pools.type != 'LvmStoragePool') and (#{conditions[0]})"
+    super(args)
   end
 
   def vms_json
@@ -93,6 +97,7 @@ class SmartPoolsController < PoolController
       pre_show
       full_items = @pool.send(item_assoc)
       find_opts = {}
+      include_pool = false
     else
       # FIXME: no permissions or usage checks here yet
       # filtering on which pool to exclude
@@ -105,8 +110,9 @@ class SmartPoolsController < PoolController
         conditions = ["#{item_class.table_name}.id not in (?)", pool_items]
       end
       find_opts = {:conditions => conditions}
+      include_pool = true
     end
-    { :full_items => full_items, :find_opts => find_opts, :include_pool => false}
+    { :full_items => full_items, :find_opts => find_opts, :include_pool => include_pool}
   end
 
   def add_hosts

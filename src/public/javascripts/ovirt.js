@@ -62,6 +62,7 @@ function add_storage(url)
              { resource_ids: storage.toString() },
               function(data,status){;
                 $(document).trigger('close.facebox');
+                // FIXME: this always reloads the tab for now
 	        grid = $("#storage_grid");
                 if (grid.size()>0 && grid != null) {
                   grid.flexReload();
@@ -256,7 +257,7 @@ function empty_summary(element_id, label){
 
 function get_selected_storage()
 {
-    return get_selected_checkboxes("storage_grid_form");
+    return get_selected_checkboxes("storage_tree_form");
 }
 function validate_storage_for_move()
 {
