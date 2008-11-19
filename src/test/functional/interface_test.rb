@@ -90,94 +90,94 @@ if File.exists? File.dirname(__FILE__) + '/../selenium.rb'
                10000)
      end
 
-     def test_4_create_start_stop_vm
-        # view default pool's subpools
-        @browser.wait_for_condition(
-              "selenium.isElementPresent(\"//ul[@id='nav_tree']/li/span\")",
-               10000)
-        @browser.click(
-            "//ul[@id='nav_tree']/li/span")  # click expand sublist checkbox
+     #def test_4_create_start_stop_vm
+     #   # view default pool's subpools
+     #   @browser.wait_for_condition(
+     #         "selenium.isElementPresent(\"//ul[@id='nav_tree']/li/span\")",
+     #          10000)
+     #   @browser.click(
+     #       "//ul[@id='nav_tree']/li/span")  # click expand sublist checkbox
 
-        # click on 'vm_resource_pool1' vm resource pool  link:
-        @pool_link="//ul[@id='nav_tree']/li/ul/li/div"
-        @browser.wait_for_condition(
-              "selenium.isElementPresent(\""+ @pool_link +"\")",
-               10000)
-        @browser.click @pool_link
-        @browser.wait_for_condition(
-             "selenium.isElementPresent(\"//li[@id='nav_vmpool']/a\")",
-              10000)
-        # click on virtual machines tab
-        @browser.click "//li[@id='nav_vmpool']/a"
-        @browser.wait_for_condition(
-               "selenium.isElementPresent(\"//div[@id='toolbar_nav']/ul/li[1]/a\")",
-               10000)
-        # click on 'add virtual machine'
-        @browser.click "//div[@id='toolbar_nav']/ul/li[1]/a"
+     #   # click on 'vm_resource_pool1' vm resource pool  link:
+     #   @pool_link="//ul[@id='nav_tree']/li/ul/li/div"
+     #   @browser.wait_for_condition(
+     #         "selenium.isElementPresent(\""+ @pool_link +"\")",
+     #          10000)
+     #   @browser.click @pool_link
+     #   @browser.wait_for_condition(
+     #        "selenium.isElementPresent(\"//li[@id='nav_vmpool']/a\")",
+     #         10000)
+     #   # click on virtual machines tab
+     #   @browser.click "//li[@id='nav_vmpool']/a"
+     #   @browser.wait_for_condition(
+     #          "selenium.isElementPresent(\"//div[@id='toolbar_nav']/ul/li[1]/a\")",
+     #          10000)
+     #   # click on 'add virtual machine'
+     #   @browser.click "//div[@id='toolbar_nav']/ul/li[1]/a"
 
-        # retrieve current # of vms
-        num_vms = @browser.get_xpath_count "//table[@id='vms_grid']/tbody/tr"
+     #   # retrieve current # of vms
+     #   num_vms = @browser.get_xpath_count "//table[@id='vms_grid']/tbody/tr"
 
-        # fill in required fields
-        @browser.wait_for_condition(
-               "selenium.isElementPresent(\"//input[@id='vm_description']\")",
-               10000)
-        @browser.type("//input[@id='vm_description']", "zzz-selenium-test-vm")
-        @browser.type("//input[@id='vm_num_vcpus_allocated']", "1")
-        @browser.type("//input[@id='vm_memory_allocated_in_mb']", "256")
-        # select 1st storage pool
-        #@browser.click("//table[@id='storage_volumes_grid']/tbody/tr/td/div/input")
-        @browser.wait_for_condition(
-               "selenium.isElementPresent(\"//form[@id='vm_form']/div[2]/div[2]/div[2]/a\")",
-               10000)
-        # click the button
-        @browser.click "//form[@id='vm_form']/div[2]/div[2]/div[2]/a"
+     #   # fill in required fields
+     #   @browser.wait_for_condition(
+     #          "selenium.isElementPresent(\"//input[@id='vm_description']\")",
+     #          10000)
+     #   @browser.type("//input[@id='vm_description']", "zzz-selenium-test-vm")
+     #   @browser.type("//input[@id='vm_num_vcpus_allocated']", "1")
+     #   @browser.type("//input[@id='vm_memory_allocated_in_mb']", "256")
+     #   # select 1st storage pool
+     #   #@browser.click("//table[@id='storage_volumes_grid']/tbody/tr/td/div/input")
+     #   @browser.wait_for_condition(
+     #          "selenium.isElementPresent(\"//form[@id='vm_form']/div[2]/div[2]/div[2]/a\")",
+     #          10000)
+     #   # click the button
+     #   @browser.click "//form[@id='vm_form']/div[2]/div[2]/div[2]/a"
 
-        @browser.wait_for_condition(
-             "selenium.isElementPresent(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]\")",
-              20000)
-        # verify title of newly created vm
-        assert_equal("zzz-selenium-test-vm",
-           @browser.get_text("//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[2]/div"))
+     #   @browser.wait_for_condition(
+     #        "selenium.isElementPresent(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]\")",
+     #         20000)
+     #   # verify title of newly created vm
+     #   assert_equal("zzz-selenium-test-vm",
+     #      @browser.get_text("//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[2]/div"))
 
-        # start it, click checkbox, 'start vm', confirmation button; reload tab, check result
-        @browser.click "//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[1]/div/input"
-        @browser.click "//div[@id='toolbar_nav']/ul/li[2]/ul/li[1]"
-        @browser.wait_for_condition(
-             "selenium.isElementPresent(\"//div[@id='vm_action_results']/div[3]/div/div[2]/a\")",
-              10000)
-        @browser.click "//div[@id='vm_action_results']/div[3]/div/div[2]/a"
-        sleep 5 # give vm time to start
-        @browser.click @pool_link
-        @browser.wait_for_condition(
-             "selenium.isElementPresent(\"//li[@id='nav_vmpool']/a\")",
-              10000)
-        # click on virtual machines tab
-        @browser.click "//li[@id='nav_vmpool']/a"
-        @browser.wait_for_condition(
-             "selenium.isElementPresent(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") && " +
-             "selenium.getText(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") == \"running\"",
-              20000)
-        #assert_equal("running",
-          #@browser.get_text("//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div"))
+     #   # start it, click checkbox, 'start vm', confirmation button; reload tab, check result
+     #   @browser.click "//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[1]/div/input"
+     #   @browser.click "//div[@id='toolbar_nav']/ul/li[2]/ul/li[1]"
+     #   @browser.wait_for_condition(
+     #        "selenium.isElementPresent(\"//div[@id='vm_action_results']/div[3]/div/div[2]/a\")",
+     #         10000)
+     #   @browser.click "//div[@id='vm_action_results']/div[3]/div/div[2]/a"
+     #   sleep 5 # give vm time to start
+     #   @browser.click @pool_link
+     #   @browser.wait_for_condition(
+     #        "selenium.isElementPresent(\"//li[@id='nav_vmpool']/a\")",
+     #         10000)
+     #   # click on virtual machines tab
+     #   @browser.click "//li[@id='nav_vmpool']/a"
+     #   @browser.wait_for_condition(
+     #        "selenium.isElementPresent(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") && " +
+     #        "selenium.getText(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") == \"running\"",
+     #         20000)
+     #   #assert_equal("running",
+     #     #@browser.get_text("//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div"))
 
-        # stop / destroy vm
-        @browser.click "//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[1]/div/input"
-        @browser.click "//div[@id='toolbar_nav']/ul/li[2]/ul/li[2]"
-        @browser.wait_for_condition(
-             "selenium.isElementPresent(\"//div[@id='vm_action_results']/div[3]/div/div[2]/a\")",
-              10000)
-        @browser.click "//div[@id='vm_action_results']/div[3]/div/div[2]/a"
-        sleep 5 # give vm time to stop
-        @browser.click @pool_link
-        @browser.wait_for_condition(
-             "selenium.isElementPresent(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") && " +
-             "selenium.getText(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") == \"stopped\"",
-              20000)
-        #assert_equal("stopped",
-          #@browser.get_text("//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div"))
+     #   # stop / destroy vm
+     #   @browser.click "//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[1]/div/input"
+     #   @browser.click "//div[@id='toolbar_nav']/ul/li[2]/ul/li[2]"
+     #   @browser.wait_for_condition(
+     #        "selenium.isElementPresent(\"//div[@id='vm_action_results']/div[3]/div/div[2]/a\")",
+     #         10000)
+     #   @browser.click "//div[@id='vm_action_results']/div[3]/div/div[2]/a"
+     #   sleep 5 # give vm time to stop
+     #   @browser.click @pool_link
+     #   @browser.wait_for_condition(
+     #        "selenium.isElementPresent(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") && " +
+     #        "selenium.getText(\"//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div\") == \"stopped\"",
+     #         20000)
+     #   #assert_equal("stopped",
+     #     #@browser.get_text("//table[@id='vms_grid']/tbody/tr[" + (num_vms.to_i + 1).to_s + "]/td[7]/div"))
 
-     end
+     #end
 
  end
 
