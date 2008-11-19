@@ -152,7 +152,7 @@ fi
 %daemon_chkconfig_post -d ovirt-taskomatic
 
 # Set up the symlink for ovirt-docs so that online help works
-docs_dir=$(rpm -q --queryformat '/usr/share/doc/%{NAME}-%{VERSION}' ovirt-docs)
+docs_dir=$(rpm -q --queryformat '/usr/share/%{NAME}' ovirt-docs)
 %{__rm} /usr/share/ovirt-server/public/help
 %{__ln_s} $docs_dir/Using_the_oVirt_Server_Suite_User_Interface/ %{app_root}/public/help
 
