@@ -122,32 +122,37 @@ class StorageController < ApplicationController
   end
 
   def new_volume
-    new_volume_internal(StoragePool.find(params[:storage_pool_id]),
-                        { :storage_pool_id => params[:storage_pool_id]})
-    render :layout => 'popup'
-  end
-
-  def new_lvm_volume
-    @source_volume = StorageVolume.find(params[:source_volume_id])
     @return_facebox = params[:return_facebox]
-    unless @source_volume.supports_lvm_subdivision
-      #fixme: proper error page for popups
-      redirect_to :controller => 'dashboard'
-      return
-    end
-    lvm_pool = @source_volume.lvm_storage_pool
-    unless lvm_pool
-      # FIXME: what should we do about VG/LV names?
-      # for now auto-create VG name as ovirt_vg_#{@source_volume.id}
-      lvm_pool = LvmStoragePool.new(:vg_name => "ovirt_vg_#{@source_volume.id}",
+    if params[:storage_pool_id]
+      @storage_pool = StoragePool.find(params[:storage_pool_id])
+      unless @storage_pool.user_subdividable
+        #fixme: proper error page for popups
+        redirect_to :controller => 'dashboard'
+        return
+      end
+      new_volume_internal(@storage_pool,
+                          { :storage_pool_id => params[:storage_pool_id]})
+    else
+      @source_volume = StorageVolume.find(params[:source_volume_id])
+      unless @source_volume.supports_lvm_subdivision
+        #fixme: proper error page for popups
+        redirect_to :controller => 'dashboard'
+        return
+      end
+      lvm_pool = @source_volume.lvm_storage_pool
+      unless lvm_pool
+        # FIXME: what should we do about VG/LV names?
+        # for now auto-create VG name as ovirt_vg_#{@source_volume.id}
+        lvm_pool = LvmStoragePool.new(:vg_name => "ovirt_vg_#{@source_volume.id}",
               :hardware_pool_id => @source_volume.storage_pool.hardware_pool_id)
-      lvm_pool.source_volumes << @source_volume
-      lvm_pool.save!
+        lvm_pool.source_volumes << @source_volume
+        lvm_pool.save!
+      end
+      new_volume_internal(lvm_pool, { :storage_pool_id => lvm_pool.id})
+      @storage_volume.lv_owner_perms='0744'
+      @storage_volume.lv_group_perms='0744'
+      @storage_volume.lv_mode_perms='0744'
     end
-    new_volume_internal(lvm_pool, { :storage_pool_id => lvm_pool.id})
-    @storage_volume.lv_owner_perms='0744'
-    @storage_volume.lv_group_perms='0744'
-    @storage_volume.lv_mode_perms='0744'
     render :layout => 'popup'
   end
 

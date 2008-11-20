@@ -1,23 +1,28 @@
 <%- content_for :title do -%>
-  <%= _("Add New LVM Volume") %>
+  <%= _("Add New Volume") %>
 <%- end -%>
 <%- content_for :description do -%>
-  Add a new LVM Storage Volume to <%= @source_volume.display_name %>.
+  Add a new Storage Volume to
+  <%= if @storage_volume.get_type_label==StoragePool::LVM
+        @source_volume.display_name
+      else
+        @storage_pool.display_name
+      end %>.
 <%- end -%>
 <div class="panel_header"></div>
 <div class="dialog_form">
-<form method="POST" action="<%= url_for :action => 'create_volume' %>" id="lvm_volume_form" >
+<form method="POST" action="<%= url_for :action => 'create_volume' %>" id="storage_volume_form" >
   <div class="dialog_form">
     <div id="new_storage_pool">
-      <%= render :partial => 'lvm_volume_form' %>
+      <%= render :partial => 'new_volume_form' %>
     </div>
   </div>
   <!-- FIXME: need to pop up the details dialog again -->
-  <%= popup_footer("$('#lvm_volume_form').submit()", "New LVM Volume") %>
+  <%= popup_footer("$('#storage_volume_form').submit()", "New Storage Volume") %>
 </form>
 </div>
 <script type="text/javascript">
-function afterLvmVolume(response, status){
+function afterStorageVolume(response, status){
     ajax_validation(response, status);
     if (response.success) {
     <% if @return_facebox %>
@@ -30,13 +35,13 @@ function afterLvmVolume(response, status){
     }
 }
 $(function() {
-    var lvmvolumeoptions = {
+    var storagevolumeoptions = {
         target:        '<%= url_for :action => 'create_volume' %>',   // target element to update
 	dataType:      'json',
-        success:       afterLvmVolume  // post-submit callback
+        success:       afterStorageVolume  // post-submit callback
     };
 
     // bind form using 'ajaxForm'
-    $('#lvm_volume_form').ajaxForm(lvmvolumeoptions);
+    $('#storage_volume_form').ajaxForm(storagevolumeoptions);
 });
 </script>

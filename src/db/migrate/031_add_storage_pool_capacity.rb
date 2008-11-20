@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -17,16 +17,12 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
-class NfsStoragePool < StoragePool
-
-  validates_presence_of :ip_addr, :export_path
-  validates_uniqueness_of :ip_addr, :scope => :export_path
-
-  def label_components
-    "#{export_path}"
+class AddStoragePoolCapacity < ActiveRecord::Migration
+  def self.up
+    add_column :storage_pools, :capacity, :integer, :limit => 8
   end
 
-  def user_subdividable
-    true
+  def self.down
+    drop_column :storage_pools, :capacity
   end
 end

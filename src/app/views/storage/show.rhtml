@@ -10,6 +10,11 @@
       <a href="#" onClick="refresh_storage_pool()">
         <%= image_tag "icon_refresh.png" %> Refresh
       </a> 
+      <%if @storage_pool.user_subdividable -%>
+      <%= link_to image_tag("icon_addstorage.png") + " Add new Volume",
+                            {:controller => 'storage', :action => 'new_volume', :storage_pool_id => @storage_pool.id},
+                             :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
+    <% end %>
       <a href="#confirm_delete_storage" rel="facebox[.bolder]">
         <%= image_tag "icon_x.png" %> Delete
       </a> 
