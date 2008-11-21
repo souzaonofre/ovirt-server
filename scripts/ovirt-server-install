@@ -20,7 +20,7 @@ STEP_FILE=/etc/ntp/step-tickers
 SASL_FILE=/etc/sasl2/libvirt.conf
 LDAP_CFG=${OVIRT_DIR}/config/ldap.yml
 
-OVIRT_SVCS="ovirt-host-browser ovirt-host-keyadd ovirt-host-status \
+OVIRT_SVCS="ovirt-host-browser ovirt-host-keyadd ovirt-db-omatic \
             ovirt-host-collect ovirt-mongrel-rails ovirt-taskomatic"
 ENABLE_SVCS="ntpdate ntpd httpd postgresql libvirtd collectd"
 

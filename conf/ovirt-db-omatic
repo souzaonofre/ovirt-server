@@ -1,10 +1,10 @@
 #!/bin/bash
 #
 #
-# ovirt-host-status       startup script for ovirt-host-status
+# ovirt-db-omatic       startup script for ovirt-db-omatic
 #
 # chkconfig: - 97 03
-# description: ovirt-host-status is an essential component of the \
+# description: ovirt-db-omatic is an essential component of the \
 #    ovirt VM manager.
 #
 
@@ -12,20 +12,20 @@
 
 export RAILS_ENV="${RAILS_ENV:-production}"
 
-DAEMON=/usr/share/ovirt-server/host-status/host-status.rb
+DAEMON=/usr/share/ovirt-server/db-omatic/db_omatic.rb
 
 . /etc/init.d/functions
 
 start() {
-    echo -n "Starting ovirt-host-status: "
+    echo -n "Starting ovirt-db-omatic: "
     daemon $DAEMON
     RETVAL=$?
     echo
 }
 
 stop() {
-    echo -n "Shutting down ovirt-host-status: "
-    killproc host-status.rb
+    echo -n "Shutting down ovirt-db-omatic: "
+    killproc db_omatic.rb
     RETVAL=$?
     echo
 }
@@ -46,7 +46,7 @@ case "$1" in
 	RETVAL=$?
 	;;
     *)
-      echo "Usage: ovirt-host-status {start|stop|restart|status}"
+      echo "Usage: ovirt-db-omatic {start|stop|restart|status}"
       exit 1
   ;;
 esac
