@@ -57,7 +57,7 @@ if File.exists? File.dirname(__FILE__) + '/../selenium.rb'
             "//ul[@id='nav_tree']/li/div")  # click 'default pool' link
       @browser.wait_for_condition(
            "selenium.isElementPresent(\"//div[@class='summary_title']\")",
-            10000)
+            50000)
 
       # verify the title of the pool
       assert_equal("default",
