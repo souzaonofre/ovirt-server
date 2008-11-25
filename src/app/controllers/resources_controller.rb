@@ -86,7 +86,7 @@ class ResourcesController < PoolController
 
   def update
     begin
-      @pool.update_attributes!(params[:vm_resource_pool])
+      @pool.update_attributes!(params[:pool])
       render :json => { :object => "vm_resource_pool", :success => true, 
                         :alert => "Virtual Machine Pool was successfully modified." }
     rescue
@@ -160,7 +160,7 @@ class ResourcesController < PoolController
     super
   end
   def pre_create
-    @pool = VmResourcePool.new(params[:vm_resource_pool])
+    @pool = VmResourcePool.new(params[:pool])
     super
   end
   def pre_edit
@@ -172,8 +172,8 @@ class ResourcesController < PoolController
   end
   def pre_show
     @pool = VmResourcePool.find(params[:id])
-    @is_hwpool_admin = @pool.parent.can_modify(@user)
     super
+    @is_hwpool_admin = @pool.parent.can_modify(@user)
   end
   def pre_vm_actions
     @pool = VmResourcePool.find(params[:id])
