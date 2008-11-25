@@ -18,24 +18,11 @@
  also available at http://www.gnu.org/copyleft/gpl.html.
 */
 
-package org.ovirt.elements {
+//class for labeling the scale of the y-axis of a chart
 
-  import mx.containers.Box;
-  import mx.core.ScrollPolicy;
+package org.ovirt.elements {
 
   public class YAxisLabel extends Box {
 
-    public var labelText:TextLiberation;
-
-    public function YAxisLabel(text:String) {
-      super();
-      labelText = new TextLiberation(text);
-      labelText.setVisible(true);
-      this.addChild(labelText);
-      this.horizontalScrollPolicy = ScrollPolicy.OFF;
-      this.verticalScrollPolicy = ScrollPolicy.OFF;
-      this.setStyle("paddingLeft","0");
-      this.setStyle("paddingRight","0");
-    }
   }
 }

@@ -324,10 +324,12 @@ class RRDResolution
    end
 
    # Set up the resolutions for our rrd
+   RRDResolution.add_item :Minimum, 10    # Ten secs
+   RRDResolution.add_item :Short,   70    # Seventy secs
+   RRDResolution.add_item :Medium,  500   # 500 secs ( 8minute, 20 sec)
+   RRDResolution.add_item :Long,    2230
+   RRDResolution.add_item :Maximum, 26350
    RRDResolution.add_item :Default, 10    # Ten secs
-   RRDResolution.add_item :Short, 500     # 500 secs ( 8minute, 20 sec)
-   RRDResolution.add_item :Medium, 2230
-   RRDResolution.add_item :Long, 26350
 end
 
        

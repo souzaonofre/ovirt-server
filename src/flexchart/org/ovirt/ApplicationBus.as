@@ -18,11 +18,22 @@
  also available at http://www.gnu.org/copyleft/gpl.html.
 */
 
+//A way to expose some functions that are defined in flexchart.mxml to
+//our ActionScript classes without needing to access Application directly
+
 package org.ovirt {
-  public class Constants {
-    public static var width:int = 722;
-    public static var height:int = 297;
-    public static var barSpacing:int = 2;
-    public static var labelHeight:int = 20;
+  public class ApplicationBus {
+
+    private static var _instance:ApplicationBus;
+
+    public static function instance():ApplicationBus {
+      if (_instance == null) {
+        _instance = new ApplicationBus();
+      }
+      return _instance;
+    }
+
+    public var barClickAction:Function;
+
   }
 }

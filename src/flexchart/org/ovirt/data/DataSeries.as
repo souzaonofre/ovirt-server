@@ -36,9 +36,15 @@ package org.ovirt.data {
       dataPoints = new Array();
       var inDataPoints:Array = object["vectors"] as Array;
       for (var i:int = 0; i < inDataPoints.length; i++) {
-        dataPoints.push(new DataPoint((inDataPoints[i] as Array)[0] as String,
-                                  (inDataPoints[i] as Array)[1] as Number,
-                                  description));
+        var value:Number = 0;
+        var valuea:Number = (inDataPoints[i] as Array)[1] as Number;
+        if (!isNaN(valuea)) {
+          value = (inDataPoints[i] as Array)[1] as Number;
+        }
+        var seconds:Number = new Number((inDataPoints[i] as Array)[0]) * 1000;
+        dataPoints.push(new DataPoint(new Date(seconds),
+                                      value,
+                                      description));
       }
       maxValue = object["max_value"] as Number;
     }

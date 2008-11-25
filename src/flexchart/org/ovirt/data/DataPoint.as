@@ -22,17 +22,18 @@ package org.ovirt.data {
 
   public class DataPoint {
 
-    private var timestamp:String;
+    private var timestamp:Date;
     private var value:Number;
     private var description:String;
 
-    public function DataPoint (timestamp:String, value:Number, description:String) {
+    public function DataPoint (timestamp:Date, value:Number,
+                               description:String) {
       this.timestamp = timestamp;
       this.value = value;
       this.description = description;
     }
 
-    public function getTimestamp():String {
+    public function getTimestamp():Date {
       return timestamp;
     }
 
