@@ -13,7 +13,7 @@ def all_storage_pools(conn)
   return all_pools
 end
 
-def get_libvirt_pool_from_volume(db_volume)
+def get_libvirt_lvm_pool_from_volume(db_volume)
   phys_volume = StorageVolume.find(:first, :conditions =>
                                    [ "lvm_pool_id = ?", db_volume.storage_pool_id])
 
@@ -56,8 +56,8 @@ class LibvirtPool
 
     if @remote_pool == nil
       @remote_pool = conn.define_storage_pool_xml(@xml.to_s)
-      # we need this because we don't want to "build" LVM pools, which would
-      # destroy existing data
+      # we need this because we don't necessarily want to "build" LVM pools,
+      # which might destroy existing data
       if @build_on_start
         @remote_pool.build
       end
@@ -84,8 +84,16 @@ class LibvirtPool
     return @remote_pool.lookup_volume_by_name(name)
   end
 
-  def create_vol_xml(xml)
-    return @remote_pool.create_vol_xml(xml)
+  def create_vol(type, name, size, owner, group, mode)
+    @vol_xml = Document.new
+    @vol_xml.add_element("volume", {"type" => type})
+    @vol_xml.root.add_element("name").add_text(name)
+    @vol_xml.root.add_element("capacity", {"unit" => "K"}).add_text(size.to_s)
+    @vol_xml.root.add_element("target")
+    @vol_xml.root.elements["target"].add_element("permissions")
+    @vol_xml.root.elements["target"].elements["permissions"].add_element("owner").add_text(owner)
+    @vol_xml.root.elements["target"].elements["permissions"].add_element("group").add_text(group)
+    @vol_xml.root.elements["target"].elements["permissions"].add_element("mode").add_text(mode)
   end
 
   def shutdown
@@ -107,7 +115,21 @@ class LibvirtPool
     elsif pool[:type] == "NfsStoragePool"
       return NFSLibvirtPool.new(pool.ip_addr, pool.export_path)
     elsif pool[:type] == "LvmStoragePool"
-      return LVMLibvirtPool.new(pool.vg_name)
+      # OK, if this is LVM storage, there are two cases we need to care about:
+      # 1) this is a LUN with LVM already on it.  In this case, all we need to
+      #    do is to create a new LV (== libvirt volume), and be done with it
+      # 2) this LUN is blank, so there is no LVM on it already.  In this
+      #    case, we need to pvcreate, vgcreate first (== libvirt pool build),
+      #    and *then* create the new LV (== libvirt volume) on top of that.
+      #
+      # We can tell the difference between an LVM Pool that exists and one
+      # that needs to be created based on the value of the pool.state;
+      # if it is PENDING_SETUP, we need to create it first
+      phys_volume = StorageVolume.find(:first, :conditions =>
+                                       [ "lvm_pool_id = ?", pool.id])
+
+      return LVMLibvirtPool.new(pool.vg_name, phys_volume.path,
+                                pool.state == StoragePool::STATE_PENDING_SETUP)
     else
       raise "Unknown storage pool type " + pool[:type].to_s
     end
@@ -151,6 +173,21 @@ class NFSLibvirtPool < LibvirtPool
     @xml.root.elements["target"].elements["path"].text = "/mnt/" + @name
   end
 
+  def create_vol(name, size, owner, group, mode)
+    # FIXME: this can actually take some time to complete (since we aren't
+    # doing sparse allocations at the moment).  During that time, whichever
+    # libvirtd we chose to use is completely hung up.  The solution is 3-fold:
+    # 1.  Allow sparse allocations in the WUI front-end
+    # 2.  Make libvirtd multi-threaded
+    # 3.  Make taskomatic multi-threaded
+    super("netfs", name, size, owner, group, mode)
+
+    # FIXME: we have to add the format as raw here because of a bug in libvirt;
+    # if you specify a volume with no format, it will crash libvirtd
+    @vol_xml.root.elements["target"].add_element("format", {"type" => "raw"})
+    @remote_pool.create_vol_xml(@vol_xml.to_s)
+  end
+
   def xmlequal?(docroot)
     return (docroot.attributes['type'] == @type and
             docroot.elements['source'].elements['host'].attributes['name'] == @host and
@@ -159,15 +196,21 @@ class NFSLibvirtPool < LibvirtPool
 end
 
 class LVMLibvirtPool < LibvirtPool
-  def initialize(vg_name)
+  def initialize(vg_name, device, build_on_start)
     super('logical', vg_name)
 
     @type = 'logical'
-    @build_on_start = false
+    @build_on_start = build_on_start
 
     @xml.root.elements["source"].add_element("name").add_text(@name)
+    @xml.root.elements["source"].add_element("device", {"path" => device})
 
     @xml.root.elements["target"].elements["path"].text = "/dev/" + @name
+  end
+
+  def create_vol(name, size, owner, group, mode)
+    super("logical", name, size, owner, group, mode)
+    @remote_pool.create_vol_xml(@vol_xml.to_s)
   end
 
   def xmlequal?(docroot)

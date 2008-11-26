@@ -143,8 +143,9 @@ class StorageController < ApplicationController
       unless lvm_pool
         # FIXME: what should we do about VG/LV names?
         # for now auto-create VG name as ovirt_vg_#{@source_volume.id}
-        lvm_pool = LvmStoragePool.new(:vg_name => "ovirt_vg_#{@source_volume.id}",
-              :hardware_pool_id => @source_volume.storage_pool.hardware_pool_id)
+        new_params = { :vg_name => "ovirt_vg_#{@source_volume.id}",
+          :hardware_pool_id => @source_volume.storage_pool.hardware_pool_id}
+        lvm_pool = StoragePool.factory(StoragePool::LVM, new_params)
         lvm_pool.source_volumes << @source_volume
         lvm_pool.save!
       end

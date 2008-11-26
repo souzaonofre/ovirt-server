@@ -20,20 +20,6 @@ require 'utils'
 
 require 'libvirt'
 
-def build_libvirt_vol_xml(name, size, owner, group, mode)
-  vol_xml = Document.new
-  vol_xml.add_element("volume", {"type" => "logical"})
-  vol_xml.root.add_element("name").add_text(name)
-  vol_xml.root.add_element("capacity", {"unit" => "K"}).add_text(size.to_s)
-  vol_xml.root.add_element("target")
-  vol_xml.root.elements["target"].add_element("permissions")
-  vol_xml.root.elements["target"].elements["permissions"].add_element("owner").add_text(owner)
-  vol_xml.root.elements["target"].elements["permissions"].add_element("group").add_text(group)
-  vol_xml.root.elements["target"].elements["permissions"].add_element("mode").add_text(mode)
-
-  return vol_xml
-end
-
 def add_volumes_to_db(db_pool, libvirt_pool, owner = nil, group = nil, mode = nil)
   # FIXME: this is currently broken if you do something like:
   # 1.  Add an iscsi pool with 3 volumes (lun-1, lun-2, lun-3)
@@ -71,29 +57,29 @@ def add_volumes_to_db(db_pool, libvirt_pool, owner = nil, group = nil, mode = ni
     storage_volume.lv_owner_perms = owner
     storage_volume.lv_group_perms = group
     storage_volume.lv_mode_perms = mode
+    storage_volume.state = StorageVolume::STATE_AVAILABLE
     storage_volume.save!
   end
 end
 
-def storage_find_suitable_host(pool_id)
-  # find all of the hosts in the same pool as the storage
-  hosts = Host.find(:all, :conditions =>
-                    [ "hardware_pool_id = ?", pool_id ])
-
+def storage_find_suitable_host(hardware_pool)
   conn = nil
-  hosts.each do |host|
-    begin
-      # FIXME: this can actually hang up taskomatic for quite some time.  To
-      # see how, make one of your remote servers do "iptables -I INPUT -j DROP"
-      # and then try to run this; it will take TCP quite a while to give up.
-      # Unfortunately the solution is probably to do some sort of threading
-      conn = Libvirt::open("qemu+tcp://" + host.hostname + "/system")
+  hardware_pool.hosts.each do |host|
+    if not host.is_disabled.nil? and host.is_disabled == 0 \
+      and host.state == Host::STATE_AVAILABLE
+      begin
+        # FIXME: this can hang up taskomatic for quite some time.  To see how,
+        # make one of your remote servers do "iptables -I INPUT -j DROP"
+        # and then try to run this; it will take TCP quite a while to give up.
+        # Unfortunately the solution is probably to do some sort of threading
+        conn = Libvirt::open("qemu+tcp://" + host.hostname + "/system")
 
-      # if we didn't raise an exception, we connected; get out of here
-      break
-    rescue Libvirt::ConnectionError
-      # if we couldn't connect for whatever reason, just try the next host
-      next
+        # if we didn't raise an exception, we connected; get out of here
+        break
+      rescue Libvirt::ConnectionError
+        # if we couldn't connect for whatever reason, just try the next host
+        next
+      end
     end
   end
 
@@ -132,7 +118,7 @@ def refresh_pool(task)
     raise "Could not find storage pool"
   end
 
-  conn = storage_find_suitable_host(phys_db_pool.hardware_pool_id)
+  conn = storage_find_suitable_host(phys_db_pool.hardware_pool)
 
   begin
     phys_libvirt_pool = LibvirtPool.factory(phys_db_pool)
@@ -141,6 +127,9 @@ def refresh_pool(task)
     begin
       # OK, the pool is all set.  Add in all of the volumes
       add_volumes_to_db(phys_db_pool, phys_libvirt_pool)
+
+      phys_db_pool.state = StoragePool::STATE_AVAILABLE
+      phys_db_pool.save!
 
       # OK, now we've scanned the underlying hardware pool and added the
       # volumes.  Next we scan for pre-existing LVM volumes
@@ -211,45 +200,43 @@ end
 def create_volume(task)
   puts "create_volume"
 
-  lvm_db_volume = task.storage_volume
-  if lvm_db_volume == nil
+  db_volume = task.storage_volume
+  if db_volume == nil
     raise "Could not find storage volume to create"
   end
-  if lvm_db_volume[:type] != "LvmStorageVolume"
-    raise "The volume to create must be of type LvmStorageVolume, not type #{lvm_db_volume[:type]}"
-  end
 
-  lvm_db_pool = lvm_db_volume.storage_pool
-  if lvm_db_pool == nil
+  db_pool = db_volume.storage_pool
+  if db_pool == nil
     raise "Could not find storage pool"
   end
-  if lvm_db_pool[:type] != "LvmStoragePool"
-    raise "The pool for the volume must be of type LvmStoragePool, not type #{lvm_db_pool[:type]}"
-  end
 
-  conn = storage_find_suitable_host(lvm_db_pool.hardware_pool_id)
+  conn = storage_find_suitable_host(db_pool.hardware_pool)
 
   begin
-    phys_libvirt_pool = get_libvirt_pool_from_volume(lvm_db_volume)
-    phys_libvirt_pool.connect(conn)
+    if db_volume[:type] == "LvmStorageVolume"
+      phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume)
+      phys_libvirt_pool.connect(conn)
+    end
 
     begin
-      lvm_libvirt_pool = LibvirtPool.factory(lvm_db_pool)
-      lvm_libvirt_pool.connect(conn)
+      libvirt_pool = LibvirtPool.factory(db_pool)
 
       begin
-        vol_xml = build_libvirt_vol_xml(lvm_db_volume.lv_name,
-                                        lvm_db_volume.size,
-                                        lvm_db_volume.lv_owner_perms,
-                                        lvm_db_volume.lv_group_perms,
-                                        lvm_db_volume.lv_mode_perms)
+        libvirt_pool.connect(conn)
 
-        lvm_libvirt_pool.create_vol_xml(vol_xml.to_s)
+        libvirt_pool.create_vol(*db_volume.volume_create_params)
+        db_volume.state = StorageVolume::STATE_AVAILABLE
+        db_volume.save!
+
+        db_pool.state = StoragePool::STATE_AVAILABLE
+        db_pool.save!
       ensure
-        lvm_libvirt_pool.shutdown
+        libvirt_pool.shutdown
       end
     ensure
-      phys_libvirt_pool.shutdown
+      if db_volume[:type] == "LvmStorageVolume"
+        phys_libvirt_pool.shutdown
+      end
     end
   ensure
     conn.close
@@ -259,34 +246,30 @@ end
 def delete_volume(task)
   puts "delete_volume"
 
-  lvm_db_volume = task.storage_volume
-  if lvm_db_volume == nil
-    raise "Could not find storage volume to delete"
-  end
-  if lvm_db_volume[:type] != "LvmStorageVolume"
-    raise "The volume to delete must be of type LvmStorageVolume, not type #{lvm_db_volume[:type]}"
+  db_volume = task.storage_volume
+  if db_volume == nil
+    raise "Could not find storage volume to create"
   end
 
-  lvm_db_pool = lvm_db_volume.storage_pool
-  if lvm_db_pool == nil
+  db_pool = db_volume.storage_pool
+  if db_pool == nil
     raise "Could not find storage pool"
   end
-  if lvm_db_pool[:type] != "LvmStoragePool"
-    raise "The pool for the volume must be of type LvmStoragePool, not type #{lvm_db_pool[:type]}"
-  end
 
-  conn = storage_find_suitable_host(lvm_db_pool.hardware_pool_id)
+  conn = storage_find_suitable_host(db_pool.hardware_pool)
 
   begin
-    phys_libvirt_pool = get_libvirt_pool_from_volume(lvm_db_volume)
-    phys_libvirt_pool.connect(conn)
+    if db_volume[:type] == "LvmStorageVolume"
+      phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume)
+      phys_libvirt_pool.connect(conn)
+    end
 
     begin
-      lvm_libvirt_pool = LibvirtPool.factory(lvm_db_pool)
-      lvm_libvirt_pool.connect(conn)
+      libvirt_pool = LibvirtPool.factory(db_pool)
+      libvirt_pool.connect(conn)
 
       begin
-        libvirt_volume = lvm_libvirt_pool.lookup_vol_by_name(lvm_db_volume.lv_name)
+        libvirt_volume = libvirt_pool.lookup_vol_by_name(db_volume.read_attribute(db_volume.volume_name))
         # FIXME: we actually probably want to zero out the whole volume here, so
         # we aren't potentially leaking data from one user to another.  There
         # are two problems, though:
@@ -296,16 +279,22 @@ def delete_volume(task)
         # off another thread to do it
         libvirt_volume.delete
 
-        # FIXME: we really should be using lvm_db_volume.destroy here, but when
-        # I tried it I ran into some "Stale db reference" errors with
-        # ActiveRecord.  sseago thinks this could be indicative of a deeper
-        # error, so we need to investigate it more
-        LvmStorageVolume.delete(lvm_db_volume.id)
+        # Note: we have to nil out the task_target because when we delete the
+        # volume object, that also deletes all dependent tasks (including this
+        # one), which leads to accessing stale tasks.  Orphan the task, then
+        # delete the object; we can clean up orphans later (or not, depending
+        # on the audit policy)
+        task.task_target = nil
+        task.save!
+
+        db_volume.destroy
       ensure
-        lvm_libvirt_pool.shutdown
+        libvirt_pool.shutdown
       end
     ensure
-      phys_libvirt_pool.shutdown
+      if db_volume[:type] == "LvmStorageVolume"
+        phys_libvirt_pool.shutdown
+      end
     end
   ensure
     conn.close

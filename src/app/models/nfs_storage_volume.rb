@@ -25,4 +25,8 @@ class NfsStorageVolume < StorageVolume
   def volume_name
     "filename"
   end
+
+  def volume_create_params
+    return filename, size, "0744", "0744", "0744"
+  end
 end

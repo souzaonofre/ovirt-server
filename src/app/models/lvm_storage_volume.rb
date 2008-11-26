@@ -25,4 +25,8 @@ class LvmStorageVolume < StorageVolume
   def volume_name
     "lv_name"
   end
+
+  def volume_create_params
+    return lv_name, size, lv_owner_perms, lv_group_perms, lv_mode_perms
+  end
 end

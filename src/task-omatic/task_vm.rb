@@ -74,7 +74,7 @@ def connect_storage_pools(conn, storage_volumes)
     # we have to special case LVM pools.  In that case, we need to first
     # activate the underlying physical device, and then do the logical one
     if volume[:type] == "LvmStorageVolume"
-      phys_libvirt_pool = get_libvirt_pool_from_volume(volume)
+      phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(volume)
       phys_libvirt_pool.connect(conn)
     end
 
@@ -398,24 +398,36 @@ def start_vm(task)
       end
     end
 
-    conn = Libvirt::open("qemu+tcp://" + host.hostname + "/system")
-
     volumes = []
     volumes += vm.storage_volumes
     volumes << image_volume if image_volume
-    storagedevs = connect_storage_pools(conn, volumes)
 
-    # FIXME: get rid of the hardcoded bridge
-    xml = create_vm_xml(vm.description, vm.uuid, vm.memory_allocated,
-                        vm.memory_used, vm.num_vcpus_allocated, vm.boot_device,
-                        vm.vnic_mac_addr, "ovirtbr0", storagedevs)
+    conn = Libvirt::open("qemu+tcp://" + host.hostname + "/system")
 
-    dom = conn.define_domain_xml(xml.to_s)
-    dom.create
+    begin
+      storagedevs = connect_storage_pools(conn, volumes)
 
-    setVmVncPort(vm, dom)
+      dom = nil
+      begin
+        # FIXME: get rid of the hardcoded bridge
+        xml = create_vm_xml(vm.description, vm.uuid, vm.memory_allocated,
+                            vm.memory_used, vm.num_vcpus_allocated,
+                            vm.boot_device, vm.vnic_mac_addr, "ovirtbr0",
+                            storagedevs)
+        dom = conn.define_domain_xml(xml.to_s)
+        dom.create
 
-    conn.close
+        setVmVncPort(vm, dom)
+      rescue
+        if dom != nil
+          dom.undefine
+        end
+        teardown_storage_pools(conn)
+        raise ex
+      end
+    ensure
+      conn.close
+    end
   rescue => ex
     setVmState(vm, vm_orig_state)
     raise ex
