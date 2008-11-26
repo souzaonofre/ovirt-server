@@ -40,18 +40,21 @@ require 'util/stats/Stats'
 #   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::Disk, 0, DiskCounter::Octets_write, 0, 0, RRDResolution::Long )
 #   requestList << StatsRequest.new("node3.priv.ovirt.org", "cpu", 0, "idle", 1211688000, 3600, 10 )
 
-   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::CalcUsed, 0, 300, RRDResolution::Default, DataFunction::Average )
-   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::NIC, 0, NicCounter::Octets_rx, 0, 0, RRDResolution::Default )
+#   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::CalcUsed, 0, 300, RRDResolution::Default, DataFunction::Average )
+#   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::NIC, 0, NicCounter::Octets_rx, 0, 0, RRDResolution::Default )
 #   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::Idle, 0, 300, RRDResolution::Default, DataFunction::RollingAverage )
 #   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::Idle, 0, 300, RRDResolution::Default, DataFunction::Average )
-   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::CalcUsed, 0, 300, RRDResolution::Default, DataFunction::RollingAverage )
+   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::CalcUsed, 1226929260, 300, RRDResolution::Default, DataFunction::RollingAverage )
+   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::CalcUsed, 1226933060, 200, RRDResolution::Default, DataFunction::RollingAverage )
+#   requestList << StatsRequest.new("node3.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::CalcUsed, 0, 3600, RRDResolution::Default, DataFunction::RollingAverage )
 #   requestList << StatsRequest.new("node4.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::Idle, 0, 3600, RRDResolution::Short, DataFunction::Average )
 #   requestList << StatsRequest.new("node4.priv.ovirt.org", DevClass::CPU, 0, CpuCounter::CalcUsed, 0, 3600, RRDResolution::Short, DataFunction::Min )
 #   requestList << StatsRequest.new("node5.priv.ovirt.org", "cpu", 0, "idle", 1211688000, 3600, 500 )
 #   requestList << StatsRequest.new("node5.priv.ovirt.org", DevClass::Memory, 0, MemCounter::Used, 0, 3600, 10 )
 
    #  Now send the request list and store the results in the statsList.
-   statsListBig = getStatsData?( requestList )
+#   statsListBig = getStatsData?( requestList )
+   statsListBig = getAggregateStatsData?( requestList )
    tmp = ""
 
    #  Now lets loop through the list, pull off the statsData object and get the data from it. 

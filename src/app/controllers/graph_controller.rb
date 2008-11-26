@@ -28,23 +28,20 @@ class GraphController < ApplicationController
     devclass = DEV_KEY_CLASSES[target]
     counter = DEV_KEY_COUNTERS[target]
 
-    #FIXME: until stats aggregation is pushed, we just get stats data for
-    # the first host in the pool. If no host in pool, the chart will be
-    # empty.
     pool = Pool.find(@id)
     hosts = pool.hosts
-    host = pool.hosts[0]
     requestList = [ ]
-    requestList.push StatsRequest.new(host.hostname, devclass, 0, counter, startTime, duration, resolution, DataFunction::Peak)
-    statsList = getStatsData?(requestList)
+    hosts.each{ |host|
+      requestList.push StatsRequest.new(host.hostname, devclass, 0, counter, startTime, duration, resolution, DataFunction::Peak)
+    }
+    statsList = getAggregateStatsData?(requestList)
 
-    #The aggregated (summed) stats will come back as a single stats list
     stat = statsList[0]
     vectors = [ ]
     data = stat.get_data?
     data.each{ |datum|
       val = datum.get_value?
-      val = 0 if val.nan?
+      val = 0 if (val != 0 && val.nan?)
       vectors.push [datum.get_timestamp?.to_i, val]
     }
     graph = { :vectors => vectors,
