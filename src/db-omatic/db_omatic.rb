@@ -26,10 +26,14 @@ class DbOmatic < Qpid::Qmf::Console
         database_connect
     end
 
+    def log(s)
+        puts "#{Time.now}: #{s}"
+    end
+
     def update_domain_state(domain, state_override = nil)
         vm = Vm.find(:first, :conditions => [ "uuid = ?", domain['uuid'] ])
         if vm == nil
-            puts "VM Not found in database, must be created by user; ignoring."
+            log "VM Not found in database, must be created by user; ignoring."
 
             #XXX: I mark this one as 'synced' here even though we couldn't sync
             #it because there really should be a db entry for every vm unless it
@@ -63,7 +67,7 @@ class DbOmatic < Qpid::Qmf::Console
             end
         end
 
-        puts "Updating VM #{domain['name']} to state #{state}"
+        log "Updating VM #{domain['name']} to state #{state}"
         vm.state = state
         vm.save
 
@@ -73,7 +77,7 @@ class DbOmatic < Qpid::Qmf::Console
     def update_host_state(host_info, state)
         db_host = Host.find(:first, :conditions => [ "hostname = ?", host_info['hostname'] ])
         if db_host
-            puts "Marking host #{host_info['hostname']} as state #{state}."
+            log "Marking host #{host_info['hostname']} as state #{state}."
             db_host.state = state
             db_host.hypervisor_type = host_info['hypervisorType']
             db_host.arch = host_info['model']
@@ -88,7 +92,7 @@ class DbOmatic < Qpid::Qmf::Console
             host_info[:synced] = true
         else
             # FIXME: This would be a newly registered host.  We could put it in the database.
-            puts "Unknown host, probably not registered yet??"
+            log "Unknown host, probably not registered yet??"
             # XXX: So it turns out this can happen as there is a race condition on bootup
             # where the registration takes longer than libvirt-qpid does to relay information.
             # So in this case, we mark this object as not synced so it will get resynced
@@ -120,7 +124,7 @@ class DbOmatic < Qpid::Qmf::Console
                 values[:class_type] = obj.klass_key[1]
                 values[:timed_out] = false
                 values[:synced] = false
-                puts "New object type #{type}"
+                log "New object type #{type}"
 
                 new_object = true
             end
@@ -130,7 +134,7 @@ class DbOmatic < Qpid::Qmf::Console
             obj.properties.each do |key, newval|
                 if values[key.to_s] != newval
                     values[key.to_s] = newval
-                    #puts "new value for property #{key} : #{newval}"
+                    #log "new value for property #{key} : #{newval}"
                     if type == "domain" and key.to_s == "state"
                         domain_state_change = true
                     end
@@ -169,7 +173,7 @@ class DbOmatic < Qpid::Qmf::Console
             obj.statistics.each do |key, newval|
                 if values[key.to_s] != newval
                     values[key.to_s] = newval
-                    #puts "new value for statistic #{key} : #{newval}"
+                    #log "new value for statistic #{key} : #{newval}"
                 end
             end
         end
@@ -196,7 +200,7 @@ class DbOmatic < Qpid::Qmf::Console
                @cached_objects[objkey][:agent_bank] == agent.agent_bank
 
                 values = @cached_objects[objkey]
-                puts "Marking object of type #{values[:class_type]} as timed out."
+                log "Marking object of type #{values[:class_type]} as timed out."
                 if values[:timed_out] == false
                     if values[:class_type] == 'node'
                         update_host_state(values, Host::STATE_UNAVAILABLE)
@@ -219,7 +223,7 @@ class DbOmatic < Qpid::Qmf::Console
 
                 values = @cached_objects[objkey]
                 if values[:timed_out] == true or values[:synced] == false
-                    puts "Marking object of type #{values[:class_type]} as in service."
+                    log "Marking object of type #{values[:class_type]} as in service."
                     if values[:class_type] == 'node'
                         update_host_state(values, Host::STATE_AVAILABLE)
                     elsif values[:class_type] == 'domain'
@@ -236,14 +240,14 @@ class DbOmatic < Qpid::Qmf::Console
     def db_init_cleanup()
         db_host = Host.find(:all)
         db_host.each do |host|
-            puts "Marking host #{host.hostname} unavailable"
+            log "Marking host #{host.hostname} unavailable"
             host.state = Host::STATE_UNAVAILABLE
             host.save
         end
 
         db_vm = Vm.find(:all)
         db_vm.each do |vm|
-            puts "Marking vm #{vm.description} as stopped."
+            log "Marking vm #{vm.description} as stopped."
             vm.state = Vm::STATE_STOPPED
             vm.save
         end
@@ -283,7 +287,7 @@ class DbOmatic < Qpid::Qmf::Console
 end
 
 
-$logfile = '/var/log/ovirt-server/qpid-db-sync.log'
+$logfile = '/var/log/ovirt-server/db-omatic.log'
 
 def main()
 
@@ -313,8 +317,11 @@ def main()
         pwd = Dir.pwd
         daemonize
         Dir.chdir(pwd)
-        STDOUT.reopen $logfile, 'a'
-        STDERR.reopen STDOUT
+
+        lf = open($logfile, 'a')
+        $stdout = lf
+        $stderr = lf
+        puts "#{Time.now}: db_omatic started."
     end
 
     dbsync = DbOmatic.new()
