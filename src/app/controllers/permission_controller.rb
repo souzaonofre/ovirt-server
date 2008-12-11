@@ -47,8 +47,9 @@ class PermissionController < ApplicationController
     unless @can_set_perms
       flash[:notice] = 'You do not have permission to create this permission record'
       redirect_to_parent
+    else
+      render :layout => 'popup'
     end
-    render :layout => 'popup'    
   end
 
   def create
