@@ -367,8 +367,18 @@ def start_vm(task)
 
       raise "Image #{vm.cobbler_name} not found in Cobbler server" unless details
 
-      ignored, ip_addr, export_path, filename =
-        details.file.split(/(.*):(.*)\/(.*)/)
+      # extract the components of the image filename
+      image_uri = details.file
+      protocol = auth = ip_addr = export_path = filename = ""
+
+      protocol, image_uri = image_uri.split("://") if image_uri.include?("://")
+      auth, image_uri = image_uri.split("@") if image_uri.include?("@")
+      # it's ugly, but string.split returns an empty string as the first
+      # result here, so we'll just ignore it
+      ignored, ip_addr, image_uri =
+	image_uri.split(/^([^\/]+)(\/.*)/) unless image_uri =~ /^\//
+      ignored, export_path, filename =
+	image_uri.split(/^(.*)\/(.+)/)
 
       found = false
 
