@@ -42,6 +42,9 @@ RPM_FLAGS	+= $(if $(_ovirt_dev),--define "extra_release .$(GIT_RELEASE)")
 rpms: dist
 	rpmbuild $(RPM_FLAGS) -ta $(distdir).tar.gz
 
+srpms: dist
+	rpmbuild $(RPM_FLAGS) -ts $(distdir).tar.gz
+
 publish: rpms
 	mkdir -p $(OVIRT_CACHE_DIR)
 	rsync -aq $(shell rpm --eval '%{_rpmdir}')/ $(OVIRT_CACHE_DIR)/ovirt/
@@ -51,4 +54,4 @@ publish: rpms
 genlangs:
 	cd src && rake updatepo && rake makemo
 
-.PHONY: rpms publish genlangs
+.PHONY: rpms publish srpms genlangs
