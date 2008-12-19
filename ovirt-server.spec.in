@@ -152,11 +152,6 @@ fi
 %daemon_chkconfig_post -d ovirt-mongrel-rails
 %daemon_chkconfig_post -d ovirt-taskomatic
 
-# Set up the symlink for ovirt-docs so that online help works
-docs_dir=$(rpm -q --queryformat '/usr/share/%{NAME}' ovirt-docs)
-%{__rm} /usr/share/ovirt-server/public/help
-%{__ln_s} $docs_dir/Using_the_oVirt_Server_Suite_User_Interface/ %{app_root}/public/help
-
 %preun
 if [ "$1" = 0 ] ; then
   /sbin/service ovirt-host-browser stop > /dev/null 2>&1

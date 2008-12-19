@@ -205,4 +205,9 @@ for svc in $ENABLE_SVCS; do
     service $svc start
 done
 
+# Set up the symlink for ovirt-docs so that online help works
+docs_dir=$(rpm -q --queryformat '/usr/share/%{NAME}' ovirt-docs)
+ln -sf $docs_dir/Using_the_oVirt_Server_Suite_User_Interface/ \
+    /usr/share/ovirt-server/public/help
+
 exit 0
