@@ -19,18 +19,33 @@
 
 class SearchController < ApplicationController
 
-  MODELS = {"HardwarePool"     => {:controller => "hardware",
-                                   :show_action => "quick_summary"},
-            "VmResourcePool"   => {:controller => "resources",
-                                   :show_action => "quick_summary"},
-            "Host"             => {:controller => "host",
-                                   :show_action => "show"},
-            "Vm"               => {:controller => "vm",
-                                   :show_action => "show"},
-            "IscsiStoragePool" => {:controller => "storage",
-                                   :show_action => "show"},
-            "NfsStoragePool"   => {:controller => "storage",
-                                 :show_action => "show"}}
+  MODELS = {"HardwarePool"       => {:controller => "hardware",
+                                     :show_action => "quick_summary",
+                                     :searched => true},
+            "VmResourcePool"     => {:controller => "resources",
+                                     :show_action => "quick_summary",
+                                     :searched => true},
+            "Host"               => {:controller => "host",
+                                     :show_action => "show",
+                                     :searched => true},
+            "Vm"                 => {:controller => "vm",
+                                     :show_action => "show",
+                                     :searched => true},
+            "IscsiStoragePool"   => {:controller => "storage",
+                                     :show_action => "show",
+                                     :searched => true},
+            "NfsStoragePool"     => {:controller => "storage",
+                                     :show_action => "show",
+                                     :searched => true},
+            "IscsiStorageVolume" => {:controller => "storage",
+                                     :show_action => "show_volume",
+                                     :searched => false},
+            "NfsStorageVolume"   => {:controller => "storage",
+                                     :show_action => "show_volume",
+                                     :searched => false},
+            "LvmStorageVolume"   => {:controller => "storage",
+                                     :show_action => "show_volume",
+                                     :searched => false}}
 
   MULTI_TYPE_MODELS = {"StoragePool" => ["IscsiStoragePool", "NfsStoragePool"]}
 
@@ -50,7 +65,7 @@ class SearchController < ApplicationController
     @model_param ||= ""
 
     if @model_param == ""
-      @models = MODELS.keys
+      @models = MODELS.keys.select {|model| MODELS[model][:searched]}
     else
       @models = MULTI_TYPE_MODELS[@model_param]
       @models ||= [@model_param]

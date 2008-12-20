@@ -50,7 +50,12 @@ class StoragePool < ActiveRecord::Base
                     LVM   => "Lvm" }
   STORAGE_TYPE_PICKLIST = STORAGE_TYPES.keys - [LVM]
 
-  def self.factory(type, params = nil)
+  STATE_PENDING_SETUP    = "pending_setup"
+  STATE_PENDING_DELETION = "pending_deletion"
+  STATE_AVAILABLE        = "available"
+
+  def self.factory(type, params = {})
+    params[:state] = STATE_PENDING_SETUP unless params[:state]
     case type
     when ISCSI
       return IscsiStoragePool.new(params)
@@ -82,22 +87,37 @@ class StoragePool < ActiveRecord::Base
     false
   end
 
-  def storage_tree_element(vm_to_include=nil)
+  def storage_tree_element(params = {})
+    vm_to_include=params.fetch(:vm_to_include, nil)
+    filter_unavailable = params.fetch(:filter_unavailable, true)
+    include_used = params.fetch(:include_used, false)
     return_hash = { :id => id,
       :type => self[:type],
       :text => display_name,
       :name => display_name,
       :available => false,
       :create_volume => user_subdividable,
-      :selected => false}
-    condition = "vms.id is null"
-    if (vm_to_include and vm_to_include.id)
-      condition +=" or vms.id=#{vm_to_include.id}"
+      :selected => false,
+      :is_pool => true}
+    conditions = nil
+    unless include_used
+      conditions = "vms.id is null"
+      if (vm_to_include and vm_to_include.id)
+        conditions +=" or vms.id=#{vm_to_include.id}"
+      end
+    end
+    if filter_unavailable
+      availability_conditions = "storage_volumes.state = '#{StoragePool::STATE_AVAILABLE}'"
+      if conditions.nil?
+        conditions = availability_conditions
+      else
+        conditions ="(#{conditions}) and (#{availability_conditions})"
+      end
     end
     return_hash[:children] = storage_volumes.find(:all,
                                :include => :vms,
-                               :conditions => condition).collect do |volume|
-      volume.storage_tree_element(vm_to_include)
+                               :conditions => conditions).collect do |volume|
+      volume.storage_tree_element(params)
     end
     return_hash
   end

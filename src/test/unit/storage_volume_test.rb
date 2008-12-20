@@ -23,7 +23,7 @@ class StorageVolumeTest < Test::Unit::TestCase
   fixtures :storage_volumes
 
   # Replace this with your real tests.
-  def test_truth
-    assert true
+  def test_relationship_to_storage_pool
+    assert_equal 'corp.com', storage_volumes(:ovirtpriv_storage_lun_1).storage_pool.hardware_pool.name
   end
 end

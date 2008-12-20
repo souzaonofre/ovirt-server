@@ -21,4 +21,12 @@ class LvmStorageVolume < StorageVolume
   def display_name
     "#{get_type_label}: #{storage_pool.vg_name}:#{lv_name}"
   end
+
+  def volume_name
+    "lv_name"
+  end
+
+  def volume_create_params
+    return lv_name, size, lv_owner_perms, lv_group_perms, lv_mode_perms
+  end
 end

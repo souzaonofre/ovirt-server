@@ -1,33 +1,33 @@
 static_vlan_one:
-  type: 'Vlan'
-  name: 'Static Vlan 1'
-  boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
+  type: Vlan
+  name: Static Vlan 1
+  boot_type: boot_type_static_ip
   number: 1
 
 dhcp_vlan_one:
-  type: 'Vlan'
-  name: 'DHCP Vlan 1'
-  boot_type_id: <%= Fixtures.identify(:boot_type_dhcp) %>
+  type: Vlan
+  name: DHCP Vlan 1
+  boot_type: boot_type_dhcp
   number: 2
 
 bootp_vlan_one:
-  type: 'Vlan'
-  name: 'BOOTP Vlan 1'
-  boot_type_id: <%= Fixtures.identify(:boot_type_bootp) %>
+  type: Vlan
+  name: BOOTP Vlan 1
+  boot_type: boot_type_bootp
   number: 3
 
 static_physical_network_one:
-  type: 'PhysicalNetwork'
-  name: 'Static Physical Network 1'
-  boot_type_id: <%= Fixtures.identify(:boot_type_static_ip) %>
+  type: PhysicalNetwork
+  name: Static Physical Network 1
+  boot_type: boot_type_static_ip
 
 dhcp_physical_network_one:
-  type: 'PhysicalNetwork'
-  name: 'DHCP Physical Network 1'
-  boot_type_id: <%= Fixtures.identify(:boot_type_dhcp) %>
+  type: PhysicalNetwork
+  name: DHCP Physical Network 1
+  boot_type: boot_type_dhcp
 
 bootp_physical_network_one:
-  type: 'PhysicalNetwork'
-  name: 'BOOTP Physical Network 1'
-  boot_type_id: <%= Fixtures.identify(:boot_type_bootp) %>
+  type: PhysicalNetwork
+  name: BOOTP Physical Network 1
+  boot_type: boot_type_bootp
 

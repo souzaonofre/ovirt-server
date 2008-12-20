@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -24,14 +24,15 @@ require 'storage_controller'
 class StorageController; def rescue_action(e) raise e end; end
 
 class StorageControllerTest < Test::Unit::TestCase
-  fixtures :storage_volumes, :storage_pools
+  fixtures :permissions, :pools, :storage_volumes, :storage_pools
 
   def setup
     @controller = StorageController.new
     @request    = ActionController::TestRequest.new
     @response   = ActionController::TestResponse.new
 
-    @first_id = storage_volumes(:one).id
+    @lun_1_id = storage_volumes(:ovirtpriv_storage_lun_1).id
+    @ovirtpriv_storage_id = storage_pools(:corp_com_ovirtpriv_storage).id
   end
 
   def test_index
@@ -50,7 +51,7 @@ class StorageControllerTest < Test::Unit::TestCase
   end
 
   def test_show
-    get :show, :id => @first_id
+    get :show, :id => @ovirtpriv_storage_id
 
     assert_response :success
     assert_template 'show'
@@ -60,7 +61,7 @@ class StorageControllerTest < Test::Unit::TestCase
   end
 
   def test_new
-    get :new, :hardware_pool_id => 4
+    get :new, :hardware_pool_id => pools(:corp_com).id
 
     assert_response :success
     assert_template 'new'
@@ -80,7 +81,7 @@ class StorageControllerTest < Test::Unit::TestCase
   end
 
   def test_edit
-    get :edit, :id => @first_id
+    get :edit, :id => @ovirtpriv_storage_id
 
     assert_response :success
     assert_template 'edit'
@@ -90,22 +91,27 @@ class StorageControllerTest < Test::Unit::TestCase
   end
 
   def test_update
-    post :update, :id => @first_id
+    post :update, :id => @ovirtpriv_storage_id
     assert_response :success
   end
 
   def test_destroy
-    hw_pool_id = nil
-    assert_nothing_raised {
-      pool = StoragePool.find(@first_id)
-      hw_pool_id = pool.hardware_pool.id
-    }
-
-    post :destroy, :id => @first_id
+    post :destroy, :id => @ovirtpriv_storage_id
     assert_response :success
+    json = ActiveSupport::JSON.decode(@response.body)
+    assert_equal 'Storage Pool was successfully deleted.', json['alert']
+  end
 
-    assert_raise(ActiveRecord::RecordNotFound) {
-      StoragePool.find(@first_id)
-    }
+  def test_no_perms_to_destroy
+    post :destroy, :id => storage_pools(:corp_com_dev_nfs_ovirtnfs).id
+    assert_response :redirect #Is this really what we want? Or should we just pop up the login page?
+  end
+
+  #FIXME: write the code to make this a real test!
+  def test_bad_id_on_destroy
+#    post :destroy, :id => bad_id
+#    assert_response :success
+#    The controller needs to gracefully handle ActiveRecord::RecordNotFound,
+#    which it does not right now.
   end
 end

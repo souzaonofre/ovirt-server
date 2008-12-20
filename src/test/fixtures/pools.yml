@@ -1,100 +1,77 @@
-one:
-  id: 1
-  name: 'default'
-  type: 'HardwarePool'
-  parent_id: 12
-  created_at: '2008-02-13 15:42:43.417883'
-  updated_at: '2008-02-14 16:41:42.417883'
-  lft: 3
-  rgt: 24
-two:
-  id: 2
-  name: 'foobar hosts'
-  type: 'VmResourcePool'
-  parent_id: 1
-  lft: 4
-  rgt: 5
-three:
-  id: 3
-  name: 'corp.com'
-  type: 'HardwarePool'
-  parent_id: 1
-  lft: 6
-  rgt: 23
-four:
-  id: 4
-  name: 'corp.com dev'
-  type: 'HardwarePool'
-  parent_id: 3
-  lft: 7
-  rgt: 8
-five:
-  id: 5
-  name: 'corp.com qa'
-  type: 'HardwarePool'
-  parent_id: 3
-  lft: 9
-  rgt: 20
-six:
-  id: 6
-  name: 'corp.com production vms'
-  type: 'VmResourcePool'
-  parent_id: 3
+root_dir_pool:
+  name: root
+  type: DirectoryPool
+  lft: 1
+  rgt: 26
+hw_dir_pool:
+  name: hardware
+  type: DirectoryPool
+  parent_id: <%= Fixtures.identify(:root_dir_pool) %>
+  lft: 2
+  rgt: 19
+smart_dir_pool:
+  name: users
+  type: DirectoryPool
+  parent_id: <%= Fixtures.identify(:root_dir_pool) %>
+  lft: 20
+  rgt: 25
+ovirtadmin_dir_pool:
+  name: ovirtadmin
+  type: DirectoryPool
+  parent_id: <%= Fixtures.identify(:smart_dir_pool) %>
   lft: 21
-  rgt: 22
-seven:
-  id: 7
-  name: 'foobar'
-  type: 'VmResourcePool'
-  parent_id: 5
+  rgt: 24
+default:
+  name: default
+  type: HardwarePool
+  parent_id: <%= Fixtures.identify(:hw_dir_pool) %>
+  lft: 3
+  rgt: 18
+corp_com:
+  name: corp.com
+  type: HardwarePool
+  parent_id: <%= Fixtures.identify(:default) %>
+  lft: 4
+  rgt: 17
+corp_com_prod:
+  name: Production Operations
+  type: HardwarePool
+  parent_id: <%= Fixtures.identify(:corp_com) %>
+  lft: 5
+  rgt: 8
+corp_com_qa:
+  name: corp.com qa
+  type: HardwarePool
+  parent_id: <%= Fixtures.identify(:corp_com) %>
+  lft: 9
+  rgt: 12
+corp_com_dev:
+  name: corp.com dev
+  type: HardwarePool
+  parent_id: <%= Fixtures.identify(:corp_com) %>
+  lft: 13
+  rgt: 16
+corp_com_production_vmpool:
+  name: corp.com production vmpool
+  type: VmResourcePool
+  parent_id: <%= Fixtures.identify(:corp_com_prod) %>
+  lft: 6
+  rgt: 7
+corp_qa_vmpool:
+  name: corp.com qa vms
+  type: VmResourcePool
+  parent_id: <%= Fixtures.identify(:corp_com_qa) %>
   lft: 10
   rgt: 11
-eight:
-  id: 8
-  name: 'some foobar hardware'
-  type: 'HardwarePool'
-  parent_id: 5
-  lft: 12
+corp_com_dev_vmpool:
+  name: corp.com dev vmpool
+  type: VmResourcePool
+  parent_id: <%= Fixtures.identify(:corp_com_dev) %>
+  lft: 14
   rgt: 15
-nine:
-  id: 9
-  name: 'some more foobar hardware'
-  type: 'HardwarePool'
-  parent_id: 8
-  lft: 13
-  rgt: 14
-ten:
-  id: 10
-  name: 'yet another pool'
-  type: 'VmResourcePool'
-  parent_id: 5
-  lft: 16
-  rgt: 17
-prodops_pool:
-  id: 11
-  name: 'Production Operations'
-  type: 'HardwarePool'
-  parent_id: 5
-  lft: 18
-  rgt: 19
-hw_dir_pool:
-  id: 12
-  name: 'hardware'
-  type: 'DirectoryPool'
-  parent_id: 13
-  lft: 2
-  rgt: 25
-root_dir_pool:
-  id: 13
-  name: 'root'
-  type: 'DirectoryPool'
-  lft: 1
-  rgt: 28
-smart_dir_pool:
-  id: 14
-  name: 'hardware'
-  type: 'DirectoryPool'
-  parent_id: 13
-  lft: 26
-  rgt: 27
-
+qa_testing_smartpool:
+  name: qa testing
+  type: SmartPool
+  parent_id: <%= Fixtures.identify(:ovirtadmin_dir_pool) %>
+  lft: 22
+  rgt: 23

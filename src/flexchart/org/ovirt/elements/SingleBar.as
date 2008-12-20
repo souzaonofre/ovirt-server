@@ -20,39 +20,66 @@
 
 package org.ovirt.elements {
 
-  import mx.containers.Box;
-  import mx.controls.ToolTip;
-  import mx.managers.ToolTipManager;
+  import flash.display.DisplayObject;
   import flash.events.Event;
   import flash.events.MouseEvent;
   import flash.geom.Rectangle;
-  import flash.display.DisplayObject;
+  import mx.containers.Canvas;
+  import mx.controls.ToolTip;
+  import mx.events.FlexEvent;
+  import mx.events.ResizeEvent;
+  import mx.formatters.DateFormatter;
+  import mx.managers.ToolTipManager;
   import org.ovirt.data.DataPoint;
 
-  public class SingleBar extends Box {
+  public class SingleBar extends Canvas {
 
     private var tip:ToolTip;
     private var dataPoint:DataPoint;
+    private var scale:Number;
+    private var dateFormat:DateFormatter = new DateFormatter();
 
-    public function SingleBar(dataPoint:DataPoint) {
+    public function SingleBar(dataPoint:DataPoint,scale:Number) {
       super();
       this.dataPoint = dataPoint;
+      this.scale = scale;
       addEventListener(MouseEvent.MOUSE_OVER,showTip);
       addEventListener(MouseEvent.MOUSE_OUT,destroyTip);
-      this.setStyle("backgroundColor","0x0000FF");
-      this.setStyle("left","1");
-      this.setStyle("right","1");
+      addEventListener(ResizeEvent.RESIZE,myResize);
+      addEventListener(FlexEvent.CREATION_COMPLETE,myResize);
+      addEventListener(Event.RENDER,myResize);
+      this.setStyle("backgroundColor","0x2875c1");
+      dateFormat.formatString = "DD-MMM-YYYY JJ:NN";
+    }
+
+    public function destroy():void {
+      removeEventListener(MouseEvent.MOUSE_OVER,showTip);
+      removeEventListener(MouseEvent.MOUSE_OUT,destroyTip);
+      removeEventListener(ResizeEvent.RESIZE,myResize);
+      removeEventListener(FlexEvent.CREATION_COMPLETE,myResize);
+      removeEventListener(FlexEvent.UPDATE_COMPLETE,myResize);
+      removeEventListener(Event.RENDER,myResize);
+    }
+
+
+    private function myResize(event:Event):void {
+       trace(event.type);
+       this.height = (dataPoint.getValue() / scale) * parent.height * .9 * -1;
+       this.y = parent.height;
     }
 
     private function showTip(event:Event):void {
+
       var w:Number = this.stage.width;
       var target:DisplayObject = event.currentTarget as DisplayObject;
       var pt:Rectangle = this.stage.getBounds(target);
       var yPos:Number = pt.y * -1;
       var xPos:Number = pt.x * -1;
-      tip = ToolTipManager.createToolTip(dataPoint.getDescription() + "\n" +
-                                           dataPoint.getTimestamp() + "\n" +
-                                           dataPoint.getValue(),
+      tip = ToolTipManager.createToolTip(dataPoint.getDescription() +
+                                         "\n" +
+                                         dateFormat.format(dataPoint.getTimestamp()) +
+                                         "\n" +
+                                         dataPoint.getValue(),
                                          xPos,yPos) as ToolTip;
       tip.x = Math.min(tip.x,
                        w - tip.width);

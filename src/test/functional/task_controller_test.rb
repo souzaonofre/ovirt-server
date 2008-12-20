@@ -31,11 +31,11 @@ class TaskControllerTest < Test::Unit::TestCase
     @request    = ActionController::TestRequest.new
     @response   = ActionController::TestResponse.new
 
-    @first_id = tasks(:one).id
+    @task_id = tasks(:shutdown_production_httpd_appliance_task).id
   end
 
   def test_show
-    get :show, :id => @first_id
+    get :show, :id => @task_id
 
     assert_response :success
     assert_template 'show'

@@ -25,9 +25,9 @@ set -v
 
 test -f Makefile && make -k distclean || :
 
-# set ovirt to initialize / use test db
-sed -i "s/DATABASE=ovirt/DATABASE=ovirt_test/" scripts/ovirt-server-install
-sed -i "s/rake/export RAILS_ENV=test\\nrake/" scripts/ovirt-server-install
+# put rails in development mode
+cp conf/ovirt-rails.sysconf conf/ovirt-rails.sysconf.orig
+echo "RAILS_ENV=development" >> conf/ovirt-rails.sysconf
 
 ./autogen.sh --prefix=$AUTOBUILD_INSTALL_ROOT
 make dist
@@ -42,3 +42,5 @@ if [ -f /usr/bin/rpmbuild ]; then
 
   rpmbuild --nodeps --define "extra_release $EXTRA_RELEASE" -ta --clean *.tar.gz
 fi
+
+mv conf/ovirt-rails.sysconf.orig conf/ovirt-rails.sysconf

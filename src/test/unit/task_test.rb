@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -20,10 +20,11 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class TaskTest < Test::Unit::TestCase
-  fixtures :tasks
+  fixtures :pools, :hosts, :vms, :permissions, :tasks
 
-  # Replace this with your real tests.
-  def test_truth
-    assert true
+  def test_exercise_task_relationships
+    assert_equal tasks(:shutdown_production_httpd_appliance_task).task_target.vm_resource_pool.name, 'corp.com production vmpool'
+    assert_equal tasks(:shutdown_production_httpd_appliance_task).task_target.host.hostname, 'prod.corp.com'
   end
+
 end

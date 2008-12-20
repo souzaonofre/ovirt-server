@@ -19,81 +19,20 @@
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
 $: << File.join(File.dirname(__FILE__), "../app")
-$: << File.join(File.dirname(__FILE__), "../vendor/plugins/betternestedset/lib")
 
 require 'rubygems'
 
-gem 'activeldap'
+$LOAD_PATH << File.expand_path(File.dirname(__FILE__))
 
-require 'active_ldap'
-require 'active_support'
-require 'active_record'
-require 'action_pack'
-require 'action_controller'
-require 'action_view'
-require 'erb'
+ENV['RAILS_ENV'] = 'production' unless ENV['RAILS_ENV']
 
-OVIRT_DIR = "/usr/share/ovirt-server"
-
-require "#{OVIRT_DIR}/vendor/plugins/betternestedset/init.rb"
-require "#{OVIRT_DIR}/vendor/plugins/acts_as_xapian/lib/acts_as_xapian"
+require File.dirname(__FILE__) + '/../config/boot'
+require "#{RAILS_ROOT}/config/environment"
 
 def database_connect
-  yml = YAML::load(ERB.new(IO.read("#{OVIRT_DIR}/config/database.yml")).result)
-  rails_env = ENV['RAILS_ENV']
-  rails_env = 'production' unless rails_env
-  dbconfig = yml[rails_env]
-  ActiveRecord::Base.establish_connection(
-                                          :adapter  => dbconfig['adapter'],
-                                          :host     => dbconfig['host'],
-                                          :username => dbconfig['username'],
-                                          :password => dbconfig['password'],
-                                          :database => dbconfig['database']
-                                          )
+  conf = YAML::load(File.open(File.dirname(__FILE__) + '/../config/database.yml'))
+  ActiveRecord::Base.establish_connection(conf[ENV['RAILS_ENV']])
 end
 
+# Open ActiveRecord connection
 database_connect
-
-require 'models/account.rb'
-require 'models/pool.rb'
-require 'models/permission.rb'
-require 'models/quota.rb'
-
-require 'models/hardware_pool.rb'
-require 'models/directory_pool.rb'
-require 'models/smart_pool.rb'
-require 'models/host.rb'
-require 'models/cpu.rb'
-require 'models/boot_type.rb'
-require 'models/bonding.rb'
-require 'models/bonding_type.rb'
-require 'models/nic.rb'
-
-require 'models/vm_resource_pool.rb'
-require 'models/vm.rb'
-
-require 'models/task'
-require 'models/host_task.rb'
-require 'models/storage_task.rb'
-require 'models/vm_task.rb'
-
-require 'models/storage_pool.rb'
-require 'models/iscsi_storage_pool.rb'
-require 'models/nfs_storage_pool.rb'
-require 'models/lvm_storage_pool.rb'
-
-require 'models/storage_volume.rb'
-require 'models/iscsi_storage_volume.rb'
-require 'models/nfs_storage_volume.rb'
-require 'models/lvm_storage_volume.rb'
-require 'models/smart_pool.rb'
-require 'models/smart_pool_tag.rb'
-
-require 'models/ip_address.rb'
-require 'models/ip_v4_address.rb'
-require 'models/ip_v6_address.rb'
-require 'models/network.rb'
-require 'models/physical_network.rb'
-require 'models/usage.rb'
-require 'models/vlan.rb'
-

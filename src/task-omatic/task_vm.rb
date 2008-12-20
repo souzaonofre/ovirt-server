@@ -24,46 +24,140 @@ require 'utils'
 gem 'cobbler'
 require 'cobbler'
 
+def findHostSLA(vm)
+  host = nil
+
+  vm.vm_resource_pool.get_hardware_pool.hosts.each do |curr|
+    # FIXME: we probably need to add in some notion of "load" into this check
+    if curr.num_cpus >= vm.num_vcpus_allocated \
+      and curr.memory >= vm.memory_allocated \
+      and not curr.is_disabled.nil? and curr.is_disabled == 0 \
+      and curr.state == Host::STATE_AVAILABLE \
+      and (vm.host_id.nil? or (not vm.host_id.nil? and vm.host_id != curr.id))
+      host = curr
+      break
+    end
+  end
+
+  if host == nil
+    # we couldn't find a host that matches this criteria
+    raise "No host matching VM parameters could be found"
+  end
+
+  return host
+end
+
+def findHost(host_id)
+  host = Host.find(:first, :conditions => [ "id = ?", host_id])
+
+  if host == nil
+    # Hm, we didn't find the host_id.  Seems odd.  Return a failure
+    raise "Could not find host_id " + host_id.to_s
+  end
+
+  return host
+end
+
+def connect_storage_pools(conn, storage_volumes)
+  storagedevs = []
+  storage_volumes.each do |volume|
+    # here, we need to iterate through each volume and possibly attach it
+    # to the host we are going to be using
+    db_pool = volume.storage_pool
+    if db_pool == nil
+      # Hum.  Specified by the VM description, but not in the storage pool?
+      # continue on and hope for the best
+      puts "Couldn't find pool for volume #{volume.path}; skipping"
+      next
+    end
+
+    # we have to special case LVM pools.  In that case, we need to first
+    # activate the underlying physical device, and then do the logical one
+    if volume[:type] == "LvmStorageVolume"
+      phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(volume)
+      phys_libvirt_pool.connect(conn)
+    end
+
+    libvirt_pool = LibvirtPool.factory(db_pool)
+    libvirt_pool.connect(conn)
+
+    # OK, the pool should be all set.  The last thing we need to do is get
+    # the path based on the volume name
+    storagedevs << libvirt_pool.lookup_vol_by_name(volume.read_attribute(volume.volume_name)).path
+  end
+
+  return storagedevs
+end
+
+def remove_pools(conn, type = nil)
+  all_storage_pools(conn).each do |remote_pool_name|
+    pool = conn.lookup_storage_pool_by_name(remote_pool_name)
+
+    if type == nil or type == Document.new(pool.xml_desc).root.attributes['type']
+      begin
+        pool.destroy
+      rescue
+      end
+
+      begin
+        # if the destroy failed, we still try to undefine; it may be a pool
+        # that was previously destroyed but not undefined for whatever reason
+        pool.undefine
+      rescue
+        # do nothing if any of this failed; the worst that happens is that
+        # we leave a pool configured
+        puts "Could not teardown pool " + remote_pool_name + "; skipping"
+      end
+    end
+  end
+end
+
+def teardown_storage_pools(conn)
+  # FIXME: this needs to get a *lot* smarter.  In particular, we want to make
+  # sure we can tear down unused pools even when there are other guests running
+  if conn.list_domains.empty?
+    # OK, there are no running guests on this host anymore.  We can teardown
+    # any storage pools that are there without fear
+
+    # we first have to tear-down LVM pools, because they might depend on the
+    # underlying physical pools
+    remove_pools(conn, "logical")
+
+    # now tear down the rest of the pools
+    remove_pools(conn)
+  end
+end
+
 def create_vm_xml(name, uuid, memAllocated, memUsed, vcpus, bootDevice,
                   macAddr, bridge, diskDevices)
   doc = Document.new
 
   doc.add_element("domain", {"type" => "kvm"})
 
-  doc.root.add_element("name")
-  doc.root.elements["name"].text = name
+  doc.root.add_element("name").add_text(name)
 
-  doc.root.add_element("uuid")
-  doc.root.elements["uuid"].text = uuid
+  doc.root.add_element("uuid").add_text(uuid)
 
-  doc.root.add_element("memory")
-  doc.root.elements["memory"].text = memAllocated
+  doc.root.add_element("memory").add_text(memAllocated.to_s)
 
-  doc.root.add_element("currentMemory")
-  doc.root.elements["currentMemory"].text = memUsed
+  doc.root.add_element("currentMemory").add_text(memUsed.to_s)
 
-  doc.root.add_element("vcpu")
-  doc.root.elements["vcpu"].text = vcpus
+  doc.root.add_element("vcpu").add_text(vcpus.to_s)
 
   doc.root.add_element("os")
-  doc.root.elements["os"].add_element("type")
-  doc.root.elements["os"].elements["type"].text = "hvm"
+  doc.root.elements["os"].add_element("type").add_text("hvm")
   doc.root.elements["os"].add_element("boot", {"dev" => bootDevice})
 
   doc.root.add_element("clock", {"offset" => "utc"})
 
-  doc.root.add_element("on_poweroff")
-  doc.root.elements["on_poweroff"].text = "destroy"
+  doc.root.add_element("on_poweroff").add_text("destroy")
 
-  doc.root.add_element("on_reboot")
-  doc.root.elements["on_reboot"].text = "restart"
+  doc.root.add_element("on_reboot").add_text("restart")
 
-  doc.root.add_element("on_crash")
-  doc.root.elements["on_crash"].text = "destroy"
+  doc.root.add_element("on_crash").add_text("destroy")
 
   doc.root.add_element("devices")
-  doc.root.elements["devices"].add_element("emulator")
-  doc.root.elements["devices"].elements["emulator"].text = "/usr/bin/qemu-kvm"
+  doc.root.elements["devices"].add_element("emulator").add_text("/usr/bin/qemu-kvm")
 
   devs = ['hda', 'hdb', 'hdc', 'hdd']
   which_device = 0
@@ -103,7 +197,7 @@ end
 
 def setVmState(vm, state)
   vm.state = state
-  vm.save
+  vm.save!
 end
 
 def setVmVncPort(vm, domain)
@@ -112,9 +206,8 @@ def setVmVncPort(vm, domain)
   if not attrib.empty?:
     vm.vnc_port = attrib.to_s.to_i
   end
-  vm.save
+  vm.save!
 end
-
 
 def findVM(task, fail_on_nil_host_id = true)
   # find the matching VM in the vms table
@@ -148,7 +241,7 @@ def setVmShutdown(vm)
   vm.state = Vm::STATE_STOPPED
   vm.needs_restart = nil
   vm.vnc_port = nil
-  vm.save
+  vm.save!
 end
 
 def create_vm(task)
@@ -174,9 +267,7 @@ def create_vm(task)
   end
 end
 
-def shutdown_vm(task)
-  puts "shutdown_vm"
-
+def shut_or_destroy_vm(task, which)
   # here, we are given an id for a VM to shutdown; we have to lookup which
   # physical host it is running on
 
@@ -198,13 +289,7 @@ def shutdown_vm(task)
   begin
     conn = Libvirt::open("qemu+tcp://" + vm.host.hostname + "/system")
     dom = conn.lookup_domain_by_uuid(vm.uuid)
-    # FIXME: crappy.  Right now we destroy the domain to make sure it
-    # really went away.  We really want to shutdown the domain to make
-    # sure it gets a chance to cleanly go down, but how can we tell when
-    # it is truly shut off?  And then we probably need a timeout in case
-    # of problems.  Needs more thought
-    #dom.shutdown
-    dom.destroy
+    dom.send(which)
 
     begin
       dom.undefine
@@ -226,6 +311,16 @@ def shutdown_vm(task)
   end
 
   setVmShutdown(vm)
+end
+
+def shutdown_vm(task)
+  puts "shutdown_vm"
+  shut_or_destroy_vm(task, "shutdown")
+end
+
+def poweroff_vm(task)
+  puts "poweroff_vm"
+  shut_or_destroy_vm(task, "destroy")
 end
 
 def start_vm(task)
@@ -272,8 +367,18 @@ def start_vm(task)
 
       raise "Image #{vm.cobbler_name} not found in Cobbler server" unless details
 
-      ignored, ip_addr, export_path, filename =
-        details.file.split(/(.*):(.*)\/(.*)/)
+      # extract the components of the image filename
+      image_uri = details.file
+      protocol = auth = ip_addr = export_path = filename = ""
+
+      protocol, image_uri = image_uri.split("://") if image_uri.include?("://")
+      auth, image_uri = image_uri.split("@") if image_uri.include?("@")
+      # it's ugly, but string.split returns an empty string as the first
+      # result here, so we'll just ignore it
+      ignored, ip_addr, image_uri =
+	image_uri.split(/^([^\/]+)(\/.*)/) unless image_uri =~ /^\//
+      ignored, export_path, filename =
+	image_uri.split(/^(.*)\/(.+)/)
 
       found = false
 
@@ -303,24 +408,36 @@ def start_vm(task)
       end
     end
 
-    conn = Libvirt::open("qemu+tcp://" + host.hostname + "/system")
-
     volumes = []
     volumes += vm.storage_volumes
     volumes << image_volume if image_volume
-    storagedevs = connect_storage_pools(conn, volumes)
 
-    # FIXME: get rid of the hardcoded bridge
-    xml = create_vm_xml(vm.description, vm.uuid, vm.memory_allocated,
-                        vm.memory_used, vm.num_vcpus_allocated, vm.boot_device,
-                        vm.vnic_mac_addr, "ovirtbr0", storagedevs)
+    conn = Libvirt::open("qemu+tcp://" + host.hostname + "/system")
 
-    dom = conn.define_domain_xml(xml.to_s)
-    dom.create
+    begin
+      storagedevs = connect_storage_pools(conn, volumes)
 
-    setVmVncPort(vm, dom)
+      dom = nil
+      begin
+        # FIXME: get rid of the hardcoded bridge
+        xml = create_vm_xml(vm.description, vm.uuid, vm.memory_allocated,
+                            vm.memory_used, vm.num_vcpus_allocated,
+                            vm.boot_device, vm.vnic_mac_addr, "ovirtbr0",
+                            storagedevs)
+        dom = conn.define_domain_xml(xml.to_s)
+        dom.create
 
-    conn.close
+        setVmVncPort(vm, dom)
+      rescue
+        if dom != nil
+          dom.undefine
+        end
+        teardown_storage_pools(conn)
+        raise ex
+      end
+    ensure
+      conn.close
+    end
   rescue => ex
     setVmState(vm, vm_orig_state)
     raise ex
@@ -331,7 +448,7 @@ def start_vm(task)
   vm.memory_used = vm.memory_allocated
   vm.num_vcpus_used = vm.num_vcpus_allocated
   vm.boot_device = Vm::BOOT_DEV_HD
-  vm.save
+  vm.save!
 end
 
 def save_vm(task)
@@ -508,7 +625,7 @@ def update_state_vm(task)
     if task_effective_state == Vm::STATE_STOPPED
       setVmShutdown(vm)
     end
-    vm.save
+    vm.save!
     puts "Updated state to " + new_vm_state
   end
 end
@@ -570,7 +687,7 @@ def migrate(vm, dest = nil)
 
   setVmState(vm, Vm::STATE_RUNNING)
   vm.host_id = dst_host.id
-  vm.save
+  vm.save!
 end
 
 def migrate_vm(task)

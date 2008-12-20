@@ -5,10 +5,44 @@
   </ul>
 </div>
 
+<textarea id="tree_template" style="display:none;">
+{macro htmlList(list, isFullList)}
+  {if isFullList}
+  <ul style="display:none;">
+  {/if}
+    {for item in list}
+      <li>
+        <span class="hitarea {if item.children.length > 0} expandable{/if}">&nbsp;</span>
+        <div id="tree_${item.type}_${item.id}">
+          <input class="grid_checkbox" type="checkbox"
+            name="grid_checkbox${item.type}_${item.id}"
+            value="${item.id}"
+            {if !item.is_pool}disabled="disabled" style="display:none"{/if}
+            {if item.selected}checked="checked"{/if}/> ${item.name} {if item.size}(${item.size} GB){/if}
+        </div>
+        {if item.children.length > 0}
+          ${htmlList(item.children, true)}
+        {/if}
+      </li>
+    {/for}
+  {if isFullList}
+  </ul>
+  {/if}
+{/macro}
+
+${htmlList(pools)}
+</textarea>
+
 <script type="text/javascript">
+  $(document).ready(function(){
+    $('#smart_storage_tree').tree({
+      content: {"pools" : <%=  @storage_tree%>},
+      clickHandler: smart_storage_select
+    });
+  });
   function get_selected_storage_for_smart_pool()
   {
-    return get_selected_checkboxes("smart_storage_grid_form");
+    return get_selected_checkboxes("smart_storage_tree_form");
   }
   function remove_storage_from_smart_pool()
   {
@@ -27,29 +61,24 @@
                }, 'json');
     }
   }
-  function smart_storage_select(selected_rows)
+  function smart_storage_select(e, elem)
   {
-    var selected_ids = new Array() ;
-    for(i=0; i<selected_rows.length; i++) {
-      selected_ids[i] = selected_rows[i].id;
-    }
-    if (selected_ids.length == 1)
-    {
-      $('#smart_storage_selection').load('<%= url_for :controller => "storage", :action => "show" %>',
-                { id: parseInt(selected_ids[0].substring(3))});
-    }
+    $('#smart_storage_tree_form ul.ovirt-tree li div').removeClass('current');
+    $(elem)
+      .addClass('current');
+    $('#smart_storage_selection').load('<%= url_for :controller => "search", :action => "single_result" %>',
+                { class_and_id: elem.id.substring(elem.id.indexOf("_")+1)});
   }
 
 </script>
 <div class="panel_header"></div>
 <% if @pool.tagged_storage_pools.size != 0 %>
   <div class="data_section">
-       <%= render :partial => "/storage/grid", :locals => { :table_id => "smart_storage_grid",
-                                                            :hwpool => @pool,
-                                                            :pool_controller => "smart_pools",
-                                                            :exclude_pool => nil,
-                                                            :on_select => "smart_storage_select",
-                                                            :is_popup => false} %>
+    <div class="storage_tree_container">
+      <form id="smart_storage_tree_form">
+        <ul id="smart_storage_tree" class="ovirt-tree"></ul>
+      </form>
+    </div>
   </div>
 
   <div class="selection_detail" id="smart_storage_selection">

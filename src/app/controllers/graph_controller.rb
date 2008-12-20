@@ -4,20 +4,50 @@ class GraphController < ApplicationController
   layout nil
 
   def flexchart_data
+    @id = params[:id]
+    target = params[:target]
+    startTime = params[:startTime].to_i
+    endTime = params[:endTime].to_i
+    duration = endTime - startTime
 
-    #FIXME: use the stats package aggregation (when it's available)
-    #instead of the old method
-    graph_obj = history_graph_data_object
+    #the maximum number of data points we want in any chart
+    maxPoints = 100
+    resolution =
+      case
+      when duration / RRDResolution::Minimum < maxPoints
+        RRDResolution::Minimum
+      when duration / RRDResolution::Short < maxPoints
+        RRDResolution::Short
+      when duration / RRDResolution::Medium < maxPoints
+        RRDResolution::Medium
+      when duration / RRDResolution::Long < maxPoints
+        RRDResolution::Long
+      else
+        RRDResolution::Maximum
+      end
+    devclass = DEV_KEY_CLASSES[target]
+    counter = DEV_KEY_COUNTERS[target]
 
-    #FIXME: for this release, the flexchart shows only peak values,
-    #       and only shows a default of the last 40 data points in rrd.
-    graph_data = { :labels => graph_obj[:timepoints].last(40),
-                   :values => graph_obj[:dataset][2][:values].last(40) }
-    my_data = graph_data[:labels].zip(graph_data[:values])
-    graph = { :vectors => my_data,
-              :max_value => graph_obj[:total_peak],
-              :description => params[:target]
-            }
+    pool = Pool.find(@id)
+    hosts = pool.hosts
+    requestList = [ ]
+    hosts.each{ |host|
+      requestList.push StatsRequest.new(host.hostname, devclass, 0, counter, startTime, duration, resolution, DataFunction::Peak)
+    }
+    statsList = getAggregateStatsData?(requestList)
+
+    stat = statsList[0]
+    vectors = [ ]
+    data = stat.get_data?
+    data.each{ |datum|
+      val = datum.get_value?
+      val = 0 if (val != 0 && val.nan?)
+      vectors.push [datum.get_timestamp?.to_i, val]
+    }
+    graph = { :vectors => vectors,
+      :max_value => stat.get_max_value?,
+      :description => target
+    }
     render :json => graph
   end
 

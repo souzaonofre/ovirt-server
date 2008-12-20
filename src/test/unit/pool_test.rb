@@ -23,7 +23,11 @@ class PoolTest < Test::Unit::TestCase
   fixtures :pools
 
   # Replace this with your real tests.
-  def test_truth
-    assert true
+  def test_get_name
+    assert_equal(pools(:corp_com_prod).name, 'Production Operations')
+  end
+
+  def test_get_parent
+    assert_equal(pools(:corp_com_prod).parent.name, 'corp.com')
   end
 end

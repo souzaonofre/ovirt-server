@@ -1,54 +1,87 @@
-    <div id="data">
-      <div class="inside">
-
-          <div id="dataTableWrapper">
-
-          <div class="dataTable">
-              <div class="inside">
-
-                <div class="data-table-column">
-
-                <p><b>IP address:</b> <%=h @storage_volume.storage_pool.ip_addr %></p>
-<% if @storage_volume.storage_pool[:type] == "IscsiStoragePool" %>
-                <p><b>Port:</b>       <%=h @storage_volume.storage_pool.port %></p>
-                <p><b>Target:</b>     <%=h @storage_volume.storage_pool[:target] %></p>
-<% elsif @storage_volume.storage_pool[:type] == "NfsStoragePool" %>
-                <p><b>Export path:</b> <%=h @storage_volume.storage_pool.export_path %></p>
-<% end %>
-                <p><b>Type:</b>       <%=h @storage_volume.storage_pool.get_type_label %></p>
-		<p></p>
-                <p><b>Path:</b>       <%=h @storage_volume.path %></p>
-<% if @storage_volume[:type] == "IscsiStorageVolume" %>
-                <p><b>LUN:</b>        <%=h @storage_volume.lun %></p>
-<% elsif @storage_volume[:type] == "NfsStorageVolume" %>
-                <p><b>Filename:</b>        <%=h @storage_volume.filename %></p>
-<% end %>
-                <p><b>Size:</b>       <%=h @storage_volume.size_in_gb %> GB</p>
-
-                </div>
-
-              </div> <!-- end #data-table.inside -->
-            </div> <!-- end #dataTable -->
-
-          </div> <!-- end #dataTableWrapper -->
-
-      </div> <!-- end #data.inside -->
-      </div> <!-- end #data -->
-
-  </td>
-  <td id="right">
-    <div class="heading">&nbsp;</div>
-    <div id="tools">
-    <h3>Actions</h3>
-    <%if @can_modify -%>
-    <% end -%>
-    <div class="actions">
-      <%= link_to "Back to #{@storage_volume.storage_pool.ip_addr}: #{@storage_volume.storage_pool[:target]}", { :action => 'show', :id => @storage_volume.storage_pool.id }, { :class => "" } %>
-    </div>
-  </div>
-
-  </td>
-
 <%- content_for :title do -%>
-<%= _("Storage Volume") %>
+  <%=h @storage_volume.display_name %>
 <%- end -%>
+
+<%- content_for :action_links do -%>
+  <%if @can_modify -%>
+    <%if @storage_volume.supports_lvm_subdivision and @storage_volume.vms.empty? -%>
+      <%= link_to image_tag("icon_addstorage.png") + " Add new Volume",
+                            {:controller => 'storage', :action => 'new_volume', :source_volume_id => @storage_volume.id},
+                             :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
+    <% end %>
+    <%if @storage_volume.deletable -%>
+      <a href="#confirm_delete"  rel="facebox[.bolder]">
+        <%= image_tag "icon_x.png" %> Delete
+      </a>
+    <%- end -%>
+  <%- end -%>
+<%- end -%>
+<%= confirmation_dialog("confirm_delete", "Are you sure?", "delete_volume()") %>
+
+  <div class="selection_key">
+    <% unless @storage_volume.storage_pool[:type] == "LvmStoragePool" %>
+      IP address:<br/>
+    <% end %>
+    <% if @storage_volume.storage_pool[:type] == "IscsiStoragePool" %>
+      Port:<br/>
+      Target:<br/>
+    <% elsif @storage_volume.storage_pool[:type] == "NfsStoragePool" %>
+      Export path:<br/>
+    <% end %>
+    Type:<br/>
+    State:<br/>
+    Path:<br/>
+    <% if @storage_volume[:type] == "IscsiStorageVolume" %>
+      LUN:<br/>
+    <% elsif @storage_volume[:type] == "NfsStorageVolume" %>
+      Filename:<br/>
+    <% elsif @storage_volume[:type] == "LvmStorageVolume" %>
+      Volume Group:<br/>
+      Logical Volume:<br/>
+      Permissions (owner/group/mode):<br/>
+    <% end %>
+    Size:<br/>
+  </div>
+  <div class="selection_value">
+    <% unless @storage_volume.storage_pool[:type] == "LvmStoragePool" %>
+      <%=h @storage_volume.storage_pool.ip_addr %><br/>
+    <% end %>
+   <% if @storage_volume.storage_pool[:type] == "IscsiStoragePool" %>
+      <%=h @storage_volume.storage_pool.port %><br/>
+      <%=h @storage_volume.storage_pool[:target] %><br/>
+    <% elsif @storage_volume.storage_pool[:type] == "NfsStoragePool" %>
+      <%=h @storage_volume.storage_pool.export_path %><br/>
+    <% end %>
+    <%=h @storage_volume.storage_pool.get_type_label %><br/>
+    <%=h @storage_volume.state %><br/>
+    <%=h @storage_volume.path %><br/>
+    <% if @storage_volume[:type] == "IscsiStorageVolume" %>
+      <%=h @storage_volume.lun %><br/>
+    <% elsif @storage_volume[:type] == "NfsStorageVolume" %>
+      <%=h @storage_volume.filename %><br/>
+    <% elsif @storage_volume[:type] == "LvmStorageVolume" %>
+      <%=h @storage_volume.storage_pool.vg_name %><br/>
+      <%=h @storage_volume.lv_name %><br/>
+      <%=h @storage_volume.lv_owner_perms %>/<%=h @storage_volume.lv_group_perms %>/<%=h @storage_volume.lv_mode_perms %><br/>
+    <% end %>
+    <%=h @storage_volume.size_in_gb %> GB<br/>
+  </div>
+<%- content_for :right do -%>
+
+<%- end -%>
+
+<script type="text/javascript">
+  function delete_volume()
+  {
+    $(document).trigger('close.facebox');
+    $.post('<%= url_for :controller => "storage", :action => "delete_volumes" %>',
+           { storage_volume_ids: <%= @storage_volume.id %> },
+            function(data,status) {
+              // FIXME: reload tree
+              if (data.alert) {
+                $.jGrowl(data.alert);
+              }
+	      empty_summary('storage_selection', 'Storage Pool or Volume');
+            }, 'json');
+  }
+</script>

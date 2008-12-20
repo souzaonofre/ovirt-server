@@ -13,6 +13,7 @@ License: GPLv2+ and MIT
 Group: Applications/System
 Requires: ruby >= 1.8.1
 Requires: ruby(abi) = 1.8
+Requires: rubygem(activerecord) >= 2.1.1-2
 Requires: rubygem(activeldap) >= 0.10.0
 Requires: rubygem(rails) >= 2.1.1
 Requires: rubygem(mongrel) >= 1.0.1
@@ -72,11 +73,11 @@ mkdir %{buildroot}
 touch %{buildroot}%{_localstatedir}/log/%{name}/mongrel.log
 touch %{buildroot}%{_localstatedir}/log/%{name}/rails.log
 touch %{buildroot}%{_localstatedir}/log/%{name}/taskomatic.log
-touch %{buildroot}%{_localstatedir}/log/%{name}/host-status.log
+touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 %{__install} -p -m0644 %{pbuild}/conf/%{name}.conf %{buildroot}%{_sysconfdir}/httpd/conf.d
 
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-host-browser %{buildroot}%{_initrddir}
-%{__install} -Dp -m0755 %{pbuild}/conf/ovirt-host-status %{buildroot}%{_initrddir}
+%{__install} -Dp -m0755 %{pbuild}/conf/ovirt-db-omatic %{buildroot}%{_initrddir}
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-host-collect %{buildroot}%{_initrddir}
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-mongrel-rails %{buildroot}%{_initrddir}
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-mongrel-rails.sysconf %{buildroot}%{_sysconfdir}/sysconfig/ovirt-mongrel-rails
@@ -146,25 +147,20 @@ fi
 # on; otherwise, we respect the choices the administrator already has made.
 # check this by seeing if each daemon is already installed
 %daemon_chkconfig_post -d ovirt-host-browser
-%daemon_chkconfig_post -d ovirt-host-status
+%daemon_chkconfig_post -d ovirt-db-omatic
 %daemon_chkconfig_post -d ovirt-host-collect
 %daemon_chkconfig_post -d ovirt-mongrel-rails
 %daemon_chkconfig_post -d ovirt-taskomatic
 
-# Set up the symlink for ovirt-docs so that online help works
-docs_dir=$(rpm -q --queryformat '/usr/share/doc/%{NAME}-%{VERSION}' ovirt-docs)
-%{__rm} /usr/share/ovirt-server/public/help
-%{__ln_s} $docs_dir/Using_the_oVirt_Server_Suite_User_Interface/ %{app_root}/public/help
-
 %preun
 if [ "$1" = 0 ] ; then
   /sbin/service ovirt-host-browser stop > /dev/null 2>&1
-  /sbin/service ovirt-host-status stop > /dev/null 2>&1
+  /sbin/service ovirt-db-omatic stop > /dev/null 2>&1
   /sbin/service ovirt-host-collect stop > /dev/null 2>&1
   /sbin/service ovirt-mongrel-rails stop > /dev/null 2>&1
   /sbin/service ovirt-taskomatic stop > /dev/null 2>&1
   /sbin/chkconfig --del ovirt-host-browser
-  /sbin/chkconfig --del ovirt-host-status
+  /sbin/chkconfig --del ovirt-db-omatic
   /sbin/chkconfig --del ovirt-host-collect
   /sbin/chkconfig --del ovirt-mongrel-rails
   /sbin/chkconfig --del ovirt-taskomatic
@@ -177,7 +173,7 @@ fi
 %{_sbindir}/ovirt-update-search
 %{_bindir}/ovirt-add-host
 %{_initrddir}/ovirt-host-browser
-%{_initrddir}/ovirt-host-status
+%{_initrddir}/ovirt-db-omatic
 %{_initrddir}/ovirt-host-collect
 %{_initrddir}/ovirt-mongrel-rails
 %{_initrddir}/ovirt-taskomatic

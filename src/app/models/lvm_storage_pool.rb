@@ -44,5 +44,10 @@ class LvmStoragePool < StoragePool
     kb_to_gb(size)
   end
 
+  # FIXME: needs to take free space into account here
+  def user_subdividable
+    true
+  end
+
 
 end

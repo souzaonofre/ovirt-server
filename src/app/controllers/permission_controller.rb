@@ -47,8 +47,9 @@ class PermissionController < ApplicationController
     unless @can_set_perms
       flash[:notice] = 'You do not have permission to create this permission record'
       redirect_to_parent
+    else
+      render :layout => 'popup'
     end
-    render :layout => 'popup'    
   end
 
   def create
@@ -102,7 +103,7 @@ class PermissionController < ApplicationController
       Permission.transaction do
         permissions = Permission.find(:all, :conditions => "id in (#{permission_ids.join(', ')})")
         permissions.each do |permission|
-          permission.destroy unless permission.is_primary?
+          permission.destroy if permission.is_primary?
         end
       end
       render :json => { :object => "permission", :success => true, 

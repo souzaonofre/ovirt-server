@@ -23,6 +23,7 @@ class VmTask < Task
 
   ACTION_START_VM    = "start_vm"
   ACTION_SHUTDOWN_VM = "shutdown_vm"
+  ACTION_POWEROFF_VM = "poweroff_vm"
 
   ACTION_SUSPEND_VM  = "suspend_vm"
   ACTION_RESUME_VM   = "resume_vm"
@@ -60,6 +61,14 @@ class VmTask < Task
                                       :icon  => "icon_x.png",
                                       :start => Vm::STATE_RUNNING,
                                       :running => Vm::STATE_STOPPING,
+                                      :success => Vm::STATE_STOPPED,
+                                      :failure => Vm::STATE_RUNNING,
+                                      :privilege => [Permission::PRIV_VM_CONTROL,
+                                                     PRIV_OBJECT_VM_POOL]},
+              ACTION_POWEROFF_VM => { :label => "Poweroff",
+                                      :icon => "icon_x.png",
+                                      :start => Vm::STATE_RUNNING,
+                                      :running => Vm::STATE_POWERING_OFF,
                                       :success => Vm::STATE_STOPPED,
                                       :failure => Vm::STATE_RUNNING,
                                       :privilege => [Permission::PRIV_VM_CONTROL,

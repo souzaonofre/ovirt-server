@@ -23,6 +23,6 @@ package org.ovirt {
     public static var width:int = 722;
     public static var height:int = 297;
     public static var barSpacing:int = 2;
-    public static var labelHeight:int = 40;
+    public static var labelHeight:int = 20;
   }
 }

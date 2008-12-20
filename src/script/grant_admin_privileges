@@ -1,11 +1,11 @@
 #!/usr/bin/ruby
-
+#FIXME: this should really be a rake task, then we get half of this stuff for free
 $: << File.join(File.dirname(__FILE__), '../dutils')
 
 require 'active_record_env'
 
 # Get configuration options...
-ldap_config = YAML::load(File.open("#{OVIRT_DIR}/config/ldap.yml"))
+ldap_config = YAML::load(File.open(File.dirname(__FILE__) +"/../config/ldap.yml"))
 uid = ARGV[0]
 base, host = ldap_config["production"]["base"], ldap_config["production"]["host"]
 

@@ -90,12 +90,15 @@ loop do
     get_credentials
 
     task.time_started = Time.now
+    task.state = Task::STATE_RUNNING
+    task.save!
 
     state = Task::STATE_FINISHED
     begin
       case task.action
       when VmTask::ACTION_CREATE_VM then create_vm(task)
       when VmTask::ACTION_SHUTDOWN_VM then shutdown_vm(task)
+      when VmTask::ACTION_POWEROFF_VM then poweroff_vm(task)
       when VmTask::ACTION_START_VM then start_vm(task)
       when VmTask::ACTION_SUSPEND_VM then suspend_vm(task)
       when VmTask::ACTION_RESUME_VM then resume_vm(task)
@@ -104,6 +107,8 @@ loop do
       when VmTask::ACTION_UPDATE_STATE_VM then update_state_vm(task)
       when VmTask::ACTION_MIGRATE_VM then migrate_vm(task)
       when StorageTask::ACTION_REFRESH_POOL then refresh_pool(task)
+      when StorageVolumeTask::ACTION_CREATE_VOLUME then create_volume(task)
+      when StorageVolumeTask::ACTION_DELETE_VOLUME then delete_volume(task)
       when HostTask::ACTION_CLEAR_VMS then clear_vms_host(task)
       else
         puts "unknown task " + task.action
@@ -119,7 +124,15 @@ loop do
 
     task.state = state
     task.time_ended = Time.now
-    task.save
+    task.save!
+    puts "done"
+  end
+
+  # FIXME: here, we clean up "orphaned" tasks.  These are tasks that we had
+  # to orphan (set task_target to nil) because we were deleting the object they
+  # depended on.
+  Task.find(:all, :conditions => [ "task_target_id IS NULL and task_target_type IS NULL" ]).each do |task|
+    task.destroy
   end
   
   # we could destroy credentials, but another process might be using them (in

@@ -32,5 +32,9 @@ class StatsData
   
   def get_timestamp?()  
     return @timestamp
-  end  
-end  
+  end
+
+  def set_value( newVal )
+    @value = newVal
+  end
+end

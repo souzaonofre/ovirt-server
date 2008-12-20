@@ -69,7 +69,7 @@ def fetchRollingAve?(rrdPath, start, endTime, interval, myFunction, lIndex, retu
          final = (final / aveLen )
 
          # Determine min / max to help with autoscale.
-         unless final.is_a? (Float) && final.nan?
+         unless final.is_a?(Float) && final.nan?
            my_min = [my_min, final].min
            my_max = [my_max, final].max
          end
@@ -137,7 +137,7 @@ def fetchRollingCalcUsedData?(rrdPath, start, endTime, interval, myFunction, lIn
          final = (final / aveLen)
 
          # Determine min / max to help with autoscale.
-         unless final.is_a? (Float) && final.nan?
+         unless final.is_a?(Float) && final.nan?
            my_min = [my_min, final].min
            my_max = [my_max, final].max
          end
@@ -190,7 +190,7 @@ def fetchCalcUsedData?(rrdPath, start, endTime, interval, myFunction, lIndex, re
       value  =  100 - value
 
       # Determine min / max to help with autoscale.
-      unless value.is_a? (Float) && value.nan?
+      unless value.is_a?(Float) && value.nan?
         my_min = [my_min, value].min
         my_max = [my_max, value].max
       end
@@ -220,7 +220,7 @@ def fetchRegData?(rrdPath, start, endTime, interval, myFunction, lIndex, returnL
    data.each do |vdata|
       value = vdata[lIndex]
       i += 1
-      unless value.is_a? (Float) && value.nan?
+      unless value.is_a?(Float) && value.nan?
         my_min = [my_min, value].min
         my_max = [my_max, value].max
       end
@@ -335,6 +335,7 @@ end
 
 
 
+
 def  getStatsData?(statRequestList)
     tmpList = []
     
@@ -348,6 +349,116 @@ def  getStatsData?(statRequestList)
        #  Now copy the array returned into the main array
        myList << tmpList
     end
+
+return myList
+
+end
+
+# This function aggregates all of the values returned into one list before
+# returning.  It is up to the caller to ensure that the request list has
+# "like" items.  For instance if you request CPU Utilization and Network bytes,
+# this function will be happy to aggregate them for you...
+
+def  getAggregateStatsData?(statRequestList)
+
+    tmpList = []
+    myMasterList = []
+    myList = []
+    my_min = 0
+    my_max = 0
+    value = 0
+
+    node = "Aggregate"
+    returnList = StatsDataList.new("Aggregate",0,0, 0, 0, 0)
+    statRequestList.each do |request|
+       node = request.get_node?
+       counter = request.get_counter?
+       tmpList =fetchData?(request.get_node?, request.get_devClass?,request.get_instance?, request.get_counter?, \
+                     request.get_starttime?, request.get_duration?,request.get_precision?, request.get_function?)
+
+       #  Now for something completely different...
+       #  The first list back will become our "master"
+       #  Each successive list will be proccesed against the master
+       #  as appropriate.
+
+       # Keep in mind the following things:
+       # 1) The lists coming in are already "normalized" for their respective types
+       #    So no need to worry about calculated values, etc.
+       # 2) Each list will have a min and max value set. Just use those values
+       #    when possible.
+
+          idx = 0
+
+          list = tmpList.get_data?()
+          list.each do |d|
+
+             #  A NaN will really screw things up, so lets terminate
+             #  them with extreme prejudice...
+
+             value = d.get_value?
+             value = 0 if value.nan?
+
+             if (myMasterList.length > idx )
+                if ( d.get_timestamp? > myMasterList[idx].get_timestamp? )
+                   spin = 1
+
+                   # Now we try to sync the pointers between the two lists
+                   # Need to move the pointer to the master list
+                   # We don't actually set anything in the list,
+                   # just position the pointers as best as we can
+
+                   while ( spin == 1)
+                      if ( idx  >= myMasterList.length - 1)
+                         # Can't go any further in the master
+                         # Will just need to append
+                         spin = 0
+                      else
+                         if ( d.get_timestamp? > myMasterList[idx].get_timestamp? )
+                            idx += 1 # Just move the pointer
+                         else
+                            spin = 0
+                         end
+                      end
+                   end # while loop
+                end
+
+                # Now the pointers should be moved as much as possible
+                # *Should* be easy to take the proper action
+                if ( d.get_timestamp? == myMasterList[idx].get_timestamp? )
+                   myMasterList[idx].set_value( myMasterList[idx].get_value? + value )
+
+                elsif ( d.get_timestamp?  > myMasterList[idx].get_timestamp? )
+                   # OK, so the new list has times that are greater than
+                   # what is in the master. append them to the end.
+                   myMasterList <<  StatsData.new(d.get_timestamp?, value )
+
+                else #  myMasterList[idx].get_timestamp? > d.get_timestamp?
+                   # Insert at the current location
+                   myMasterList.insert(idx, StatsData.new(d.get_timestamp?, value ))
+                end
+             else
+                # OK, we have reached the end of the master list
+                # and still have more data. Just append.
+                myMasterList <<  StatsData.new(d.get_timestamp?, value )
+             end
+
+             mvalue = myMasterList[idx].get_value?()
+             unless mvalue.is_a?(Float) && mvalue.nan?
+               my_min = [my_min, mvalue].min
+               my_max = [my_max, mvalue].max
+             end
+             idx += 1
+          end
+       end
+
+    # Its late at night try some brute force
+
+    myMasterList.each do |d|
+       returnList.append_data( StatsData.new(d.get_timestamp?, d.get_value? ))
+    end
+    returnList.set_min_value(my_min)
+    returnList.set_max_value(my_max)
+    myList << returnList
 
 return myList
 

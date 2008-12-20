@@ -20,13 +20,13 @@
 
 package org.ovirt {
 
-  import flash.net.URLLoader;
-  import flash.net.URLRequest;
   import com.adobe.serialization.json.JSON;
   import flash.events.Event;
   import flash.events.IOErrorEvent;
-  import org.ovirt.data.DataSeries;
+  import flash.net.URLLoader;
+  import flash.net.URLRequest;
   import org.ovirt.charts.Chart;
+  import org.ovirt.data.DataSeries;
 
   public class DataSource {
 
@@ -52,6 +52,7 @@ package org.ovirt {
     }
 
     private function ioError( e:IOErrorEvent ):void {
+      trace("ioError");
       //FIXME:
       //do something useful with this error
     }

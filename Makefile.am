@@ -25,6 +25,8 @@ EXTRA_DIST =			\
   conf					\
   src
 
+DISTCLEANFILES = $(PACKAGE)-$(VERSION).tar.gz
+
 # For Release: 0..., set _ovirt_dev=1 so that we get extra_release.GIT-
 # annotated rpm version strings.
 _ovirt_dev = \
@@ -40,6 +42,9 @@ RPM_FLAGS	+= $(if $(_ovirt_dev),--define "extra_release .$(GIT_RELEASE)")
 rpms: dist
 	rpmbuild $(RPM_FLAGS) -ta $(distdir).tar.gz
 
+srpms: dist
+	rpmbuild $(RPM_FLAGS) -ts $(distdir).tar.gz
+
 publish: rpms
 	mkdir -p $(OVIRT_CACHE_DIR)
 	rsync -aq $(shell rpm --eval '%{_rpmdir}')/ $(OVIRT_CACHE_DIR)/ovirt/
@@ -49,4 +54,4 @@ publish: rpms
 genlangs:
 	cd src && rake updatepo && rake makemo
 
-.PHONY: rpms publish genlangs
+.PHONY: rpms publish srpms genlangs

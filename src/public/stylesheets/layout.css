@@ -548,3 +548,9 @@ a { color:#000000; text-decoration: none;}
 .slider_value { background: #FFFFFF; font-size:105%; padding-left:5px; float:left;}
 .slider_minlabel { float:left; padding:4px 4px 4px 0;}
 .slider_maxlabel { float:left; padding:4px;}
+
+#storage tree container div
+.storage_tree_container {
+  overflow:auto;
+  border:#CCCCCC solid 1px;
+}

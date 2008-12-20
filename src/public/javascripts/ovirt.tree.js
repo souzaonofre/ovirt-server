@@ -121,6 +121,7 @@ function processChildren(list, templateObj){
                           }
                       }
                     });
+                    this.openToSelected(self);
                 },
                 toggle: function(e, elem) {
                     $(elem)
@@ -129,8 +130,11 @@ function processChildren(list, templateObj){
                       .siblings('ul').slideToggle("normal");
                 },
                 clickHandler: function(e,elem) {
-                    alert('e: ' + e + ', elem: ' + elem);
-                    var fred = 'fred';
+                    // make this a default impl if needed.
+                },
+                openToSelected: function(self) {
+                    //find 'selected' items and open tree accordingly.  This may need to have a
+                    //marker of some sort passed in since different trees may have different needs.
                 },
 		off: function() {
 			this.element.css({background: 'none'});

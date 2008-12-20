@@ -88,4 +88,8 @@ class VmTest < Test::Unit::TestCase
     assert_equal @vm.cobbler_system_name, @vm.uuid,
       "VMs should be using the UUID as their Cobbler system name."
   end
+
+  def test_get_pending_state
+    assert_equal 'stopped', vms(:production_httpd_vm).get_pending_state
+  end
 end

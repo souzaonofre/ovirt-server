@@ -1,65 +1,35 @@
-# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
-one:
-  id: 1
+default_quota:
   total_vcpus: 30
-  total_vmemory: 2097152
+  total_vmemory: 204800000
   total_vnics: 20
-  total_storage: 104857600
+  total_storage: 41943040000
   total_vms: 20
-  pool_id: 1
-two:
-  id: 2
+  pool: default
+corp_com_quota:
   total_vcpus: 32
-  total_vmemory: 16765
-  total_vnics: 5
-  total_storage: 1000000
-  total_vms: 13
-  pool_id: 3
-three:
-  id: 3
-  total_vcpus: 2
-  total_vmemory: 
-  total_vnics: 
-  total_storage:
-  total_vms:
-  pool_id: 4
-four:
-  id: 4
-  total_vcpus: 
-  total_vmemory: 
-  total_vnics: 
-  total_storage:
-  total_vms: 2
-  pool_id: 6
-five:
-  id: 5
-  total_vcpus: 3
-  total_vmemory: 1024 
-  total_vnics: 
-  total_storage: 150
-  total_vms: 
-  pool_id: 5
-six:
-  id: 6
+  total_vmemory: 51200000
+  total_vnics: 20
+  total_storage: 10485760000
+  total_vms: 32
+  pool: corp_com
+corp_com_dev_quota:
   total_vcpus: 4
-  total_vmemory: 5096
-  total_vnics: 3
-  total_storage: 1024
-  total_vms: 2
-  pool_id: 5
-seven:
-  id: 7
-  total_vcpus: 
-  total_vmemory: 
-  total_vnics: 1
-  total_storage: 112233
-  total_vms: 
-  pool_id: 11
-eight:
-  id: 8
-  total_vcpus: 20
-  total_vmemory: 2097152
-  total_vnics: 30
-  total_storage: 1111111111
-  total_vms: 20
-  pool_id: 7
+  total_vmemory: 12288000
+  total_vnics: 5
+  total_storage: 2621440000
+  total_vms: 8
+  pool: corp_com_dev
+corp_com_qa_quota:
+  total_vcpus: 4
+  total_vmemory: 12288000
+  total_vnics: 5
+  total_storage: 2621440000
+  total_vms: 8
+  pool: corp_com_qa
+corp_com_prod_quota:
+  total_vcpus: 4
+  total_vmemory: 12288000
+  total_vnics: 5
+  total_storage: 2621440000
+  total_vms: 8
+  pool: corp_com_prod

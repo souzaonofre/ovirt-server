@@ -85,7 +85,7 @@ class Host < ActiveRecord::Base
   end
 
   def cpu_speed
-    "FIX ME!"
+    cpus[0].speed unless cpus.empty?
   end
 
   def display_name

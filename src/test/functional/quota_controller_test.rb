@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -24,18 +24,18 @@ require 'quota_controller'
 class QuotaController; def rescue_action(e) raise e end; end
 
 class QuotaControllerTest < Test::Unit::TestCase
-  fixtures :quotas
+  fixtures :quotas, :pools
 
   def setup
     @controller = QuotaController.new
     @request    = ActionController::TestRequest.new
     @response   = ActionController::TestResponse.new
 
-    @first_id = quotas(:one).id
+    @quota_id = quotas(:default_quota).id
   end
 
   def test_show
-    get :show, :id => @first_id
+    get :show, :id => @quota_id
 
     assert_response :success
     assert_template 'show'
@@ -45,7 +45,7 @@ class QuotaControllerTest < Test::Unit::TestCase
   end
 
   def test_new
-    get :new, :pool_id => 1
+    get :new, :pool_id => pools(:default).id
 
     assert_response :success
     assert_template 'new'
@@ -56,7 +56,7 @@ class QuotaControllerTest < Test::Unit::TestCase
   def test_create
     num_quotas = Quota.count
 
-    post :create, :quota => { :pool_id => 8 }
+    post :create, :quota => { :pool_id => pools(:default).id }
 
     assert_response :success
 
@@ -64,7 +64,7 @@ class QuotaControllerTest < Test::Unit::TestCase
   end
 
   def test_edit
-    get :edit, :id => @first_id
+    get :edit, :id => @quota_id
 
     assert_response :success
     assert_template 'edit'
@@ -74,22 +74,31 @@ class QuotaControllerTest < Test::Unit::TestCase
   end
 
   def test_update
-    post :update, :id => @first_id
+    post :update, :id => @quota_id
     assert_response :success
   end
 
   def test_destroy
-    pool = nil
-    assert_nothing_raised {
-      quota = Quota.find(@first_id)
-      pool = quota.pool
-    }
-
-    post :destroy, :id => @first_id
+    post :destroy, :id => @quota_id
     assert_response :success
+    json = ActiveSupport::JSON.decode(@response.body)
+    assert_equal 'Quota was successfully deleted.', json['alert']
+  end
 
-    assert_raise(ActiveRecord::RecordNotFound) {
-      Quota.find(@first_id)
-    }
+  def test_not_destroyed
+    assert true  #How do we make it return failure message?
+  end
+
+  def test_no_perms_to_destroy
+    post :destroy, :id => quotas(:corp_com_dev_quota).id
+    assert_response :redirect #Is this really what we want? Or should we just pop up the login page?
+  end
+
+  #FIXME: write the code to make this a real test!
+  def test_bad_id_on_destroy
+#    post :destroy, :id => bad_id
+#    assert_response :success
+#    The controller needs to gracefully handle ActiveRecord::RecordNotFound,
+#    which it does not right now.
   end
 end

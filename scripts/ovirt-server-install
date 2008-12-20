@@ -5,6 +5,13 @@ OVIRT_CFG=/etc/ovirt-server
 
 DATABASE=ovirt
 USERNAME=ovirt
+[ -r /etc/sysconfig/ovirt-rails ] && . /etc/sysconfig/ovirt-rails
+if [ ! -z "$RAILS_ENV" ]; then
+   DATABASE="$DATABASE"_"$RAILS_ENV"
+   export RAILS_ENV
+else
+   export RAILS_ENV="production"
+fi
 
 EXISTS_FILE=${OVIRT_CFG}/db/exists
 PW_FILE=${OVIRT_CFG}/db/dbaccess
@@ -13,7 +20,7 @@ STEP_FILE=/etc/ntp/step-tickers
 SASL_FILE=/etc/sasl2/libvirt.conf
 LDAP_CFG=${OVIRT_DIR}/config/ldap.yml
 
-OVIRT_SVCS="ovirt-host-browser ovirt-host-keyadd ovirt-host-status \
+OVIRT_SVCS="ovirt-host-browser ovirt-host-keyadd ovirt-db-omatic \
             ovirt-host-collect ovirt-mongrel-rails ovirt-taskomatic"
 ENABLE_SVCS="ntpdate ntpd httpd postgresql libvirtd collectd"
 
@@ -186,7 +193,7 @@ touch $EXISTS_FILE
 
 cd ${OVIRT_DIR}
 mkdir -p log
-export RAILS_ENV="production" && rake db:migrate
+rake db:migrate
 cd -
 
 ${OVIRT_DIR}/script/grant_admin_privileges ovirtadmin
@@ -197,5 +204,10 @@ ovirt-add-host $(hostname) ${OVIRT_DIR}/ovirt.keytab
 for svc in $ENABLE_SVCS; do
     service $svc start
 done
+
+# Set up the symlink for ovirt-docs so that online help works
+docs_dir=$(rpm -q --queryformat '/usr/share/%{NAME}' ovirt-docs)
+ln -sf $docs_dir/Using_the_oVirt_Server_Suite_User_Interface/ \
+    /usr/share/ovirt-server/public/help
 
 exit 0

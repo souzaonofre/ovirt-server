@@ -6,6 +6,7 @@
     import mx.containers.VBox;
     import mx.effects.Resize;
     import org.ovirt.Constants;
+    import org.ovirt.ApplicationBus;
     import org.ovirt.charts.Chart;
     import org.ovirt.charts.BarChart;
 
@@ -21,6 +22,7 @@
     private var contractResources:Resize = new Resize();
 
     private function myInit():void {
+
       mainChart.height = Constants.height;
       mainChart.width = Constants.width;
       hostsChart.width = Constants.width;
@@ -42,6 +44,9 @@
       contractResources.heightTo = 0;
       contractResources.target = hostsChart;
       contractResources.duration = 500;
+
+      ApplicationBus.instance().barClickAction = zoomIntoSeries;
+
     }
 
     private function zoomOutSeries(e:Event):void {
@@ -61,7 +66,8 @@
 
   </mx:Script>
 
-  <mx:VBox id="mainChart"  click="zoomIntoSeries(event)" />
-  <mx:VBox id="hostsChart" visible="false" opaqueBackground="0x00ff00" click="zoomOutSeries(event)"/>
-
+  <mx:VBox id="mainChart" />
+  <mx:VBox id="hostsChart" visible="false" opaqueBackground="0x00ff00" click="zoomOutSeries(event)">
+    <mx:Text text="This Space Reserved for Drill-down Hosts Chart" />
+  </mx:VBox>
 </mx:Application>

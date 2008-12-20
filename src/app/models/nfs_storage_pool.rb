@@ -25,4 +25,8 @@ class NfsStoragePool < StoragePool
   def label_components
     "#{export_path}"
   end
+
+  def user_subdividable
+    true
+  end
 end

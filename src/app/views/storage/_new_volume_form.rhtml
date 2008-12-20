@@ -1,0 +1,24 @@
+<%= error_messages_for 'storage_volume' %>
+
+<!--[form:storage_pool]-->
+<%= hidden_field 'storage_volume', 'storage_pool_id'  %>
+<%= hidden_field_tag 'storage_type', @storage_volume.get_type_label  %>
+
+<%= text_field_with_label "Size (GB):", 'storage_volume', 'size_in_gb'  %>
+
+<%if @storage_volume.get_type_label==StoragePool::LVM -%>
+  <%= text_field_with_label "LV Name:", 'storage_volume', 'lv_name' %>
+
+  <%= text_field_with_label "Owner permissions:", 'storage_volume', 'lv_owner_perms' %>
+
+  <%= text_field_with_label "Group permissions:", 'storage_volume', 'lv_group_perms' %>
+
+  <%= text_field_with_label "Mode permissions:", 'storage_volume', 'lv_mode_perms' %>
+<%- end -%>
+<%= text_field_with_label "LUN:", 'storage_volume', 'lun' if @storage_volume.get_type_label==StoragePool::ISCSI %>
+
+<%= text_field_with_label "Filename:", 'storage_volume', 'filename' if @storage_volume.get_type_label==StoragePool::NFS %>
+
+
+<!--[eoform:storage_volume]-->
+

@@ -111,13 +111,15 @@ class HardwareController < PoolController
   end
 
   def show_storage
+    @storage_tree = @pool.storage_tree(:filter_unavailable => false, :include_used => true).to_json
     show
   end
 
   def show_tasks
     @task_types = [["VM Task", "VmTask"],
                    ["Host Task", "HostTask"],
-                   ["Storage Task", "StorageTask", "break"],
+                   ["Storage Task", "StorageTask"],
+                   ["Storage Volume Task", "StorageVolumeTask", "break"],
                    ["Show All", ""]]
     super
   end
@@ -162,7 +164,7 @@ class HardwareController < PoolController
     if params[:id]
       pre_show
       storage_pools = @pool.storage_pools
-      find_opts = {}
+      find_opts = {:conditions => "type != 'LvmStoragePool'"}
       include_pool = false
     else
       # FIXME: no permissions or usage checks here yet
@@ -170,7 +172,7 @@ class HardwareController < PoolController
       id = params[:exclude_pool]
       storage_pools = StoragePool
       find_opts = {:include => :hardware_pool,
-        :conditions => ["pools.id != ?", id]}
+        :conditions => ["(storage_pools.type != 'LvmStoragePool') and (pools.id != ?)", id]}
       include_pool = true
     end
     super(:full_items => storage_pools,:include_pool => include_pool,:find_opts => find_opts)

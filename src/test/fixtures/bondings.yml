@@ -1,15 +1,17 @@
 mailservers_managed_node_bonding:
-    name: Production Network
-    interface_name: mailbonding0
-    bonding_type_id: <%= Fixtures.identify(:link_aggregation_bonding_type) %>
-    host_id: <%= Fixtures.identify(:mailservers_managed_node) %>
-    arp_ping_address: 172.31.0.100
-    arp_interval: 0
-    vlan_id: <%= Fixtures.identify(:dhcp_vlan_one) %>
+  name: Production Network
+  interface_name: mailbonding0
+  bonding_type: link_aggregation_bonding_type
+  host: mailservers_managed_node
+  arp_ping_address: 172.31.0.100
+  arp_interval: 0
+  vlan: dhcp_vlan_one
+  nics: mailserver_nic_one, mailserver_nic_two
 
 mediaserver_managed_node_bonding:
-    name: Fileserver Network
-    interface_name: mediabonding0
-    bonding_type_id: <%= Fixtures.identify(:link_aggregation_bonding_type) %>
-    host_id: <%= Fixtures.identify(:mediaserver_managed_node) %>
-    vlan_id: <%= Fixtures.identify(:dhcp_vlan_one) %>
+  name: Fileserver Network
+  interface_name: mediabonding0
+  bonding_type: link_aggregation_bonding_type
+  host: mediaserver_managed_node
+  vlan: dhcp_vlan_one
+  nics: mediaserver_nic_one, mediaserver_nic_two
