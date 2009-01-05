@@ -23,7 +23,8 @@ EXTRA_DIST =			\
   ovirt-server.spec.in	\
   scripts				\
   conf					\
-  src
+  src					\
+  installer
 
 DISTCLEANFILES = $(PACKAGE)-$(VERSION).tar.gz
 

@@ -1,5 +1,6 @@
 %define pbuild %{_builddir}/%{name}-%{version}
 %define app_root %{_datadir}/%{name}
+%define acehome  %{_datadir}/ace
 
 Summary: oVirt Server Suite
 Name: ovirt-server
@@ -45,9 +46,19 @@ BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 URL: http://ovirt.org/
 
-%description
+%package installer
+Summary: Installer modules for the oVirt Server Suite
+Requires: ruby(abi) = 1.8
+Requires: ace
+Requires: ace-postgres
+Requires: rubygem(highline)
+Requires: hal
 
+%description
 The Server Suite for oVirt.
+
+%description installer
+The Installer for the ovirt server suite
 
 %prep
 %setup -q
@@ -59,6 +70,7 @@ test "x$RPM_BUILD_ROOT" != "x" && rm -rf $RPM_BUILD_ROOT
 mkdir %{buildroot}
 
 %{__install} -d -m0755 %{buildroot}%{_bindir}
+%{__install} -d -m0755 %{buildroot}%{_datadir}
 %{__install} -d -m0755 %{buildroot}%{_sbindir}
 %{__install} -d -m0755 %{buildroot}%{_initrddir}
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/sysconfig
@@ -69,6 +81,7 @@ mkdir %{buildroot}
 %{__install} -d -m0755 %{buildroot}%{_localstatedir}/log/%{name}
 %{__install} -d -m0755 %{buildroot}%{_localstatedir}/run/%{name}
 %{__install} -d -m0755 %{buildroot}%{app_root}
+%{__install} -d -m0755 %{buildroot}/%{acehome}
 
 touch %{buildroot}%{_localstatedir}/log/%{name}/mongrel.log
 touch %{buildroot}%{_localstatedir}/log/%{name}/rails.log
@@ -113,6 +126,12 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 %{__rm} -rf %{buildroot}%{app_root}/tmp
 %{__mkdir} %{buildroot}%{_localstatedir}/lib/%{name}/tmp
 %{__ln_s} %{_localstatedir}/lib/%{name}/tmp %{buildroot}%{app_root}/tmp
+
+# Set up the installer
+%{__cp} -pr %{pbuild}/installer/modules %{buildroot}/%{acehome}
+%{__cp} -pr %{pbuild}/installer/appliances %{buildroot}/%{acehome}
+%{__cp} -pr %{pbuild}/installer/bin/ovirt-installer %{buildroot}%{_sbindir}
+
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -192,6 +211,10 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/development.rb
 %config(noreplace) %{_sysconfdir}/%{name}/production.rb
 %config(noreplace) %{_sysconfdir}/%{name}/test.rb
+
+%files installer
+%{_sbindir}/ovirt-installer
+%{acehome}
 
 %changelog
 * Thu May 29 2008 Alan Pevec <apevec@redhat.com> - 0.0.5-0
