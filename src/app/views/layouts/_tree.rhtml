@@ -14,6 +14,20 @@
       tree_url = "<%=  url_for :controller =>"/tree", :action => "return_filtered_list" %>";
       processTree();
       treeTimer = setInterval(processTree,15000);
+      $('div.nav-dashboard a').bind('click', function(e){
+          if(this === e.target){
+              var myURL = $(this).attr('href');
+              $('.current').removeClass('current');
+              $(this).parent().addClass('current');
+              $.ajax({
+                url: this.href,
+                dataType: 'html',
+                success: handleTabsAndContent,
+                error: function(xhr) {$.jGrowl(xhr.status + ' ' + xhr.statusText);}
+              });
+              e.preventDefault();
+          }
+      })
       $('#nav_tree_form ul.ovirt-tree li').livequery(
         function(){
           $(this)
@@ -21,6 +35,7 @@
           .bind('click',function(){
             $('#nav_tree_form ul.ovirt-tree li div').removeClass('current');
             var thisHref = (urlObj[$(this).attr('class')] !=null) ? urlObj[$(this).attr('class')] + '/' + this.id :null;
+            $('div.nav-dashboard').removeClass('current');
             $(this).toggleClass('current');
             currentNode = this.id;
             if ($tabs != null) {
@@ -33,10 +48,7 @@
                 type: 'GET',
                 data: {ajax:true,tab:selected_tab},
                 dataType: 'html',
-                success: function(data) {
-                  $('#side-toolbar').html($(data).find('div.toolbar'));
-                  $('#tabs-and-content-container').html($(data).not('div#side-toolbar'));
-                },
+                success: handleTabsAndContent,
                 error: function(xhr) {$.jGrowl(xhr.status + ' ' + xhr.statusText);}
               });
             }
@@ -71,9 +83,9 @@
 </script>
 
 <!-- Output elements -->
-<div class="nav-dashboard">
-  <% selected = "selected" if controller.controller_name == "dashboard" && params[:action] == "index" %>
-  <%= link_to "Dashboard", { :controller => "dashboard" }, { :id => "dashboard", :class => "#{selected}" } %>
+<% selected = "current" if controller.controller_name == "dashboard" && params[:action] == "index" %>
+<div class="nav-dashboard <%= selected %>">
+  <%= link_to "Dashboard", dashboard_url, { :id => "dashboard"} %>
 </div>
 <form id="nav_tree_form">
   <div class="nav-tree">

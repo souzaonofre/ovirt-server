@@ -1,31 +1,7 @@
-  <td id="right">
-          <div class="tools">
-
-          <h3>Actions</h3>
-
-          <div class="actions">
-            <div><%= link_to_if @can_set_perms, 'User Permissions', { :controller => 'permission', :action => 'new', :pool_id => @default_pool }, { :class => "edit" } %></div>
-            <table>
-              <tr><td><%= pluralize @default_pool.permissions.super_admins.size, "Super Admin" %></td></tr>
-              <tr><td><%= pluralize @default_pool.permissions.admins.size, "Administrator" %></td></tr>
-              <tr><td><%= pluralize @default_pool.permissions.users.size, "User" %></td></tr>
-              <tr><td><%= pluralize @default_pool.permissions.monitors.size, "Monitor" %></td></tr>
-            </table>
-          </div>
-
-         <% if @can_modify %>
-          <h3>Networks</h3>
-          <a href="<%= url_for :controller => 'network', :action => 'list' %>">
-             View / Edit
-          </a>
-         <% end %>
-
-          </div> <!-- end #tools -->
-  </td>
-
-
-
-<%- content_for :title do -%>
-<%= _("Dashboard") %>
-<%- end -%>
-
+  <%= render :partial => "/task/show", :locals => { :task_types => @task_types,
+                                                    :task_states => @task_states,
+                                                    :task_type => @task_type,
+                                                    :task_state => @task_state,
+                                                    :tasks => @tasks,
+                                                    :action => 'index',
+                                                    :pool => nil } %>

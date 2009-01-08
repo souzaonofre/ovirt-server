@@ -59,7 +59,7 @@
     background: url('../../images/minus.gif') no-repeat left;
 }
 
-ul.ovirt-tree .current {
+.current {
     background-color: #698FA6;
     color:#000000;
     width: 100%;

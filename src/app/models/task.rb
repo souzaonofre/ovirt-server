@@ -45,6 +45,19 @@ class Task < ActiveRecord::Base
   COMPLETED_STATES = [STATE_FINISHED, STATE_FAILED, STATE_CANCELED]
   WORKING_STATES   = [STATE_QUEUED, STATE_RUNNING, STATE_PAUSED]
 
+  TASK_TYPES_OPTIONS = [["VM Task", "VmTask"],
+                        ["Host Task", "HostTask"],
+                        ["Storage Task", "StorageTask"],
+                        ["Storage Volume Task", "StorageVolumeTask", "break"],
+                        ["Show All", ""]]
+  TASK_STATES_OPTIONS = [["Queued", Task::STATE_QUEUED],
+                         ["Running", Task::STATE_RUNNING],
+                         ["Paused", Task::STATE_PAUSED],
+                         ["Finished", Task::STATE_FINISHED],
+                         ["Failed", Task::STATE_FAILED],
+                         ["Canceled", Task::STATE_CANCELED, "break"],
+                         ["Show All", ""]]
+
   def cancel
     self[:state] = STATE_CANCELED
     save!

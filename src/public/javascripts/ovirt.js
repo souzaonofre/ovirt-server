@@ -318,3 +318,8 @@ function afterNetwork(response, status){
       }
     }
 }
+
+function handleTabsAndContent(data) {
+  $('#side-toolbar').html($(data).find('div.toolbar'));
+  $('#tabs-and-content-container').html($(data).not('div#side-toolbar'));
+}

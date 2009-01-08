@@ -9,7 +9,7 @@
     (
     {
     url: '<%=  url_for :action => "tasks",
-                       :id => pool.id %>',
+                       :id => pool %>',
     params: [{name: "task_type", value: '<%=task_type%>'},
              {name: "task_state", value: '<%=task_state%>'}
              <%=", {name: 'checkboxes', value: #{checkboxes}}" if checkboxes%>],

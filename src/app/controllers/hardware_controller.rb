@@ -116,17 +116,7 @@ class HardwareController < PoolController
   end
 
   def show_tasks
-    @task_types = [["VM Task", "VmTask"],
-                   ["Host Task", "HostTask"],
-                   ["Storage Task", "StorageTask"],
-                   ["Storage Volume Task", "StorageVolumeTask", "break"],
-                   ["Show All", ""]]
-    super
-  end
-
-  def tasks_internal
-    @task_type = params[:task_type]
-    @task_type ||=""
+    @task_types = Task::TASK_TYPES_OPTIONS
     super
   end
 
