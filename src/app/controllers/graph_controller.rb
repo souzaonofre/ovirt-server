@@ -6,9 +6,9 @@ class GraphController < ApplicationController
   def flexchart_data
     @id = params[:id]
     target = params[:target]
-    startTime = params[:startTime].to_i
-    endTime = params[:endTime].to_i
-    duration = endTime - startTime
+    startTime = Time.at(params[:startTime].to_i)
+    endTime = Time.at(params[:endTime].to_i)
+    duration = endTime.to_i - startTime.to_i
 
     #the maximum number of data points we want in any chart
     maxPoints = 100
@@ -29,10 +29,30 @@ class GraphController < ApplicationController
     counter = DEV_KEY_COUNTERS[target]
 
     pool = Pool.find(@id)
-    hosts = pool.hosts
+    hosts = Host.find(:all,
+                      :include=> :membership_audit_events,
+                      :conditions => ['membership_audit_events.container_target_id = ?',pool])
+
     requestList = [ ]
     hosts.each{ |host|
-      requestList.push StatsRequest.new(host.hostname, devclass, 0, counter, startTime, duration, resolution, DataFunction::Peak)
+      eventsInRange = host.membership_audit_events.from_pool(pool,
+                                                             startTime,
+                                                             endTime)
+      priorAuditEvent = host.membership_audit_events.most_recent_prior_event_from_pool(pool,startTime)
+      timeRanges = get_ranges_from_event_list(eventsInRange,
+                                              priorAuditEvent,
+                                              startTime,
+                                              endTime)
+      timeRanges.each{ |range|
+        requestList.push StatsRequest.new(host.hostname,
+                                          devclass,
+                                          0,
+                                          counter,
+                                          range[0].to_i,
+                                          range[1].to_i - range[0].to_i,
+                                          resolution,
+                                          DataFunction::Peak)
+      }
     }
     statsList = getAggregateStatsData?(requestList)
 
@@ -50,6 +70,40 @@ class GraphController < ApplicationController
     }
     render :json => graph
   end
+
+  def get_ranges_from_event_list(list, priorEvent, startTime, endTime)
+
+    results = Array.new
+    range = [startTime,endTime]
+
+    joined = false
+    if priorEvent
+      if priorEvent.action == MembershipAuditEvent::JOIN
+        joined = true
+      end
+    end
+
+    list.each_with_index { |event,index|
+      if event.action == MembershipAuditEvent::JOIN
+        joined = true
+        range[0] = event.created_at
+      else
+        range[0] = startTime unless joined
+        joined = false
+        range[1] = event.created_at
+        results.push Array.new(range)
+        range = [startTime,endTime]
+      end
+    }
+
+    if joined
+      range[1] = endTime
+      results.push Array.new(range)
+    end
+
+    results
+  end
+
 
 
   # generate layout for availability bar graphs

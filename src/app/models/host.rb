@@ -23,6 +23,15 @@ class Host < ActiveRecord::Base
   belongs_to :hardware_pool
   belongs_to :bonding_type
 
+  has_many :membership_audit_events, :as => :member_target, :dependent => :destroy, :order => "created_at ASC" do
+    def from_pool(pool,startTime,endTime)
+      find(:all, :conditions=> ['container_target_id = ? and created_at between ? and ?',pool,startTime,endTime])
+    end
+    def most_recent_prior_event_from_pool(pool,startTime)
+      find(:last, :conditions=> ['container_target_id = ? and created_at < ?',pool,startTime])
+    end
+  end
+
   has_many :cpus,     :dependent => :destroy
   has_many :nics,     :dependent => :destroy
   has_many :bondings, :dependent => :destroy

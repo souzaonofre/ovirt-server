@@ -20,6 +20,7 @@
 class Pool < ActiveRecord::Base
   acts_as_nested_set
 
+  has_many :membership_audit_events, :as => :container_target, :dependent => :destroy
   # moved associations here so that nested set :include directives work
   # TODO: find a way to put this back into vm_resource_pool.rb
   has_many :vms, :dependent => :nullify, :order => "id ASC", :foreign_key => :vm_resource_pool_id
