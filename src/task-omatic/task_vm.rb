@@ -656,7 +656,7 @@ def migrate(vm, dest = nil)
     src_conn = Libvirt::open("qemu+tcp://" + src_host.hostname + "/system")
     dst_conn = Libvirt::open("qemu+tcp://" + dst_host.hostname + "/system")
 
-    connect_storage_pools(dst_conn, vm)
+    connect_storage_pools(dst_conn, vm.storage_volumes)
 
     dom = src_conn.lookup_domain_by_uuid(vm.uuid)
     dom.migrate(dst_conn, Libvirt::Domain::MIGRATE_LIVE)
