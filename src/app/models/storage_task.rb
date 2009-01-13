@@ -26,7 +26,11 @@ class StorageTask < Task
   end
 
   def task_obj
-    "StoragePool;;;#{self.storage_pool.id};;;#{self.storage_pool.display_name}"
+    if self.storage_pool
+      "StoragePool;;;#{self.storage_pool.id};;;#{self.storage_pool.display_name}"
+    else
+      ""
+    end
   end
   def host
     nil

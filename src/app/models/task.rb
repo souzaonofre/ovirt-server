@@ -45,18 +45,18 @@ class Task < ActiveRecord::Base
   COMPLETED_STATES = [STATE_FINISHED, STATE_FAILED, STATE_CANCELED]
   WORKING_STATES   = [STATE_QUEUED, STATE_RUNNING, STATE_PAUSED]
 
-  TASK_TYPES_OPTIONS = [["VM Task", "VmTask"],
-                        ["Host Task", "HostTask"],
-                        ["Storage Task", "StorageTask"],
-                        ["Storage Volume Task", "StorageVolumeTask", "break"],
-                        ["Show All", ""]]
+  TASK_TYPES_OPTIONS = [["VM Tasks", "VmTask"],
+                        ["Host Tasks", "HostTask"],
+                        ["Storage Tasks", "StorageTask"],
+                        ["Storage Volume Tasks", "StorageVolumeTask", "break"],
+                        ["All Types", ""]]
   TASK_STATES_OPTIONS = [["Queued", Task::STATE_QUEUED],
                          ["Running", Task::STATE_RUNNING],
                          ["Paused", Task::STATE_PAUSED],
                          ["Finished", Task::STATE_FINISHED],
                          ["Failed", Task::STATE_FAILED],
                          ["Canceled", Task::STATE_CANCELED, "break"],
-                         ["Show All", ""]]
+                         ["All States", ""]]
 
   def cancel
     self[:state] = STATE_CANCELED
@@ -84,4 +84,9 @@ class Task < ActiveRecord::Base
     ""
   end
 
+  def action_with_args
+    ret_val = action
+    ret_val += " #{args}" if args
+    ret_val
+  end
 end

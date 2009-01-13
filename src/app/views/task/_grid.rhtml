@@ -18,12 +18,11 @@
         <%= "{display: '', width : 20, align: 'left', process: #{table_id}checkbox}," if checkboxes %>
         {display: 'Type', width : 80, align: 'left'},
         {display: 'Item', width : 120, align: 'right', process: <%= table_id%>item},
-        {display: 'Action', name : 'action', width : 80, align: 'left'},
+        {display: 'Action', name : 'action', width : 120, align: 'left'},
+        {display: 'Message', name : 'message', width : 180, align: 'left'},
         {display: 'State', name : 'state', width : 60, align: 'left'},
         {display: 'User', name : 'user', width : 60, align: 'right'},
-        {display: 'Created', name : 'tasks.created_at', width : 140, align: 'right'},
-        {display: 'Args', name : 'args', width : 180, align: 'left'},
-        {display: 'Message', name : 'message', width : 180, align: 'left'}
+        {display: 'Created', name : 'tasks.created_at', width : 140, align: 'right'}
 	],
     sortname: "tasks.created_at",
     sortorder: "desc",

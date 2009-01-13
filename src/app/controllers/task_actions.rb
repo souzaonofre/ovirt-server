@@ -42,7 +42,7 @@ module TaskActions
     find_opts[:conditions] = conditions unless conditions.empty?
     attr_list = []
     attr_list << :id if params[:checkboxes]
-    attr_list += [:type_label, :task_obj, :action, :state, :user, :created_at, :args, :message]
+    attr_list += [:type_label, :task_obj, :action_with_args, :message, :state, :user, :created_at]
     json_hash(tasks_query_obj, attr_list, [:all], find_opts)
   end
 

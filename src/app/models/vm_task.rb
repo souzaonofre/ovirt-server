@@ -123,7 +123,11 @@ class VmTask < Task
   end
 
   def task_obj
-    "Vm;;;#{self.vm.id};;;#{self.vm.description}"
+    if self.vm
+      "Vm;;;#{self.vm.id};;;#{self.vm.description}"
+    else
+      ""
+    end
   end
 
   def self.valid_actions_for_vm_state(state, vm=nil, user=nil)

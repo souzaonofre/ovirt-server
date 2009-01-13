@@ -2,7 +2,8 @@
   <ul>
     <%if task_types %>
       <li>
-         <%= image_tag "icon_move.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Type &nbsp;&nbsp;&nbsp;<%= image_tag "icon_toolbar_arrow.gif", :style => "vertical-align:middle;" %>
+         <%= image_tag "view.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;<%= task_types.select {|type| type[1]==task_type}[0][0] %>
+         &nbsp;&nbsp;&nbsp;<%= image_tag "icon_toolbar_arrow.gif", :style => "vertical-align:middle;" %>
          <ul>
           <% task_types.each_index { |index| %>
               <li onclick="apply_task_filter('<%=task_types[index][1]%>','<%=task_state%>');";"
@@ -20,7 +21,8 @@
     <% end %>
 
     <li>
-       <%= image_tag "icon_move.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;State &nbsp;&nbsp;&nbsp;<%= image_tag "icon_toolbar_arrow.gif", :style => "vertical-align:middle;" %>
+       <%= image_tag "view.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;<%= task_states.select {|state| state[1]==task_state}[0][0] %>
+       &nbsp;&nbsp;&nbsp;<%= image_tag "icon_toolbar_arrow.gif", :style => "vertical-align:middle;" %>
        <ul>
         <% task_states.each_index { |index| %>
             <li onclick="apply_task_filter('<%=task_type%>','<%=task_states[index][1]%>');";"
