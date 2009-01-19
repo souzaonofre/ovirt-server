@@ -28,6 +28,20 @@
               e.preventDefault();
           }
       })
+      $('div.nav-networks a').bind('click', function(e){
+          if(this === e.target){
+              var myURL = $(this).attr('href');
+              $('.current').removeClass('current');
+              $(this).parent().addClass('current');
+              $.ajax({
+                url: this.href,
+                dataType: 'html',
+                success: handleTabsAndContent,
+                error: function(xhr) {$.jGrowl(xhr.status + ' ' + xhr.statusText);}
+              });
+              e.preventDefault();
+          }
+      })
       $('#nav_tree_form ul.ovirt-tree li').livequery(
         function(){
           $(this)
@@ -36,6 +50,7 @@
             $('#nav_tree_form ul.ovirt-tree li div').removeClass('current');
             var thisHref = (urlObj[$(this).attr('class')] !=null) ? urlObj[$(this).attr('class')] + '/' + this.id :null;
             $('div.nav-dashboard').removeClass('current');
+            $('div.nav-networks').removeClass('current');
             $(this).toggleClass('current');
             currentNode = this.id;
             if ($tabs != null) {
@@ -87,13 +102,13 @@
 <div class="nav-dashboard <%= selected %>">
   <%= link_to "Dashboard", dashboard_url, { :id => "dashboard"} %>
 </div>
+<% network_selected = "current" if controller.controller_name == "network" %>
+<div class="nav-networks <%= network_selected %>">
+  <%= link_to "Networks", {:controller => "network", :action => "list", :ajax => true}, { :id => "networks"} %>
+</div>
 <form id="nav_tree_form">
   <div class="nav-tree">
     <ul id="nav_tree" class="ovirt-tree"></ul>
-  </div>
-  <div class="nav-smart-pool">
-    <span class="nav-smart-pool-header">Smart Pools</span> <!--FIXME: replace with i18n text -->
-    <ul id="smart_nav_tree" class="ovirt-tree"></ul>
   </div>
 </form>
 

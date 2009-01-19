@@ -1,13 +1,12 @@
 #nav_tree {
-   padding: 20px;
+   padding: 0px 20px;
 }
 
 .nav-tree {
     width: 222px;
     position: absolute;
     overflow: auto;
-    top: 25px;
-    bottom: 140px;
+    top: 51px;
 }
 
 .ovirt-tree, .ovirt-tree ul {
@@ -44,9 +43,18 @@
     background-image: url('../../images/icon_smartpool.png');
 }
 
+.SmartPoolRoot {
+    padding: 4px 0 4px 28px !important;
+    background-image: url('../../images/icon_smartpools.png');
+}
+.DirectoryPool {
+    padding: 4px 0 4px 28px !important;
+    background-image: url('../../images/icon_smartpools_dir.png');
+}
+
 .hitarea {
 	width: 16px;
-	margin-left: -16px;
+        margin: 4px 0 0 -16px;
 	float: left;
 	cursor: pointer;
 }
@@ -81,11 +89,18 @@
 }
 
 .nav-dashboard {
-    background-image: url('../../images/icon_dashboard.gif');
+    background-image: url('../../images/icon_dashboard.png');
     background-repeat: no-repeat;
     background-position: left;
-    padding: 0px 0 0px 28px;
+    padding: 4px 0 4px 28px;
     position: absolute;
-    height: 25px;
-    top: 0;
+}
+
+.nav-networks {
+    background-image: url('../../images/icon_networks.png');
+    background-repeat: no-repeat;
+    background-position: left;
+    padding: 4px 0 4px 28px;
+    position:absolute;
+    top:28px;
 }

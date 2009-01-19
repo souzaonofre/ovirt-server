@@ -34,8 +34,17 @@ class NetworkController < ApplicationController
    end
 
    def list
-      @networks = Network.find(:all)
-      network_permissions
+     @networks = Network.find(:all)
+     network_permissions
+     respond_to do |format|
+       format.html {
+         render :layout => 'tabs-and-content' if params[:ajax]
+         render :layout => 'help-and-content' if params[:nolayout]
+       }
+       format.xml {
+         render :xml => @pool.to_xml(XML_OPTS)
+       }
+     end
    end
 
    def networks_json

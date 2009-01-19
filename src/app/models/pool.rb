@@ -243,7 +243,9 @@ class Pool < ActiveRecord::Base
     current_id = opts.delete(:current_id)
     opts.delete(:order)
     subtree_list = full_set(opts)
-    subtree_list -= [self] if smart_pool_set
+    if (smart_pool_set and !subtree_list.include?(self))
+      subtree_list.unshift(self)
+    end
     subtree_list = Pool.send(type, subtree_list) if type
     return_tree_list = []
     ref_hash = {}
@@ -260,7 +262,13 @@ class Pool < ActiveRecord::Base
           pool_parent = pool.parent
           parent_element = pool_parent.send(method)
           ref_hash[pool_parent.id] = parent_element
-          return_tree_list << parent_element
+          smart_root = ref_hash[pool_parent.parent_id]
+          if smart_root
+            smart_root[:children] ||= []
+            smart_root[:children] << parent_element
+          else
+            return_tree_list << parent_element
+          end
           parent_element[:children] ||= []
           parent_element[:children] << new_element
         else

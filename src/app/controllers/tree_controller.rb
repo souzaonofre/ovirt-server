@@ -29,12 +29,19 @@ class TreeController < ApplicationController
         @clientHash[tempItem[0]] = itemHash
       }
     end
-    @serverHash = {:pools => build_json(HardwarePool.get_default_pool.full_set_nested(:method => :json_hash_element,
-                       :privilege => Permission::PRIV_VIEW, :user => get_login_user))
-                  }
-    @serverHash[:smart_pools] = adjust_smart_pool_list(build_json(DirectoryPool.get_smart_root.full_set_nested(:method => :json_hash_element,
-         :privilege => Permission::PRIV_VIEW, :user => get_login_user,
-         :smart_pool_set => true)))
+    pools = build_json(
+                HardwarePool.get_default_pool.full_set_nested(
+                    :method => :json_hash_element,
+                    :privilege => Permission::PRIV_VIEW,
+                    :user => get_login_user))
+    smart_pools = adjust_smart_pool_list(
+                      build_json(
+                          DirectoryPool.get_smart_root.full_set_nested(
+                              :method => :json_hash_element,
+                              :privilege => Permission::PRIV_VIEW,
+                              :user => get_login_user,
+                              :smart_pool_set => true)))
+    @serverHash = {:pools => smart_pools + pools }
     @ids.each { |item|
       if @clientHash.has_key?(item.to_s)
         @clientHash.delete(item.to_s)
@@ -69,19 +76,29 @@ class TreeController < ApplicationController
   end
 
   def adjust_smart_pool_list(list)
-    mySmartPools = Array.new
-    otherSmartPools = Array.new
-    list.each {|listItem|
-      if (listItem[:name] == get_login_user)
-        if listItem.has_key?(:children)
-          listItem[:children].each {|item|
-            mySmartPools.push(item)
-          }
+    # list should have a single element. If it doesn't, don't transform anything here
+    if list.size == 1
+      smart_root = list[0]
+      smart_root[:name] = "Smart Pools"
+      smart_root[:type] = "SmartPoolRoot"
+      mySmartPools = Array.new
+      otherSmartPools = Array.new
+      if smart_root.has_key?(:children)
+        smart_root[:children].each do |listItem|
+          if (listItem[:name] == get_login_user)
+            if listItem.has_key?(:children)
+              listItem[:children].each {|item|
+                item[:parent_id] = smart_root[:id]
+                mySmartPools.push(item)
+              }
+            end
+          else
+            otherSmartPools.push(listItem) if listItem.has_key?(:children)
+          end
         end
-      else
-        otherSmartPools.push(listItem)
+        smart_root[:children] = mySmartPools + otherSmartPools
       end
-    }
-    mySmartPools + otherSmartPools
+    end
+    list
   end
 end
