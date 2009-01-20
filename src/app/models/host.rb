@@ -35,11 +35,12 @@ class Host < ActiveRecord::Base
   has_many :cpus,     :dependent => :destroy
   has_many :nics,     :dependent => :destroy
   has_many :bondings, :dependent => :destroy
-  has_many :vms,      :dependent => :nullify
-
+  has_many :vms,      :dependent => :nullify do
     def consuming_resources
       find(:all, :conditions=>{:state=>Vm::RUNNING_STATES})
     end
+  end
+
   has_many :tasks, :as => :task_target, :dependent => :destroy, :order => "id ASC" do
     def queued
       find(:all, :conditions=>{:state=>Task::STATE_QUEUED})
