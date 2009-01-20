@@ -56,7 +56,7 @@ def fetchRollingAve?(rrdPath, start, endTime, interval, myFunction, lIndex, retu
       final = 0
       value = 0
       value = vdata[lIndex]
-      value = 0 if value.nan?
+      value = 0 if value.is_?(Float) && value.nan?
  
 
       roll.push(value)
@@ -120,7 +120,7 @@ def fetchRollingCalcUsedData?(rrdPath, start, endTime, interval, myFunction, lIn
       final = 0
       value = 0
       value = vdata[lIndex]
-      value = 100 if value.nan?
+      value = 100 if value.is_a?(Float) && value.nan?
       if ( value > 100 )
          value = 100
       end
@@ -183,7 +183,7 @@ def fetchCalcUsedData?(rrdPath, start, endTime, interval, myFunction, lIndex, re
    data.each do |vdata|
       i += 1
       value = vdata[lIndex]
-      value = 100 if value.nan?
+      value = 100 if value.is_a?(Float) && value.nan?
       if ( value > 100 )
          value = 100
       end
@@ -396,7 +396,7 @@ def  getAggregateStatsData?(statRequestList)
              #  them with extreme prejudice...
 
              value = d.get_value?
-             value = 0 if value.nan?
+             value = 0 if value.is_a?(Float) && value.nan?
 
              if (myMasterList.length > idx )
                 if ( d.get_timestamp? > myMasterList[idx].get_timestamp? )
