@@ -78,6 +78,7 @@ mkdir %{buildroot}
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/httpd/conf.d
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/%{name}
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/%{name}/db
+%{__install} -d -m0755 %{buildroot}%{_sysconfdir}/cron.d
 %{__install} -d -m0755 %{buildroot}%{_localstatedir}/lib/%{name}
 %{__install} -d -m0755 %{buildroot}%{_localstatedir}/log/%{name}
 %{__install} -d -m0755 %{buildroot}%{_localstatedir}/run/%{name}
@@ -89,6 +90,7 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/rails.log
 touch %{buildroot}%{_localstatedir}/log/%{name}/taskomatic.log
 touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 %{__install} -p -m0644 %{pbuild}/conf/%{name}.conf %{buildroot}%{_sysconfdir}/httpd/conf.d
+%{__install} -p -m0644 %{pbuild}/conf/%{name}.crontab %{buildroot}%{_sysconfdir}/cron.d/%{name}
 
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-host-browser %{buildroot}%{_initrddir}
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-db-omatic %{buildroot}%{_initrddir}
@@ -197,6 +199,7 @@ fi
 %{_initrddir}/ovirt-host-collect
 %{_initrddir}/ovirt-mongrel-rails
 %{_initrddir}/ovirt-taskomatic
+%{_sysconfdir}/cron.d/%{name}
 %config(noreplace) %{_sysconfdir}/sysconfig/ovirt-mongrel-rails
 %config(noreplace) %{_sysconfdir}/sysconfig/ovirt-rails
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf

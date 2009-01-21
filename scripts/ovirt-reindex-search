@@ -1,4 +1,6 @@
 #!/bin/bash
+[ -r /etc/sysconfig/ovirt-rails ] && . /etc/sysconfig/ovirt-rails
+RAILS_ENV="${RAILS_ENV:-production}"
 RAKEFILE=/usr/share/ovirt-server/Rakefile
 MODELS="Host Vm IscsiStoragePool NfsStoragePool HardwarePool VmResourcePool"
-rake -f $RAKEFILE xapian:rebuild_index models="$MODELS"
+RAILS_ENV=$RAILS_ENV rake -f $RAKEFILE xapian:rebuild_index models="$MODELS"
