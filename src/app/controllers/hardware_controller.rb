@@ -51,7 +51,12 @@ class HardwareController < PoolController
     end
 
     respond_to do |format|
-      format.xml { render :xml => @pools.to_xml(XML_OPTS) }
+      format.xml {
+        opts = XML_OPTS.dup
+        opts[:include] = opts[:include].inject({}) { |m, k| m[k] = {}; m }
+        opts[:include][:hosts] = { :include => :cpus }
+        render :xml => @pools.to_xml(opts)
+      }
     end
   end
 

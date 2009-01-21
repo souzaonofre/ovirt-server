@@ -61,7 +61,7 @@ class HostController < ApplicationController
     else
       respond_to do |format|
         format.html { render :layout => 'selection' }
-        format.xml { render :xml => @host.to_xml }
+        format.xml { render :xml => @host.to_xml(:include => [ :cpus ] ) }
       end
     end
   end
