@@ -4,9 +4,8 @@
 
 .nav-tree {
     width: 222px;
-    position: absolute;
     overflow: auto;
-    top: 51px;
+    position: relative;
 }
 
 .ovirt-tree, .ovirt-tree ul {
@@ -93,7 +92,7 @@
     background-repeat: no-repeat;
     background-position: left;
     padding: 4px 0 4px 28px;
-    position: absolute;
+    position: relative;
 }
 
 .nav-networks {
@@ -101,6 +100,5 @@
     background-repeat: no-repeat;
     background-position: left;
     padding: 4px 0 4px 28px;
-    position:absolute;
-    top:28px;
+    position:relative;
 }

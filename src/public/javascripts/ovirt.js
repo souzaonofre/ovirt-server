@@ -138,23 +138,21 @@ function add_vms_to_smart_pool(url)
 // deal with ajax form response, filling in validation messages where required.
 function ajax_validation(response, status)
 {
-  if (response.object) {
-    $(".fieldWithErrors").removeClass("fieldWithErrors");
-    $("div.errorExplanation").remove();
-    if (!response.success && response.errors ) {
-      for(i=0; i<response.errors.length; i++) {
-        var element = $("div.form_field:has(#"+response.object + "_" + response.errors[i][0]+")");
-        if (element) {
-          element.addClass("fieldWithErrors");
-          for(j=0; j<response.errors[i][1].length; j++) {
-            element.append('<div class="errorExplanation">'+response.errors[i][1][j]+'</div>');
-          }
+  $(".fieldWithErrors").removeClass("fieldWithErrors");
+  $("div.errorExplanation").remove();
+  if (!response.success && response.errors ) {
+    for(i=0; i<response.errors.length; i++) {
+      var element = $("div.form_field:has(#"+response.object + "_" + response.errors[i][0]+")");
+      if (element) {
+        element.addClass("fieldWithErrors");
+        for(j=0; j<response.errors[i][1].length; j++) {
+          element.append('<div class="errorExplanation">'+response.errors[i][1][j]+'</div>');
         }
       }
     }
-    if (response.alert) {
-      $.jGrowl(response.alert);
-    }
+  }
+  if (response.alert) {
+    $.jGrowl(response.alert);
   }
 }
 

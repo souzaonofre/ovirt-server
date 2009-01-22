@@ -87,9 +87,11 @@ class SmartPool < Pool
               user_pools <<[child_pool.name, child_pool.id]
             end
         else
-          pool_element[:children].each do |child_element|
-            child_pool = child_element[:obj]
-            other_pools << [pool.name + " > " + child_pool.name, child_pool.id]
+          if pool_element.has_key?(:children)
+            pool_element[:children].each do |child_element|
+              child_pool = child_element[:obj]
+              other_pools << [pool.name + " > " + child_pool.name, child_pool.id]
+            end
           end
         end
       end

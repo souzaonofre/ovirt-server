@@ -167,7 +167,6 @@ class ResourcesController < PoolController
     @pool = VmResourcePool.find(params[:id])
     @parent = @pool.parent
     @perm_obj = @pool.parent
-    @redir_obj = @pool
     @current_pool_id=@pool.id
   end
   def pre_show
@@ -179,7 +178,6 @@ class ResourcesController < PoolController
     @pool = VmResourcePool.find(params[:id])
     @parent = @pool.parent
     @perm_obj = @pool
-    @redir_obj = @pool
     authorize_user
   end
 

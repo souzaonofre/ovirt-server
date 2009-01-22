@@ -332,7 +332,6 @@ class VmController < ApplicationController
       @vm.vm_resource_pool = @vm_resource_pool
     end
     @perm_obj = @vm.vm_resource_pool
-    @redir_controller = 'resources'
     @current_pool_id=@perm_obj.id
     _setup_provisioning_options
   end
@@ -348,7 +347,6 @@ class VmController < ApplicationController
     end
     @vm = Vm.new(params[:vm])
     @perm_obj = @vm.vm_resource_pool
-    @redir_controller = 'resources'
     @current_pool_id=@perm_obj.id
   end
   def pre_show
@@ -359,7 +357,6 @@ class VmController < ApplicationController
   def pre_edit
     @vm = Vm.find(params[:id])
     @perm_obj = @vm.vm_resource_pool
-    @redir_obj = @vm
     @current_pool_id=@perm_obj.id
     _setup_provisioning_options
   end

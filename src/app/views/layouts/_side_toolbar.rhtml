@@ -10,7 +10,7 @@
    end %>
 
 <%if pool -%>
-  <%if pool[:type]=="HardwarePool" -%>
+  <%if pool[:type]=="HardwarePool" and @can_modify -%>
     <div class="toolbar" style="float:left;">
       <a href="<%= url_for :controller => :hardware, :action => 'new', :parent_id => pool %>" rel="facebox[.bolder]">
        <%=image_tag "icon_add_hardwarepool.png", :title=>"Add Hardware Pool"  %>
@@ -28,7 +28,7 @@
      <%=image_tag "icon_add_smartpool.png", :title=>"Add Smart Pool"  %>
    </a>
 </div>
-<%if pool -%>
+<%if pool and @can_modify -%>
   <div class="toolbar" style="float:left;">
     <a href="#conf_nav_delete_pool" rel="facebox[.bolder]">
       <%= image_tag "icon_delete.gif", :title=>"Delete Selected Pool" %>

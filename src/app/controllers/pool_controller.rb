@@ -62,8 +62,10 @@ class PoolController < ApplicationController
   end
 
   def users_json
-    json_list(@pool.permissions,
-              [:grid_id, :uid, :user_role, :source])
+    attr_list = []
+    attr_list << :grid_id if params[:checkboxes]
+    attr_list += [:uid, :user_role, :source]
+    json_list(@pool.permissions, attr_list)
   end
 
   def hosts_json(args)
@@ -103,7 +105,6 @@ class PoolController < ApplicationController
   def pre_new
     @parent = Pool.find(params[:parent_id])
     @perm_obj = @parent
-    @redir_controller = @perm_obj.get_controller
     @current_pool_id=@parent.id
   end
   def pre_create
@@ -114,7 +115,6 @@ class PoolController < ApplicationController
       @parent = Pool.find(params[:parent_id])
     end
     @perm_obj = @parent
-    @redir_controller = @perm_obj.get_controller
     @current_pool_id=@parent.id
   end
   def pre_show_pool

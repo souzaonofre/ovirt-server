@@ -29,7 +29,8 @@ class HardwareController < PoolController
 
   before_filter :pre_modify, :only => [:add_hosts, :move_hosts,
                                        :add_storage, :move_storage,
-                                       :create_storage, :delete_storage]
+                                       :create_storage, :delete_storage,
+                                       :move, :removestorage]
 
   def index
     if params[:path]
@@ -174,7 +175,6 @@ class HardwareController < PoolController
   end
 
   def move
-    pre_modify
     @resource_type = params[:resource_type]
     @id = params[:id]
     @pools = HardwarePool.get_default_pool.full_set_nested(:method => :json_hash_element,
@@ -330,7 +330,6 @@ class HardwareController < PoolController
   end
 
   def removestorage
-    pre_modify
     render :layout => 'popup'
   end
 

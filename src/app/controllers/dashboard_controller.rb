@@ -29,6 +29,7 @@ class DashboardController < ApplicationController
 
   def index
     @task_types = Task::TASK_TYPES_OPTIONS
+    @user = get_login_user
     show_tasks
   end
 

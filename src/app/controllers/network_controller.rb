@@ -20,22 +20,24 @@
 class NetworkController < ApplicationController
    ########################## Networks related actions
 
-   def network_permissions
+  before_filter :pre_list, :only => [:list]
+
+   def authorize_admin
      # TODO more robust permission system
      #  either by subclassing network from pool
      #  or by extending permission model to accomodate
      #  any object
      @default_pool = HardwarePool.get_default_pool
-     set_perms(@default_pool)
-     unless @can_modify
-       flash[:notice] = 'You do not have permission to view networks'
-       redirect_to :controller => 'dashboard'
-     end
+     @perm_obj=@default_pool
+     super('You do not have permission to access networks')
+   end
+
+   def pre_list
+     @networks = Network.find(:all)
+     authorize_admin
    end
 
    def list
-     @networks = Network.find(:all)
-     network_permissions
      respond_to do |format|
        format.html {
          render :layout => 'tabs-and-content' if params[:ajax]
@@ -51,9 +53,12 @@ class NetworkController < ApplicationController
       json_list(Network.find(:all), [:id, :name, :type, [:boot_type, :label]])
    end
 
+   def pre_show
+     @network = Network.find(params[:id])
+     authorize_admin
+   end
+
    def show
-    @network = Network.find(params[:id])
-    network_permissions
     respond_to do |format|
       format.html { render :layout => 'selection' }
       format.xml { render :xml => @network.to_xml }

@@ -24,7 +24,7 @@ class SmartPoolsController < PoolController
                                        :add_storage, :remove_storage,
                                        :add_vms, :remove_vms,
                                        :add_pools, :remove_pools,
-                                       :add_items]
+                                       :add_items, :add_pool_dialog]
   def show_vms
     show
   end
@@ -65,7 +65,6 @@ class SmartPoolsController < PoolController
   end
 
   def add_pool_dialog
-    pre_modify
     @selected_pools = @pool.tagged_pools.collect {|pool| pool.id}
     render :layout => 'popup'
   end

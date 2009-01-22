@@ -103,9 +103,12 @@
   <%= link_to "Dashboard", dashboard_url, { :id => "dashboard"} %>
 </div>
 <% network_selected = "current" if controller.controller_name == "network" %>
-<div class="nav-networks <%= network_selected %>">
-  <%= link_to "Networks", {:controller => "network", :action => "list", :ajax => true}, { :id => "networks"} %>
-</div>
+
+<%if HardwarePool.get_default_pool.can_modify(@user) -%>
+  <div class="nav-networks <%= network_selected %>">
+    <%= link_to "Networks", {:controller => "network", :action => "list", :ajax => true}, { :id => "networks"} %>
+  </div>
+<% end -%>
 <form id="nav_tree_form">
   <div class="nav-tree">
     <ul id="nav_tree" class="ovirt-tree"></ul>

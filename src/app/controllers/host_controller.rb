@@ -31,6 +31,7 @@ class HostController < ApplicationController
   end
 
   before_filter :pre_action, :only => [:host_action, :enable, :disable, :clear_vms, :edit_network]
+  before_filter :pre_addhost, :only => [:addhost]
 
   # GETs should be safe (see http://www.w3.org/2001/tag/doc/whenToUseGet.html)
   verify :method => [:post, :put], :only => [ :create, :update ],
@@ -83,6 +84,14 @@ class HostController < ApplicationController
   def addhost
     @hardware_pool = Pool.find(params[:hardware_pool_id])
     render :layout => 'popup'
+  end
+
+  def pre_addhost
+    @pool = Pool.find(params[:hardware_pool_id])
+    @parent = @pool.parent
+    @perm_obj = @pool
+    @current_pool_id=@pool.id
+    authorize_admin
   end
 
   def add_to_smart_pool

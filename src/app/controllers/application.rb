@@ -82,26 +82,38 @@ class ApplicationController < ActionController::Base
   def pre_show
   end
 
-  def authorize_user
-    authorize_action(false)
+  def authorize_user(msg=nil)
+    authorize_action(false,msg)
   end
-  def authorize_admin
-    authorize_action(true)
+  def authorize_admin(msg=nil)
+    authorize_action(true,msg)
   end
-  def authorize_action(is_modify_action)
+  def authorize_action(is_modify_action, msg=nil)
+    msg ||= 'You do not have permission to create or modify this item '
     if @perm_obj
       set_perms(@perm_obj)
       unless (is_modify_action ? @can_modify : @can_control_vms)
-        @redir_obj = @perm_obj unless @redir_obj
-        flash[:notice] = 'You do not have permission to create or modify this item '
-        if @json_hash
-          @json_hash[:success] = false
-          @json_hash[:alert] = flash[:notice]
-          render :json => @json_hash
-        elsif @redir_controller
-          redirect_to :controller => @redir_controller, :action => 'show', :id => @redir_obj
-        else
-          redirect_to :action => 'show', :id => @redir_obj
+        respond_to do |format|
+          format.html do
+            @title = "Access denied"
+            @errmsg = msg
+            @ajax = params[:ajax]
+            @nolayout = params[:nolayout]
+            if @ajax
+              render :template => 'layouts/popup-error', :layout => 'tabs-and-content'
+            elsif @nolayout
+              render :template => 'layouts/popup-error', :layout => 'help-and-content'
+            else
+              render :template => 'layouts/popup-error', :layout => 'popup'
+            end
+          end
+          format.json do
+            @json_hash ||= {}
+            @json_hash[:success] = false
+            @json_hash[:alert] = msg
+            render :json => @json_hash
+          end
+          format.xml { head :forbidden }
         end
         false
       end

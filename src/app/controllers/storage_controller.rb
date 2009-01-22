@@ -26,6 +26,7 @@ class StorageController < ApplicationController
   before_filter :pre_new2, :only => [:new2]
   before_filter :pre_json, :only => [:storage_volumes_json]
   before_filter :pre_create_volume, :only => [:create_volume]
+  before_filter :pre_add, :only => [:add, :addstorage]
 
   def index
     list
@@ -258,27 +259,15 @@ class StorageController < ApplicationController
     end
   end
 
-  def add_internal
-    @hardware_pool = HardwarePool.find(params[:hardware_pool_id])
-    @perm_obj = @hardware_pool
-    @redir_controller = @perm_obj.get_controller
-    authorize_admin
-    @storage_pools = @hardware_pool.storage_volumes
-    @storage_types = StoragePool::STORAGE_TYPE_PICKLIST
-  end
-
   def addstorage
-    add_internal
     render :layout => 'popup'    
   end
 
   def add
-    add_internal
     render :layout => false
   end
 
   def new
-    add_internal
     render :layout => false
   end
 
@@ -396,7 +385,13 @@ class StorageController < ApplicationController
   def pre_new
     @hardware_pool = HardwarePool.find(params[:hardware_pool_id])
     @perm_obj = @hardware_pool
-    @redir_controller = @perm_obj.get_controller
+    authorize_admin
+    @storage_pools = @hardware_pool.storage_volumes
+    @storage_types = StoragePool::STORAGE_TYPE_PICKLIST
+  end
+
+  def pre_add
+    pre_new
   end
 
   def pre_new2
@@ -406,7 +401,6 @@ class StorageController < ApplicationController
     end
     @storage_pool = StoragePool.factory(params[:storage_type], new_params)
     @perm_obj = @storage_pool.hardware_pool
-    @redir_controller = @storage_pool.hardware_pool.get_controller
     authorize_admin
   end
   def pre_create
@@ -416,12 +410,10 @@ class StorageController < ApplicationController
     end
     @storage_pool = StoragePool.factory(type, pool)
     @perm_obj = @storage_pool.hardware_pool
-    @redir_controller = @storage_pool.hardware_pool.get_controller
   end
   def pre_edit
     @storage_pool = StoragePool.find(params[:id])
     @perm_obj = @storage_pool.hardware_pool
-    @redir_obj = @storage_pool
   end
   def pre_create_volume
     volume = params[:storage_volume]
@@ -430,7 +422,6 @@ class StorageController < ApplicationController
     end
     @storage_volume = StorageVolume.factory(type, volume)
     @perm_obj = @storage_volume.storage_pool.hardware_pool
-    @redir_controller = @storage_volume.storage_pool.hardware_pool.get_controller
     authorize_admin
   end
   def pre_json
