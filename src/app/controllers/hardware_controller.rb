@@ -293,15 +293,39 @@ class HardwareController < PoolController
     resource_ids_str = params[:resource_ids]
     resource_ids = resource_ids_str.split(",").collect {|x| x.to_i}
 
+    # if user doesn't have modify permission on both source and destination
+    unless @pool.can_modify(@user) and Pool.find(params[:target_pool_id]).can_modify(@user)
+        render :json => { :success => false,
+               :alert => "Cannot #{item_action.to_s} #{item_class.table_name.humanize} without admin permissions on both pools" }
+        return
+    end
+
+    # relay error message if movable check fails for any resource
+    success = true
+    failed_resources = ""
+    resource_ids.each {|x|
+       unless item_class.find(x).movable?
+         success = false
+         failed_resources += x.to_s + " "
+       end
+    }
+    resource_ids.delete_if { |x| ! item_class.find(x).movable? }
+
     begin
       @pool.transaction do
         @pool.send(item_method, resource_ids, target_pool_id)
       end
+    rescue
+      success = false
+    end
+
+    if success
       render :json => { :success => true,
         :alert => "#{item_action.to_s} #{item_class.table_name.humanize} successful." }
-    rescue
+    else
       render :json => { :success => false,
-        :alert => "#{item_action.to_s} #{item_class.table_name.humanize} failed." }
+         :alert => "#{item_action.to_s} #{item_class.table_name.humanize} failed" +
+                   (failed_resources == "" ? "." : " for " + failed_resources) }
     end
   end
 

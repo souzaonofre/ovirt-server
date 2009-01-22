@@ -32,9 +32,22 @@ class StorageVolume < ActiveRecord::Base
     end
   end
 
+  validates_presence_of :storage_pool_id
+
+
+  validates_numericality_of :size,
+     :greater_than_or_equal_to => 0,
+     :unless => Proc.new { |storage_volume| storage_volume.nil? }
+
+  validates_inclusion_of :type,
+    :in => %w( IscsiStorageVolume LvmStorageVolume NfsStorageVolume )
+
   STATE_PENDING_SETUP    = "pending_setup"
   STATE_PENDING_DELETION = "pending_deletion"
   STATE_AVAILABLE        = "available"
+
+  validates_inclusion_of :state,
+    :in => [ STATE_PENDING_SETUP, STATE_PENDING_DELETION, STATE_AVAILABLE]
 
   def self.factory(type, params = {})
     params[:state] = STATE_PENDING_SETUP unless params[:state]
@@ -129,6 +142,14 @@ class StorageVolume < ActiveRecord::Base
       return_hash[:children] = []
     end
     return_hash
+  end
+
+  def movable?
+     if vms.size > 0 or
+         (not lvm_storage_pool.nil? and not lvm_storage_pool.movable?)
+           return false
+     end
+     return true
   end
 
 end

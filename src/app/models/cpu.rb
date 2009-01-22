@@ -21,4 +21,27 @@
 #
 class Cpu < ActiveRecord::Base
     belongs_to :host
+
+    validates_presence_of :host_id,
+        :message => 'A host must be specified.'
+
+    validates_numericality_of :cpu_number,
+        :greater_than_or_equal_to => 0
+
+    validates_numericality_of :core_number,
+        :greater_than_or_equal_to => 0
+
+    validates_numericality_of :number_of_cores,
+        :greater_than_or_equal_to => 1
+
+    validates_numericality_of :cpuid_level,
+        :greater_than_or_equal_to => 0
+
+    validates_numericality_of :speed,
+        :greater_than => 0
+    # also verify speed in MHz ?
+
+    validates_presence_of :vendor
+    validates_presence_of :model
+    validates_presence_of :family
 end

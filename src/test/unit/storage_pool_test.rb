@@ -21,8 +21,53 @@ require File.dirname(__FILE__) + '/../test_helper'
 
 class StoragePoolTest < Test::Unit::TestCase
   fixtures :storage_pools
+  fixtures :pools
+  fixtures :vms
+
+  def setup
+    @storage_pool = StoragePool.new(
+         :type => 'IscsiStoragePool',
+         :capacity => 100,
+         :state => 'available' )
+    @storage_pool.hardware_pool = pools(:default)
+  end
+
+  def test_valid_fails_without_hardware_pool
+    @storage_pool.hardware_pool = nil
+    flunk "Storage pool must specify hardware pool" if @storage_pool.valid?
+  end
+
+  def test_valid_fails_with_bad_type
+    @storage_pool.type = 'foobar'
+    flunk 'Storage pool must specify valid type' if @storage_pool.valid?
+  end
+
+  def test_valid_fails_with_bad_capacity
+    @storage_pool.capacity = -1
+    flunk 'Storage pool must specify valid capacity >= 0' if @storage_pool.valid?
+  end
+
+  def test_valid_fails_with_bad_state
+    @storage_pool.state = 'foobar'
+    flunk 'Storage pool must specify valid state' if @storage_pool.valid?
+  end
 
   def test_hardware_pool_relationship
     assert_equal 'corp.com', storage_pools(:corp_com_ovirtpriv_storage).hardware_pool.name
+  end
+
+  def test_movable
+    assert_equal @storage_pool.movable?, true, "Storage pool without volumes should be movable"
+
+    storage_volume = StorageVolume.new(
+           :size => 100,
+           :type => 'IscsiStorageVolume',
+           :state => 'available' )
+    @storage_pool.storage_volumes << storage_volume
+
+    assert_equal @storage_pool.movable?, true, "Storage pool w/ movable storage volumes should be movable"
+
+    storage_volume.vms << vms(:production_httpd_vm)
+    assert_equal @storage_pool.movable?, false, "Storage pool w/ unmovable storage volumes should not be movable"
   end
 end

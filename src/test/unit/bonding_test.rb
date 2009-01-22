@@ -35,6 +35,7 @@ class BondingTest < ActiveSupport::TestCase
       :bonding_type_id => bonding_types(:failover_bonding_type),
       :host_id         => hosts(:mailservers_managed_node))
     @bonding.vlan = networks(:dhcp_vlan_one)
+    @bonding.bonding_type = bonding_types(:load_balancing_bonding_type)
   end
 
   # Ensures that the name is required.
@@ -68,6 +69,40 @@ class BondingTest < ActiveSupport::TestCase
 
     flunk 'Bondings have to have a host.' if @bonding.valid?
   end
+
+  def test_valid_fails_without_bonding_type
+    @bonding.bonding_type = nil
+    flunk 'Bonding must specify bonding type' if @bonding.valid?
+  end
+
+  def test_valid_fails_without_vlan
+    @bonding.vlan = nil
+    flunk 'Bonding must specify vlan' if @bonding.valid?
+  end
+
+  # Ensures that an arp ping address must have the correct format
+  #
+  def test_valid_fails_with_bad_arp_ping_address
+    @bonding.arp_ping_address = 'foobar'
+
+    flunk "An arp ping address must be in the format ##.##.##.##." if @bonding.valid?
+  end
+
+  # Ensures that an arp interval is a numerical value >= 0
+  #
+  def test_valid_fails_with_bad_arp_interval
+    @bonding.arp_interval = -1
+
+    flunk "An arp interval must be >= 0" if @bonding.valid?
+  end
+
+  def test_static_network_bonding_must_have_ip
+    @bonding.vlan = networks(:static_vlan_one)
+    @bonding.ip_addresses.delete_if { true }
+
+    flunk 'Bonding assigned to static networks must have at least one ip' if @bonding.valid?
+  end
+
 
   # Ensure that retrieving a bonding returns its associated objects.
   #

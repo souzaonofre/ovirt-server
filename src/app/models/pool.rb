@@ -53,6 +53,9 @@ class Pool < ActiveRecord::Base
   validates_presence_of :name
   validates_uniqueness_of :name, :scope => :parent_id
 
+  validates_inclusion_of :type,
+    :in => %w( DirectoryPool HardwarePool VmResourcePool SmartPool )
+
   # overloading this method such that we can use permissions.admins to get all the admins for an object
   has_many :permissions, :dependent => :destroy, :order => "id ASC" do
     def super_admins

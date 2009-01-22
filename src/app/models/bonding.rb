@@ -30,6 +30,8 @@
 # interface. They can be ignored if not used.
 #
 class Bonding < ActiveRecord::Base
+
+
   belongs_to :host
   belongs_to :bonding_type
   belongs_to :vlan
@@ -58,9 +60,20 @@ class Bonding < ActiveRecord::Base
   validates_presence_of :vlan_id,
     :message => 'A vlan must be specified.'
 
+  # verify arp ping address to be ipv4 if set
+  validates_format_of :arp_ping_address,
+     :with => %r{^(\d{1,3}\.){3}\d{1,3}$},
+     :unless => Proc.new { |bonding| bonding.arp_ping_address.nil? }
+
+  validates_numericality_of :arp_interval,
+     :greater_than_or_equal_to => 0,
+     :unless => Proc.new { |bonding| bonding.arp_interval.nil? }
+
  protected
   def validate
-    if vlan.boot_type.proto == 'static' and ip_addresses.size == 0
+    if ! vlan.nil? and
+       vlan.boot_type.proto == 'static' and
+       ip_addresses.size == 0
            errors.add("vlan_id",
                       "is static. Must create at least one static ip")
      end

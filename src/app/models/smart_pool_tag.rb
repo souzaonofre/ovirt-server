@@ -31,6 +31,11 @@ class SmartPoolTag < ActiveRecord::Base
 
   validates_uniqueness_of :smart_pool_id, :scope => [:tagged_id, :tagged_type]
 
+  validates_presence_of :tagged_id
+
+  validates_inclusion_of :tagged_type,
+    :in => %w( Pool StoragePool Host Vm )
+
   def tagged_type=(sType)
     super(sType.to_s.classify.constantize.base_class.to_s)
   end

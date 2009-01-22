@@ -310,6 +310,13 @@ class StorageController < ApplicationController
   end
 
   def destroy
+    unless @storage_pool.movable?
+     format.json { render :json => { :object => "storage_pool",
+        :success => false,
+        :alert => "Cannot delete storage with associated vms" } }
+     return
+    end
+
     pool = @storage_pool.hardware_pool
     if @storage_pool.destroy
       alert="Storage Pool was successfully deleted."

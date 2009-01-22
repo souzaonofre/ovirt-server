@@ -21,9 +21,63 @@ require File.dirname(__FILE__) + '/../test_helper'
 
 class HostTest < Test::Unit::TestCase
   fixtures :hosts
+  fixtures :pools
+  fixtures :vms
 
-  # Replace this with your real tests.
-  def test_truth
-    assert true
+  def setup
+     @host = Host.new(
+         :uuid => 'foobar',
+         :hostname => 'foobar',
+         :arch => 'x86_64',
+         :hypervisor_type => 'KVM',
+         :state => 'available')
+
+      @host.hardware_pool = pools(:corp_com)
   end
+
+  def test_valid_fails_without_hardware_pool
+      @host.hardware_pool = nil
+
+      flunk "Hosts must be associated w/ a hardware pool" if @host.valid?
+  end
+
+  def test_valid_without_uuid
+       @host.uuid = nil
+
+       flunk "Hosts don't need to be associated w/ a uuid" unless @host.valid?
+  end
+
+
+  def test_valid_fails_without_hostname
+       @host.hostname = ''
+
+       flunk "Hosts must be associated w/ a hostname" if @host.valid?
+  end
+
+
+  def test_valid_fails_without_arch
+       @host.arch = ''
+
+       flunk "Hosts must be associated w/ an arch" if @host.valid?
+  end
+
+  def test_valid_fails_with_bad_hypervisor_type
+       @host.hypervisor_type = 'foobar'
+
+       flunk "Hosts must be associated w/ a valid hypervisor type" if @host.valid?
+  end
+
+  def test_valid_fails_with_bad_state
+       @host.state = 'foobar'
+
+       flunk "Hosts must be associated w/ a valid state" if @host.valid?
+  end
+
+  def test_host_movable
+       assert_equal @host.movable?, true, "Hosts are movable unless associated w/ vms"
+
+       @host.vms << vms(:production_httpd_vm)
+       assert_equal @host.movable?, false, "Hosts with associated vms are not movable"
+  end
+
 end

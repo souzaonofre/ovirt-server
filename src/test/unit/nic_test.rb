@@ -22,9 +22,61 @@ require File.dirname(__FILE__) + '/../test_helper'
 class NicTest < Test::Unit::TestCase
   fixtures :ip_addresses
   fixtures :nics
+  fixtures :hosts
+  fixtures :networks
 
-  # Replace this with your real tests.
-  def test_truth
-    assert true
+  def setup
+    @nic = Nic.new(
+         :mac => '00:11:22:33:44:55',
+         :usage_type => 1,
+         :bandwidth => 100 )
+    @nic.host = hosts(:prod_corp_com)
+    @nic.physical_network = networks(:static_physical_network_one)
+
+    @ip_address = IpV4Address.new(
+         :address => '1.2.3.4',
+         :netmask => '2.3.4.5',
+         :gateway => '3.4.5.6',
+         :broadcast => '4.5.6.7' )
+
+    @nic.ip_addresses << @ip_address
   end
+
+  def test_valid_fails_without_mac
+    @nic.mac = ''
+
+    flunk 'Nic must have a mac' if @nic.valid?
+  end
+
+  def test_valid_fails_with_invalid_mac
+    @nic.mac = 'foobar'
+
+    flunk 'Nic must have a valid mac' if @nic.valid?
+  end
+
+  def test_valid_fails_without_host
+    @nic.host = nil
+
+    flunk 'Nic must have a host' if @nic.valid?
+  end
+
+  def test_valid_fails_without_physical_network
+    @nic.physical_network = nil
+
+    flunk 'Nic must have a physical network' if @nic.valid?
+  end
+
+  def test_valid_fails_with_invalid_bandwidth
+    @nic.bandwidth = -1
+
+    flunk 'Nic bandwidth must be >= 0' if @nic.valid?
+  end
+
+  def test_static_network_nic_must_have_ip
+    @nic.physical_network = networks(:static_physical_network_one)
+    @nic.ip_addresses.delete_if { true }
+
+    flunk 'Nics assigned to static networks must have at least one ip' if @nic.valid?
+  end
+
 end

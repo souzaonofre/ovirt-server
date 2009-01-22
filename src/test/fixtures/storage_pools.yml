@@ -5,14 +5,25 @@ corp_com_ovirtpriv_storage:
   port: 3260
   target: ovirtpriv:storage
   state: available
+  capacity: 1024
 corp_com_nfs_ovirtnfs:
   hardware_pool: corp_com
   type: NfsStoragePool
   ip_addr: 192.168.50.2
   export_path: /ovirtnfs
+  capacity: 1024
+  state: available
 corp_com_dev_nfs_ovirtnfs:
   hardware_pool: corp_com_dev
   type: NfsStoragePool
   ip_addr: 192.168.50.3
   export_path: /devnfs
   state: available
+  capacity: 1024
+corp_com_dev_lvm_ovirtlvm:
+  hardware_pool: corp_com_dev
+  type: LvmStoragePool
+  ip_addr: 192.168.50.3
+  export_path: /devnfs
+  state: available
+  capacity: 1024

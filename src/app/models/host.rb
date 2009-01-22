@@ -60,12 +60,28 @@ class Host < ActiveRecord::Base
                              [ :search_users, 'U', "search_users" ] ],
                  :eager_load => :smart_pools
 
+  validates_presence_of :hardware_pool_id,
+     :message => 'A hardware pool id must be specified.'
+
+  validates_presence_of :hostname,
+     :message => 'A hostname must be specified.'
+
+  validates_presence_of :arch,
+     :message => 'An arch must be specified.'
 
   KVM_HYPERVISOR_TYPE = "KVM"
-  HYPERVISOR_TYPES = [KVM_HYPERVISOR_TYPE]
+  QEMU_HYPERVISOR_TYPE = "QEMU"
+  HYPERVISOR_TYPES = [KVM_HYPERVISOR_TYPE, QEMU_HYPERVISOR_TYPE]
   STATE_UNAVAILABLE = "unavailable"
   STATE_AVAILABLE   = "available"
   STATES = [STATE_UNAVAILABLE, STATE_AVAILABLE]
+
+  validates_inclusion_of :hypervisor_type,
+     :in => HYPERVISOR_TYPES,
+     :unless => Proc.new { |host| host.hypervisor_type.nil? or host.hypervisor_type == "" }
+
+  validates_inclusion_of :state,
+     :in => STATES + Task::COMPLETED_STATES + Task::WORKING_STATES
 
   def memory_in_mb
     kb_to_mb(memory)
@@ -106,6 +122,10 @@ class Host < ActiveRecord::Base
 
   def search_users
     hardware_pool.search_users
+  end
+
+  def movable?
+     return vms.size == 0
   end
 
 end

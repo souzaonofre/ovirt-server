@@ -250,13 +250,13 @@ class HostBrowser
         puts "Saving new CPU records"
         cpu_info.collect do |cpu|
             detail = Cpu.new(
-                "cpu_number"      => cpu['CPUNUM'],
-                "core_number"     => cpu['CORENUM]'],
-                "number_of_cores" => cpu['NUMCORES'],
+                "cpu_number"      => cpu['CPUNUM'].to_i,
+                "core_number"     => cpu['CORENUM]'].to_i,
+                "number_of_cores" => cpu['NUMCORES'].to_i,
                 "vendor"          => cpu['VENDOR'],
                 "model"           => cpu['MODEL'],
                 "family"          => cpu['FAMILY'],
-                "cpuid_level"     => cpu['CPUIDLVL'],
+                "cpuid_level"     => cpu['CPUIDLVL'].to_i,
                 "speed"           => cpu['SPEED'],
                 "cache"           => cpu['CACHE'],
                 "flags"           => cpu['FLAGS'])
@@ -290,7 +290,7 @@ class HostBrowser
 
                     updated_nic = Nic.find_by_id(nic.id)
 
-                    updated_nic.bandwidth = detail['BANDWIDTH']
+                    updated_nic.bandwidth = detail['BANDWIDTH'].to_i
 
                     updated_nic.save!
                     found=true
@@ -310,7 +310,7 @@ class HostBrowser
             puts "Creating a new nic..."
             detail = Nic.new(
                 'mac'          => nic['MAC'].upcase,
-                'bandwidth'    => nic['BANDWIDTH'],
+                'bandwidth'    => nic['BANDWIDTH'].to_i,
                 'usage_type'   => 1)
             detail.physical_network = network
 

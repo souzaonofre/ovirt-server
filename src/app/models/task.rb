@@ -45,6 +45,17 @@ class Task < ActiveRecord::Base
   COMPLETED_STATES = [STATE_FINISHED, STATE_FAILED, STATE_CANCELED]
   WORKING_STATES   = [STATE_QUEUED, STATE_RUNNING, STATE_PAUSED]
 
+  validates_inclusion_of :type,
+   :in => %w( HostTask StorageTask StorageVolumeTask VmTask )
+
+  validates_inclusion_of :state,
+    :in => COMPLETED_STATES + WORKING_STATES
+
+  # FIXME validate action depending on type / subclass
+  # validate task_target_id, task_type_id, arg, message
+  #   depending on subclass, action, state
+
+
   TASK_TYPES_OPTIONS = [["VM Tasks", "VmTask"],
                         ["Host Tasks", "HostTask"],
                         ["Storage Tasks", "StorageTask"],
@@ -88,5 +99,10 @@ class Task < ActiveRecord::Base
     ret_val = action
     ret_val += " #{args}" if args
     ret_val
+  end
+
+  def validate
+    errors.add("time_ended", "Tasks ends before it's started") unless time_ended.nil? or time_started.nil? or time_ended > time_started
+    errors.add("time_started", "Tasks starts before it's created") unless time_started.nil? or created_at.nil? or time_started > created_at
   end
 end

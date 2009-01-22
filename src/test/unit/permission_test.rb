@@ -21,6 +21,14 @@ require File.dirname(__FILE__) + '/../test_helper'
 
 class PermissionTest < Test::Unit::TestCase
   fixtures :permissions
+  fixtures :pools
+
+  def setup
+    @permission = Permission.new(
+        :uid => 'foobar',
+        :user_role => 'Super Admin' )
+    @permission.pool = pools(:root_dir_pool)
+  end
 
   # Replace this with your real tests.
   def test_simple_permission
@@ -31,5 +39,25 @@ class PermissionTest < Test::Unit::TestCase
   def test_permission_with_parent
     assert_equal permissions(:ovirtadmin_default).inherited_from_id, permissions(:ovirtadmin_root).id
     assert_equal permissions(:ovirtadmin_default).parent_permission, permissions(:ovirtadmin_root)
+  end
+
+  def test_valid_fails_without_pool
+    @permission.pool = nil
+    flunk 'Permission must specify pool' if @permission.valid?
+  end
+
+  def test_valid_fails_without_uid
+    @permission.uid = ''
+    flunk 'Permission must specify uid' if @permission.valid?
+  end
+
+  def test_valid_fails_without_user_role
+    @permission.user_role = ''
+    flunk 'Permission must specify user role' if @permission.valid?
+  end
+
+  def test_valid_fails_with_invalid_user_role
+    @permission.user_role = 'foobar'
+    flunk 'Permission must specify valid user role' if @permission.valid?
   end
 end

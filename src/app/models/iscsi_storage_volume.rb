@@ -31,4 +31,6 @@ class IscsiStorageVolume < StorageVolume
     return true
   end
 
+  validates_presence_of :lun
+
 end

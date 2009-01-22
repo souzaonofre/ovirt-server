@@ -45,7 +45,7 @@ class ResourcesControllerTest < ActionController::TestCase
 
   def test_create
     assert_difference('VmResourcePool.count') do
-      post :create, :vm_resource_pool => { :name => 'foo_resource_pool' }, :parent_id => pools(:default).id
+      post :create, :pool => { :name => 'foo_resource_pool'}, :parent_id => pools(:default).id
     end
 
     assert_response :success

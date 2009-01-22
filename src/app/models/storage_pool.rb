@@ -39,6 +39,13 @@ class StoragePool < ActiveRecord::Base
 
   validates_presence_of :hardware_pool_id
 
+  validates_inclusion_of :type,
+    :in => %w( IscsiStoragePool LvmStoragePool NfsStoragePool )
+
+
+  validates_numericality_of :capacity,
+     :greater_than_or_equal_to => 0
+
   acts_as_xapian :texts => [ :ip_addr, :target, :export_path, :type ],
                  :terms => [ [ :search_users, 'U', "search_users" ] ],
                  :eager_load => :smart_pools
@@ -53,6 +60,9 @@ class StoragePool < ActiveRecord::Base
   STATE_PENDING_SETUP    = "pending_setup"
   STATE_PENDING_DELETION = "pending_deletion"
   STATE_AVAILABLE        = "available"
+
+  validates_inclusion_of :state,
+    :in => [ STATE_PENDING_SETUP, STATE_PENDING_DELETION, STATE_AVAILABLE]
 
   def self.factory(type, params = {})
     params[:state] = STATE_PENDING_SETUP unless params[:state]
@@ -120,5 +130,12 @@ class StoragePool < ActiveRecord::Base
       volume.storage_tree_element(params)
     end
     return_hash
+  end
+
+  def movable?
+    storage_volumes.each{ |x|
+       return false unless x.movable?
+    }
+    return true
   end
 end
