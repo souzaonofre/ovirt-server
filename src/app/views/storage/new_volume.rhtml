@@ -18,20 +18,26 @@
     </div>
   </div>
   <!-- FIXME: need to pop up the details dialog again -->
-  <%= popup_footer("$('#storage_volume_form').submit()", "New Storage Volume") %>
+  <% if @return_to_workflow %>
+    <%# TODO: update this method in application_helper to take an array, so we can include
+        a callback or trigger to to go previous step in flow. %>
+    <%= popup_footer("$('#storage_volume_form').submit()", "New Storage Volume") %>
+  <% else %>
+    <%= popup_footer("$('#storage_volume_form').submit()", "New Storage Volume") %>
+  <%  end %>
 </form>
 </div>
 <script type="text/javascript">
 function afterStorageVolume(response, status){
     ajax_validation(response, status);
     if (response.success) {
-    <% if @return_facebox %>
-      $('#window').fadeOut('fast');
-      $("#window").empty().load("<%= @return_facebox %>")
-      $('#window').fadeIn('fast');
-    <% else %>
-      $(document).trigger('close.facebox');
-    <% end %>
+        //this is where I want to publish to...
+        //$(document).trigger('STORAGE_VOLUME', [response.new_volume]);
+        //but it only picks up correctly right now if I push it here, so this needs to change later
+      $('ul.ovirt-tree').trigger('STORAGE_VOLUME', [response.new_volume]);
+      <% unless @return_to_workflow -%>
+        $(document).trigger('close.facebox');
+      <% end -%>
     }
 }
 $(function() {

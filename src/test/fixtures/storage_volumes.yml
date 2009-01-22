@@ -19,6 +19,16 @@ ovirtpriv_storage_lun_3:
   storage_pool: corp_com_ovirtpriv_storage
   type: IscsiStorageVolume
   state: available
+  lvm_pool_id: corp_com_dev_lvm_ovirtlvm
+ovirtpriv_lvm_volume_1:
+  size: 1048576
+  path: /dev/disk/by-id/scsi-S_beaf321013
+  storage_pool: corp_com_dev_lvm_ovirtlvm
+  type: LvmStorageVolume
+  state: available
+  lv_owner_perms: 0744
+  lv_group_perms: 0744
+  lv_mode_perms: 0744
 ovirt_nfs_disk_1:
   size: 3145728
   path: /mnt/a3q49Sj4Sfmae1bV/disk1.dsk

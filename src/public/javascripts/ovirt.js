@@ -171,7 +171,7 @@ function afterHwPool(response, status){
           $tabs.tabs("load",$tabs.data('selected.tabs'));
         }
       }
-      
+
       //FIXME: point all these refs at a widget so we dont need the functions in here
       processTree();
 
@@ -320,4 +320,65 @@ function afterNetwork(response, status){
 function handleTabsAndContent(data) {
   $('#side-toolbar').html($(data).find('div.toolbar'));
   $('#tabs-and-content-container').html($(data).not('div#side-toolbar'));
+}
+
+var VmCreator = {
+  checkedBoxesFromTree : [],
+  buildCheckboxList: function(id) {
+      var rawList = $('#'+ id + ' :checkbox:checked').parent('div');
+      if (rawList.length >0) {
+          rawList.each(function(i) {
+            VmCreator.checkedBoxesFromTree.push(rawList.get(i).id);
+          });
+      } else {
+          VmCreator.checkedBoxesFromTree.splice(0);
+      }
+  },
+  clickCheckboxes: function() {
+      $.each(VmCreator.checkedBoxesFromTree, function(n, curBox){
+          $('#' + curBox).children(':checkbox').click();
+      });
+      VmCreator.checkedBoxesFromTree = [];
+  },
+  recreateTree: function(o){
+      $('#storage_volumes_tree').tree({
+        content: o.content,
+        template: "storage_volumes_template",
+        selectedNodes: o.selectedNodes,
+        clickHandler: VmCreator.goToCreateStorageHandler,
+        channel: 'STORAGE_VOLUME',
+        refresh: VmCreator.returnToVmForm
+      });
+  },
+  goToCreateStorageHandler: function goToCreateStorageHandler(e,elem){
+    if ($(e.target).is('img') && $(e.target).parent().is('div')){
+        //remove the temp form in case there is one hanging around for some reason
+        $('temp_create_vm_form').remove();
+        VmCreator.buildCheckboxList(elem.element.get(0).id);
+        var storedOptions = $('#storage_volumes_tree').data('tree').options;
+        // copy/rename form
+        $('#window').clone(true).attr({style: 'display:none', id: 'temp_window'}).appendTo('body');
+        $('#temp_window #vm_form').attr({id: 'temp_create_vm_form'});
+        // continue standard calls to go to next step (create storage)
+        $('#window').fadeOut('fast');
+        $("#window").empty().load($(e.target).siblings('a').attr('href'));
+        $('#window').fadeIn('fast');
+        // empty tree
+        $('#temp_create_vm_form #storage_volumes_tree').empty();
+        // reinitialize tree so it has data and is subscribed
+        VmCreator.recreateTree(storedOptions);
+    }
+  },
+  returnToVmForm: function returnToVmForm(e,elem) {
+      //The item has now been added to the tree, now copy it into a facebox
+      var storedOptions = $('#storage_volumes_tree').data('tree').options;
+      $('#window').fadeOut('fast');
+      $('#window').remove();
+      $('#temp_window').clone(true).attr({style: 'display:block', id: 'window'})
+        .appendTo('td.body > div.content').end().remove();
+      $('#window #temp_create_vm_form').attr({id: 'vm_form'});
+      $('#window').fadeIn('fast');
+      VmCreator.recreateTree(storedOptions);
+      VmCreator.clickCheckboxes();
+  }
 }

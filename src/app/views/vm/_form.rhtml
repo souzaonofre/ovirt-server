@@ -37,7 +37,7 @@
     <div class="clear_row" style="height:15px;"></div>
     <div class="clear_row"></div>
     <div class="clear_row"></div>
-    
+
     <div class="form_heading">Network</div>
     <div class="clear_row"></div>
     <div class="clear_row"></div>
@@ -56,21 +56,31 @@
 
 <!--[eoform:vm]-->
 
-<textarea id="tree_template" style="display:none;">
-{macro htmlList(list, isFullList)}
+<textarea id="storage_volumes_template" style="display:none;">
+{macro htmlList(list, id, isFullList)}
   {if isFullList}
   <ul style="display:none;">
   {/if}
     {for item in list}
       <li>
         <span class="hitarea {if item.children.length > 0} expandable{/if}">&nbsp;</span>
-        <div id="move-${item.id}" class="{if !item.available} unclickable{/if}">
+        <div id="${id}-${item.ui_object}" class="{if !item.available} unclickable{/if}">
           <input type="checkbox" name="vm[storage_volume_ids][]" value="${item.id}"
             {if !item.available}disabled="disabled" style="display:none"{/if}
             {if item.selected}checked="checked"{/if}/> ${item.name} {if item.size}(${item.size} GB){/if}
+            {if item.create_volume}
+              <%=image_tag("icon_addstorage.png")%>
+              {if item.is_pool}
+              <a href="<%= url_for :controller => 'storage', :action => 'new_volume'%>?storage_pool_id=${item.id}&return_to_workflow=true"
+                rel="facebox[.bolder]" class="selection_facebox"></a>
+              {else}
+              <a href="<%= url_for :controller => 'storage', :action => 'new_volume'%>?source_volume_id=${item.id}&return_to_workflow=true"
+                rel="facebox[.bolder]" class="selection_facebox"></a>
+              {/if}
+            {/if}
         </div>
         {if item.children.length > 0}
-          ${htmlList(item.children, true)}
+          ${htmlList(item.children, id, true)}
         {/if}
       </li>
     {/for}
@@ -79,12 +89,16 @@
   {/if}
 {/macro}
 
-${htmlList(pools)}
+${htmlList(pools, id)}
 </textarea>
 <script type="text/javascript">
     $(document).ready(function(){
       $('#storage_volumes_tree').tree({
-        content: {"pools" : <%=  @storage_tree%>}
+        content: {"pools" : <%=  @storage_tree%>},
+        template: "storage_volumes_template",
+        clickHandler: VmCreator.goToCreateStorageHandler,
+        channel: 'STORAGE_VOLUME',
+        refresh: VmCreator.returnToVmForm
       });
     });
 </script>

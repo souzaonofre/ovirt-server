@@ -35,4 +35,7 @@ class LvmStorageVolume < StorageVolume
   validates_presence_of :lv_group_perms
   validates_presence_of :lv_mode_perms
 
+  def ui_parent
+    storage_pool.source_volumes[0][:type].to_s + '_' +storage_pool.source_volumes[0].id.to_s
+  end
 end

@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -110,6 +110,25 @@ class StorageVolumeTest < Test::Unit::TestCase
     @storage_volume.vms << vms(:production_httpd_vm)
 
     assert_equal @storage_volume.movable?, false, "Storage volume w/ vms should not be movable"
+  end
+
+  def test_create_valid_lvm_volume
+#    FIXME: Write this test, using similer steps as in storage_controller#new_volume.
+#    Also add validation to model to make sure the lvm volume's lvm pool has a source volume
+  end
+  def test_return_correct_lvm_ui_parent
+    #test lvm volume values
+    assert_equal storage_volumes(:ovirtpriv_storage_lun_3).type.to_s + '_' +storage_volumes(:ovirtpriv_storage_lun_3).id.to_s,
+      storage_volumes(:ovirtpriv_lvm_volume_1).ui_parent,
+      'Incorrect ui parent returned'
+    #test isci volume values
+    assert_equal storage_volumes(:corp_com_ovirtpriv_storage).type.to_s + '_' +storage_volumes(:corp_com_ovirtpriv_storage).id.to_s,
+      storage_volumes(:ovirtpriv_storage_lun_3).ui_parent,
+      'Incorrect ui parent returned'
+    #test nfs volume values
+    assert_equal storage_volumes(:corp_com_nfs_ovirtnfs).type.to_s + '_' +storage_volumes(:corp_com_nfs_ovirtnfs).id.to_s,
+      storage_volumes(:ovirt_nfs_disk_3).ui_parent,
+      'Incorrect ui parent returned'
   end
 
 end

@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -123,7 +123,8 @@ class StorageController < ApplicationController
   end
 
   def new_volume
-    @return_facebox = params[:return_facebox]
+    @return_to_workflow = params[:return_to_workflow]
+    @return_to_workflow ||= false
     if params[:storage_pool_id]
       @storage_pool = StoragePool.find(params[:storage_pool_id])
       unless @storage_pool.user_subdividable
@@ -171,7 +172,8 @@ class StorageController < ApplicationController
       respond_to do |format|
         format.json { render :json => { :object => "storage_volume",
             :success => true,
-            :alert => "Storage Volume was successfully created." } }
+            :alert => "Storage Volume was successfully created.",
+            :new_volume => @storage_volume.storage_tree_element({:filter_unavailable => false, :state => 'new'})} }
         format.xml { render :xml => @storage_volume,
             :status => :created,
             # FIXME: create storage_volume_url method if relevant
@@ -241,7 +243,7 @@ class StorageController < ApplicationController
   end
 
   def edit
-    render :layout => 'popup'    
+    render :layout => 'popup'
   end
 
   def update
@@ -250,11 +252,11 @@ class StorageController < ApplicationController
         @storage_pool.update_attributes!(params[:storage_pool])
         insert_refresh_task
       end
-      render :json => { :object => "storage_pool", :success => true, 
+      render :json => { :object => "storage_pool", :success => true,
                         :alert => "Storage Pool was successfully modified." }
     rescue
       # FIXME: need to distinguish pool vs. task save errors (but should mostly be pool)
-      render :json => { :object => "storage_pool", :success => false, 
+      render :json => { :object => "storage_pool", :success => false,
                         :errors => @storage_pool.errors.localize_error_messages.to_a  }
     end
   end
@@ -290,10 +292,10 @@ class StorageController < ApplicationController
           storage_pool.destroy
         end
       end
-      render :json => { :object => "storage_pool", :success => true, 
+      render :json => { :object => "storage_pool", :success => true,
         :alert => "Storage Pools were successfully deleted." }
     rescue
-      render :json => { :object => "storage_pool", :success => true, 
+      render :json => { :object => "storage_pool", :success => true,
         :alert => "Error deleting storage pools." }
     end
   end

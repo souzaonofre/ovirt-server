@@ -75,60 +75,149 @@ function processChildren(list, templateObj){
                     this.setData('template', TrimPath.parseDOMTemplate(this.getData('template')));
 		},
 		init: function() {
+                    var self = this, o = this.options;
                     this.setTemplate(this.getTemplate());
-                    this.element.html(this.getTemplate().process(this.getData('content')));
+                    this.populate();
+                    this.element
+                    .bind('click', function(event){
+                        self.clickHandler(event, self);
+                        if(self.getData('toggle') === 'toggle') {
+                          self.toggle(event, this);
+                        } else {
+                          self.element.triggerHandler('toggle',[event,this],self.getData('toggle'));
+                        }
+                    });
+                    o.selectedNodes !== undefined? this.openToSelected() :o.selectedNodes=[];
+                    o.channel !== undefined? this.subscribe(o.channel): o.channel = '';
+                    if (o.cacheContent === true) this.buildLookup();
+                },
+                populate: function() {
+                    var contentWithId = this.getData('content');
+                    contentWithId.id = this.element.get(0).id;
+                    this.element.html(this.getTemplate().process(contentWithId));
+                },
+                buildLookup: function() {
+                    this.setData('lookupList', this.walkTree(this.getData('content').pools, [], this));
+                },
+                walkTree: function(list, lookup, self) {
+                    $.each(list, function(n,obj){
+                        lookup.push(obj);
+                        if (obj.children.length > 0) self.walkTree(obj.children, lookup, self);
+                    });
+                    return lookup;
+                },
+                subscribe: function subscribe(channel) {
                     var self = this;
-                    this.element
-                    .find('li:has(ul)')
-                    .children('span.hitarea')
-                    .click(function(event){
-                      if (this == event.target) {
-                          if($(this).siblings('ul').size() >0) {
-                              if(self.getData('toggle') === 'toggle') {
-                                  self.toggle(event, this);  //we need 'this' so we have the right element to toggle
-                              } else {
-                                self.element.triggerHandler('toggle',[event,this],self.getData('toggle'));
-                              }
-                          }
-                      }
-                    });
-                    this.element
-                    .find('li > div')
-                    .filter(':not(.unclickable)')
-                    .bind('click', function(event) {
-                      if (this == event.target) {
-                          if(self.getData('clickHandler') === 'clickHandler') {
-                            self.clickHandler(event, this);  //we need 'this' so we have the right element to add click behavior to
-                          } else {
-                            self.element.triggerHandler('clickHandler',[event,this],self.getData('clickHandler'));
-                          }
-                      }
-                    });
-                    this.openToSelected(self);
+                    this.element.bind(channel, function(e,data){self.refresh(e,data);});
                 },
                 toggle: function(e, elem) {
-                    $(elem)
+                    if ($(e.target).is('span.hitarea')){
+                      $(e.target)
                       .toggleClass('expanded')
                       .toggleClass('expandable')
                       .siblings('ul').slideToggle("normal");
+                      if ($(e.target).hasClass('expanded')) {
+                        this.setSelectedNode(this.chop(e.target), true);
+                      } else {
+                          this.setSelectedNode(this.chop(e.target), false);
+                      }
+                    }
                 },
-                clickHandler: function(e,elem) {
-                    // make this a default impl if needed.
+                chop: function(elem) {
+                    var id = $(elem).siblings('div').get(0).id;
+                    return id.substring(id.indexOf('-') +1);
                 },
-                openToSelected: function(self) {
-                    //find 'selected' items and open tree accordingly.  This may need to have a
-                    //marker of some sort passed in since different trees may have different needs.
+                clickHandler: function(e,elem) { //TODO: make this a default impl if needed.
+                    this.options.clickHandler !== undefined? this.element.triggerHandler('clickHandler',[e,this],this.getData('clickHandler')): null;
+                    if ($(e.target).is('div') && $(e.target).parent().is('li')){}
                 },
-		off: function() {
-			this.element.css({background: 'none'});
-			this.destroy(); // use the predefined function
-		}
+                setSelectedNode: function(id, isOpen) {
+                    if (isOpen) {
+                        if($.inArray(id,this.getData('selectedNodes')) == -1){
+                          this.setData(this.getData('selectedNodes').push(id));
+                        }
+                    } else {
+                        if($.inArray(id,this.getData('selectedNodes')) != -1){
+                          this.setData(this.getData('selectedNodes').splice(this.getData('selectedNodes').indexOf(id),1));
+                        }
+                    }
+                },
+                openToSelected: function() {
+                    for (var i = 0; i < this.getData('selectedNodes').length; i++){
+                      this.toggle($.event.fix({type: 'toggle',
+                                              target: this.element.find('#' +this.element.get(0).id + '-' + this.getData('selectedNodes')[i]).siblings('span').get(0)})
+                                  , this);
+                    }
+                },
+                refresh: function(e, list) {
+                    //NOTE: The widget expects the convention used elsewhere of {blah}-{ui_object}
+                    //(where {blah} is the id of the container element, see above for an example soon),
+                    //since there may be 2 items with the same db id.
+                    var self = this;
+                    list = $.makeArray(list);
+                    $.each(list, function(n,data){
+                      switch(data.state) {
+                          case 'deleted': {
+                            self._delete(data);
+                            break;
+                          }
+                          case 'changed': {
+                            self._update(data);
+                            break;
+                          }
+                          default: {
+                            self._add(data);
+                            break;
+                          }
+                      }
+                    });
+                    self.options.refresh !== undefined? self.element.triggerHandler('refresh',[e,list],self.getData('refresh')): null;
+                },
+                //methods meant to be called internally by widget
+                _add: function(data){
+                  var myLookupList = this.getData('lookupList');
+                    if (data.ui_parent !==null) {
+                      var matchedItems = $.grep(myLookupList,function(value) {return value.ui_object == data.ui_parent;});
+                      var self = this;
+                      $.each(matchedItems, function(n,obj){
+                        var existingObj = [];
+                        if(obj.children.length >0) {
+                          existingObj = $.grep(obj.children,function(value) {return value.ui_object == data.ui_object;});
+                        }
+                        if (existingObj.length === 0){
+                            obj.children.push(data);
+                            myLookupList.push(data);
+                            self._addDomElem(data);
+                        } else {}
+                      });
+                    } else {myLookupList.push(data);}
+                },
+                _delete: function(data){}, //TODO: implement
+                _update: function(data) {}, //TODO: implement
+                _addDomElem: function(data) {
+                  var dataToInsert = this.getTemplate().process({"pools":[data], "id":this.element.get(0).id});
+                  if (data.ui_parent) {
+                    var searchString = '#' + this.element.get(0).id + '-' + data.ui_parent;
+                    var parentElem = this.element.find(searchString).siblings('ul');
+                    if (parentElem.size() === 0) {
+                        this.element.find(searchString).parent().append('<ul>' + dataToInsert + '</ul>');
+                        this.element.find(searchString).siblings('span').addClass('expanded');
+                    } else {
+                      parentElem.append(dataToInsert);
+                    }
+                  } else {
+                      this.element.append(dataToInsert);
+                  }
+                },
+                _deleteDomElem: function(data) {}, //TODO: implement
+                _updateDomElem: function(data) {} //TODO: implement
 	};
 	$.yi = $.yi || {}; // create the namespace
 	$.widget("yi.tree", Tree);
 	$.yi.tree.defaults = {
             template: 'tree_template',
             toggle: 'toggle',
-            clickHandler: 'clickHandler'
+            clickHandler: 'clickHandler',
+            cacheContent: true
 	};
 })(jQuery);

@@ -180,6 +180,7 @@ class Pool < ActiveRecord::Base
                      ["Disk", :storage_in_gb, "(gb)"]]
 
   #needed by tree widget for display
+  #FIXME: this can be removed once all instances of treeview are gone
   def hasChildren
     return (rgt - lft) != 1
   end

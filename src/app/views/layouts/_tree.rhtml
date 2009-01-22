@@ -27,7 +27,7 @@
               });
               e.preventDefault();
           }
-      })
+      });
       $('div.nav-networks a').bind('click', function(e){
           if(this === e.target){
               var myURL = $(this).attr('href');
@@ -41,7 +41,7 @@
               });
               e.preventDefault();
           }
-      })
+      });
       $('#nav_tree_form ul.ovirt-tree li').livequery(
         function(){
           $(this)
