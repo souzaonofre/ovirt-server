@@ -32,7 +32,7 @@ class StorageController < ApplicationController
     list
     respond_to do |format|
       format.html { render :action => 'list' }
-      format.xml { render :xml => @storage_pools.to_xml }
+      format.xml { render :xml => @storage_pools.to_xml( :include => :storage_volumes) }
     end
   end
 
@@ -80,7 +80,12 @@ class StorageController < ApplicationController
     else
       respond_to do |format|
         format.html { render :layout => 'selection' }
-        format.xml { render :xml => @storage_pool.to_xml }
+        format.xml {
+          xml_txt = @storage_pool.to_xml(:include => :storage_volumes) do |xml|
+            xml.type @storage_pool.class.name
+          end
+          render :xml => xml_txt
+        }
       end
     end
   end
