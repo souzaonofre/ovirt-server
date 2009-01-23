@@ -44,7 +44,8 @@ class StoragePool < ActiveRecord::Base
 
 
   validates_numericality_of :capacity,
-     :greater_than_or_equal_to => 0
+     :greater_than_or_equal_to => 0,
+     :unless => Proc.new { |storage_pool| storage_pool.capacity.nil? }
 
   acts_as_xapian :texts => [ :ip_addr, :target, :export_path, :type ],
                  :terms => [ [ :search_users, 'U', "search_users" ] ],
