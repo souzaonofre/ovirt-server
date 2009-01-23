@@ -71,10 +71,10 @@
             {if item.create_volume}
               <%=image_tag("icon_addstorage.png")%>
               {if item.is_pool}
-              <a href="<%= url_for :controller => 'storage', :action => 'new_volume'%>?storage_pool_id=${item.id}&return_to_workflow=true"
+              <a href="<%= url_for :controller => 'storage_volume', :action => 'new'%>?storage_pool_id=${item.id}&return_to_workflow=true"
                 rel="facebox[.bolder]" class="selection_facebox"></a>
               {else}
-              <a href="<%= url_for :controller => 'storage', :action => 'new_volume'%>?source_volume_id=${item.id}&return_to_workflow=true"
+              <a href="<%= url_for :controller => 'storage_volume', :action => 'new'%>?source_volume_id=${item.id}&return_to_workflow=true"
                 rel="facebox[.bolder]" class="selection_facebox"></a>
               {/if}
             {/if}

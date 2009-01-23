@@ -6,7 +6,7 @@
   <%if @can_modify -%>
     <%if @storage_volume.supports_lvm_subdivision and @storage_volume.vms.empty? -%>
       <%= link_to image_tag("icon_addstorage.png") + " Add new Volume",
-                            {:controller => 'storage', :action => 'new_volume', :source_volume_id => @storage_volume.id},
+                            {:controller => 'storage_volume', :action => 'new', :source_volume_id => @storage_volume.id},
                              :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
     <% end %>
     <%if @storage_volume.deletable -%>
@@ -74,7 +74,7 @@
   function delete_volume()
   {
     $(document).trigger('close.facebox');
-    $.post('<%= url_for :controller => "storage", :action => "delete_volumes" %>',
+    $.post('<%= url_for :controller => "storage_volume", :action => "destroy" %>',
            { storage_volume_ids: <%= @storage_volume.id %> },
             function(data,status) {
               // FIXME: reload tree

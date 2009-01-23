@@ -11,7 +11,7 @@
 <%- end -%>
 <div class="panel_header"></div>
 <div class="dialog_form">
-<form method="POST" action="<%= url_for :action => 'create_volume' %>" id="storage_volume_form" >
+<form method="POST" action="<%= url_for :action => 'create' %>" id="storage_volume_form" >
   <div class="dialog_form">
     <div id="new_storage_pool">
       <%= render :partial => 'new_volume_form' %>
@@ -42,7 +42,7 @@ function afterStorageVolume(response, status){
 }
 $(function() {
     var storagevolumeoptions = {
-        target:        '<%= url_for :action => 'create_volume' %>',   // target element to update
+        target:        '<%= url_for :action => 'create' %>',   // target element to update
 	dataType:      'json',
         success:       afterStorageVolume  // post-submit callback
     };
