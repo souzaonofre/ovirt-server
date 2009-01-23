@@ -48,6 +48,7 @@ URL: http://ovirt.org/
 
 %package installer
 Summary: Installer modules for the oVirt Server Suite
+Group: Applications/System
 Requires: ruby(abi) = 1.8
 Requires: ace
 Requires: ace-postgres
