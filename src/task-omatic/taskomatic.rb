@@ -283,7 +283,7 @@ class TaskOmatic
     # FIXME: get rid of the hardcoded bridge
     xml = create_vm_xml(db_vm.description, db_vm.uuid, db_vm.memory_allocated,
               db_vm.memory_used, db_vm.num_vcpus_allocated, db_vm.boot_device,
-              db_vm.vnic_mac_addr, "ovirtbr0", storagedevs)
+              db_vm.vnic_mac_addr, "breth0", storagedevs)
 
     result = node.domainDefineXML(xml.to_s)
     raise "Error defining virtual machine: #{result.text}" unless result.status == 0

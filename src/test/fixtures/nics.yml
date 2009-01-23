@@ -23,7 +23,7 @@ ldapserver_nic_one:
   mac: 00:03:02:00:09:06
   usage_type: 1
   bandwidth: 100
-  bridge: ovirtbr0
+  bridge: breth0
   host: ldapserver_managed_node
   physical_network: static_physical_network_one
 
