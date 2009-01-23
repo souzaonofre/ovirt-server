@@ -116,54 +116,6 @@ class StorageVolumeController < ApplicationController
   end
 
   def destroy
-    if params[:id]
-      delete_volume
-    else
-      delete_volumes
-    end
-  end
-
-  def delete_volumes
-    storage_volume_ids_str = params[:storage_volume_ids]
-    storage_volume_ids = storage_volume_ids_str.split(",").collect {|x| x.to_i}
-    alerts = []
-    status = true
-    begin
-      StorageVolume.transaction do
-        storage = StorageVolume.find(:all, :conditions => "id in (#{storage_volume_ids.join(', ')})")
-        unless storage.empty?
-          set_perms(storage[0].storage_pool.hardware_pool)
-          unless @can_modify and storage[0].storage_pool.user_subdividable
-            respond_to do |format|
-              format.json { render :json => { :object => "storage_volume",
-                  :success => false,
-                  :alert => "You do not have permission to delete this storage volume." } }
-              format.xml { head :forbidden }
-            end
-          else
-            storage.each do |storage_volume|
-              alert, success = delete_volume_internal(storage_volume)
-              alerts << alert
-              status = false unless success
-            end
-            respond_to do |format|
-              format.json { render :json => { :object => "storage_volume",
-                  :success => status, :alert => alerts.join("\n") } }
-              format.xml { head(status ? :ok : :method_not_allowed) }
-            end
-          end
-        else
-          respond_to do |format|
-            format.json { render :json => { :object => "storage_volume",
-                :success => false, :alert => "no volumes selected" } }
-            format.xml { head(status ? :ok : :method_not_allowed) }
-          end
-        end
-      end
-    end
-  end
-
-  def delete_volume
     @storage_volume = StorageVolume.find(params[:id])
     set_perms(@storage_volume.storage_pool.hardware_pool)
     unless @can_modify and @storage_volume.storage_pool.user_subdividable
@@ -181,7 +133,6 @@ class StorageVolumeController < ApplicationController
         format.xml { head(success ? :ok : :method_not_allowed) }
       end
     end
-
   end
 
   def pre_create

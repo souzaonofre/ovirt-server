@@ -75,7 +75,7 @@
   {
     $(document).trigger('close.facebox');
     $.post('<%= url_for :controller => "storage_volume", :action => "destroy" %>',
-           { storage_volume_ids: <%= @storage_volume.id %> },
+           { id: <%= @storage_volume.id %> },
             function(data,status) {
               // FIXME: reload tree
               if (data.alert) {
