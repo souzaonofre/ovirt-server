@@ -206,10 +206,12 @@ class StorageController < ApplicationController
 
   def destroy
     unless @storage_pool.movable?
+      @error = "Cannot delete storage with associated vms"
       respond_to do |format|
         format.json { render :json => { :object => "storage_pool",
-            :success => false,
-            :alert => "Cannot delete storage with associated vms" } }
+            :success => false, :alert => @error } }
+        format.xml { render :template => "errors/simple", :layout => false,
+          :status => :forbidden }
       end
       return
     end
