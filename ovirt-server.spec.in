@@ -34,6 +34,11 @@ Requires: rrdtool-ruby
 Requires: iscsi-initiator-utils
 Requires: cyrus-sasl-gssapi
 Requires: ovirt-docs
+Requires: qpidd
+Requires: rubygem-qpid
+Requires: qpidc
+Requires: qmf
+Requires: ruby-qpid
 Requires(post):  /sbin/chkconfig
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service

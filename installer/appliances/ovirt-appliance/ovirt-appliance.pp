@@ -5,7 +5,7 @@ import 'firewall'
 firewall::setup{'setup': status => 'disabled'}
 
 # dns configuration
-$mgmt_ipaddr = '192.168.222.211'
+$mgmt_ipaddr = '192.168.50.2'
 $prov_ipaddr = ''
 $ovirt_host = 'management.priv.ovirt.org'
 $ipa_host = 'management.priv.ovirt.org'
