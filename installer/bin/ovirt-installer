@@ -88,13 +88,18 @@ if (prompt_yes_no(welcome, :default => "y") == "n")
     exit(0)
 end
 
-
-if File.exist?("/usr/sbin/sestatus")
-    sestatus = `/usr/sbin/sestatus`
-    if sestatus !~ /(Current mode:                   permissive|Current mode:                   disabled|SELinux status:                 disabled|SELinux status:                 permissive)/
-        puts "SELinux enabled, please disable or set in permissive mode permanently by editing"
-        puts "/etc/selinux/config and rebooting"
-        exit
+if File.exist?("/usr/sbin/selinuxenabled")
+    sestatus = system "/usr/sbin/selinuxenabled"
+    if sestatus == true
+        selinux_disable = prompt_yes_no("SELinux enabled, would you like to disable it?", :default => "y")
+        if selinux_disable == "n"
+            @cli.say("Please disable selinux prior to running the installer again")
+            exit(0)
+        else
+            @cli.say("Disabling SELinux")
+            system "/usr/sbin/lokkit --selinuxtype=disabled"
+            system "/usr/sbin/setenforce 0"
+        end
     end
 end
 
@@ -134,7 +139,7 @@ ipa_host = ovirt_host
 @cli.say( "\nThe following DNS servers were found:")
 File.open('/etc/resolv.conf').each_line{ |line|
   line = line.chomp
-    puts line if line =~ /nameserver/ and line !~ /nameserver 127.0.0.1/
+    puts line if line =~ /nameserver/
 }
 dns_servers = prompt_yes_no("Use this systems's dns servers?")
 
@@ -189,7 +194,7 @@ db_password = prompt_for_answer("Enter a password for the ovirt postgres account
 # FreeIPA Configuration
 realm_name = prompt_for_answer("Enter your realm name (example: example.com):", :regex => FQDN)
 
-freeipa_password = prompt_for_answer("NOTE: The following pasword will also be you ovirtadmin password for the web management login\n\
+freeipa_password = prompt_for_answer("NOTE: The following pasword will also be your ovirtadmin password for the web management login\n\
 Enter an administrator password for FreeIPA:", :password => true)
 ldap_dn = "cn=ipaConfig,cn=etc,"
 ldap_dn_temp = realm_name.split(".")
