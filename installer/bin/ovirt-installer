@@ -149,22 +149,30 @@ prov_ip = `ifconfig #{prov_dev}`
 prov_ipaddr= prov_ip.scan(/\s*inet addr:([\d.]+)/)
 
 if dns_servers == "y"
-    host_lookup = Socket.getaddrinfo(ipa_host,nil)
-    hostip = host_lookup[1][3]
-    if hostip.to_s != mgmt_ipaddr.to_s
-        @cli.say("Reverse dns lookup for #{ipa_host} failed, exiting")
-        exit
+    mgmt_ipaddr_lookup = Socket.getaddrinfo(mgmt_ipaddr.to_s,nil)
+    mgmt_hostname = mgmt_ipaddr_lookup[1][2]
+    if mgmt_hostname.to_s != ipa_host.to_s
+        @cli.say("Reverse dns lookup for #{mgmt_ipaddr} failed, exiting")
+        exit(0)
+    end
+
+    ipa_host_lookup = Socket.getaddrinfo(ipa_host,nil)
+    ipa_hostip = ipa_host_lookup[1][3]
+    if ipa_hostip.to_s != mgmt_ipaddr.to_s
+         @cli.say("Forward dns lookup for #{ipa_host} failed, exiting")
+         exit(0)
     end
 end
 
 # DHCP Configuration
 dhcp_setup = prompt_yes_no("Does your provisioning network already have dhcp?")
 if dhcp_setup == "n"
+    dnsdomainname = `/bin/dnsdomainname`
     dhcp_interface = prov_dev
     dhcp_network = prompt_for_answer("Enter the first 3 octets of the dhcp network you wish to use (example: 192.168.50):", :regex => THREE_OCTETS)
     dhcp_start = prompt_for_answer("Enter the dhcp pool start address (example: 3):", :regex => OCTET)
     dhcp_stop = prompt_for_answer("Enter the dhcp pool end addess (example: 100):", :regex => OCTET)
-    dhcp_domain = prompt_for_answer("Enter the dhcp domain you wish to use (example: example.com):", :regex => IP_OR_FQDN)
+    dhcp_domain = prompt_for_answer("Enter the dhcp domain you wish to use (example: example.com):", :default => dnsdomainname.chomp, :regex => IP_OR_FQDN)
     tftp_setup = prompt_yes_no("Provide pxe/tftp capability?")
 
     if sep_networks == "y"
