@@ -58,11 +58,9 @@ function processChildren(list, templateObj){
          $('#' + data.parent_id).parent().append('<ul>' + result + '</ul>');
          $('#' + data.parent_id).siblings('span').addClass('expanded');
        }
-      }
-    else {
-      if (data.children) {
-          processChildren(data.children, templateObj);
-      }
+    }
+    if (data.children) {
+      processChildren(data.children, templateObj);
     }
   });
 }

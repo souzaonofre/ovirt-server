@@ -21,7 +21,7 @@ class TreeController < ApplicationController
     @clientHash = {}
     if (params[:item])
       params[:item].each { |item|
-        tempItem = item.split("-")
+        tempItem = item.split("-",2)
         itemHash = {
           :id => tempItem[0].to_s,
           :name =>tempItem[1]
@@ -81,6 +81,7 @@ class TreeController < ApplicationController
       smart_root = list[0]
       smart_root[:name] = "Smart Pools"
       smart_root[:type] = "SmartPoolRoot"
+      smart_root[:state] = "unchanged"
       mySmartPools = Array.new
       otherSmartPools = Array.new
       if smart_root.has_key?(:children)
