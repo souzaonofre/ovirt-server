@@ -76,7 +76,12 @@ class SmartPoolsController < PoolController
   def storage_pools_json
     args = items_json_internal(StoragePool, :tagged_storage_pools)
     conditions = args[:find_opts][:conditions]
-    conditions[0] = "(storage_pools.type != 'LvmStoragePool') and (#{conditions[0]})"
+    storage_conditions = "storage_pools.type != 'LvmStoragePool'"
+    if conditions[0]
+      conditions[0] = "(#{storage_conditions}) and (#{conditions[0]})"
+    else
+      conditions[0] = storage_conditions
+    end
     super(args)
   end
 
