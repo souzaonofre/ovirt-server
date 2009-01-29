@@ -326,7 +326,7 @@ def main()
 
     dbsync = DbOmatic.new()
     s = Qpid::Qmf::Session.new(:console => dbsync, :rcv_events => false)
-    b = s.add_broker("amqp://localhost:5672")
+    b = s.add_broker("amqp://guest:guest@localhost:5672")
 
     dbsync.db_init_cleanup()
 

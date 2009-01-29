@@ -4,7 +4,7 @@ require "rubygems"
 require "qpid"
 
 s = Qpid::Qmf::Session.new()
-b = s.add_broker("amqp://localhost:5672")
+b = s.add_broker("amqp://guest:guest@localhost:5672")
 
 while true:
     nodes = s.objects(:class => "node")

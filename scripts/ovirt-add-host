@@ -23,6 +23,8 @@ default_realm = krbV.Context().default_realm
 ipaddr = get_ip(sys.argv[1])
 
 libvirt_princ = 'libvirt/' + sys.argv[1] + '@' + default_realm
+qpidd_princ = 'qpidd/' + sys.argv[1] + '@' + default_realm
+
 if len(sys.argv) > 2:
         outname = sys.argv[2]
 else:
@@ -33,6 +35,8 @@ else:
 kadmin_local('addprinc -randkey +requires_preauth ' + libvirt_princ)
 kadmin_local('ktadd -k ' + outname + ' ' + libvirt_princ)
 
-if len(sys.argv) <= 2:
-        # make sure it is readable by apache
-        os.chmod(outname, 0644)
+kadmin_local('addprinc -randkey ' + qpidd_princ)
+kadmin_local('ktadd -k ' + outname + ' ' + qpidd_princ)
+
+# make sure it is readable by apache and qpidd.
+os.chmod(outname, 0644)

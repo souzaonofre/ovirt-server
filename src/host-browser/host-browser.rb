@@ -328,6 +328,7 @@ class HostBrowser
         krb5 = krb5_arg || Krb5.new
 
         default_realm = krb5.get_default_realm
+        qpidd_princ = 'qpidd/' + hostname + '@' + default_realm
         libvirt_princ = 'libvirt/' + hostname + '@' + default_realm
         outfile = ipaddress + '-libvirt.tab'
         @keytab_filename = @keytab_dir + outfile
@@ -338,6 +339,8 @@ class HostBrowser
             puts "Writing keytab file: #{@keytab_filename}" unless defined?(TESTING)
             kadmin_local('addprinc -randkey ' + libvirt_princ)
             kadmin_local('ktadd -k ' + @keytab_filename + ' ' + libvirt_princ)
+            kadmin_local('addprinc -randkey ' + qpidd_princ)
+            kadmin_local('ktadd -k ' + @keytab_filename + ' ' + qpidd_princ)
 
             File.chmod(0644,@keytab_filename)
         end

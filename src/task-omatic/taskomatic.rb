@@ -47,7 +47,7 @@ class TaskOmatic
 
     @session = Qpid::Qmf::Session.new()
     # FIXME: Should come from some kind of config or DNS SRV or what have you.
-    @broker = @session.add_broker("amqp://localhost:5672")
+    @broker = @session.add_broker("amqp://guest:guest@localhost:5672")
 
     do_daemon = true
 
