@@ -1,0 +1,4 @@
+<div class="snapshot_graph_container" title="<%=  number_to_percentage get_percentage(type, data), :precision => 2%>">
+  <% load_css = (get_scaled_data(type, data) >90) ? "load_graph_high" : "load_graph_low" %>
+  <div class="snapshot_graph <%=load_css%>" style="width: <%= get_scaled_data(type, data)%>px;"></div>
+</div>

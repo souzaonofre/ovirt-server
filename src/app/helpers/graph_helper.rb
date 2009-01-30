@@ -23,7 +23,7 @@ module GraphHelper
                     :values => [remaining],
                     :fill => 'white',
                     :stroke => 'lightgray',
-                    :strokeWidth => 1 
+                    :strokeWidth => 1
                 }
             ]
         }
@@ -36,20 +36,34 @@ module GraphHelper
         data_sets = []
         if (total > used)
             # 3/4 is the critical boundry for now
-            color = 'red' if (used.to_f / total.to_f) > 0.75 
+            color = 'red' if (used.to_f / total.to_f) > 0.75
             data_sets.push({ :name => title + '_used', :values => [used],
                              :fill => color, :stroke => 'lightgray', :strokeWidth => 1 },
-                           { :name => title + '_available', 
+                           { :name => title + '_available',
                              :values => [available], :fill => 'white',
                              :stroke => 'lightgray', :strokeWidth => 1})
         else
             data_sets.push({ :name => title + '_available', :values => [available],
                              :fill => 'white', :stroke => 'lightgray', :strokeWidth => 1 },
-                           { :name => title + '_used', 
+                           { :name => title + '_used',
                              :values => [used], :fill => 'red',
                              :stroke => 'lightgray', :strokeWidth => 1})
         end
         return ActiveSupport::JSON.encode({:timepoints => [], :dataset => data_sets})
     end
-  
+
+    def get_scaled_data(type, data)
+      if (data[:avg][type] > data[:scale][type])
+          data[:avg][type] = data[:scale][type]
+      end
+      # 180 is the maximum width we display for the bar graph in the ui
+      data[:avg][type] * (180.0/data[:scale][type])
+    end
+
+    def get_percentage(type, data)
+      if (data[:avg][type] > data[:scale][type])
+          return 100
+      end
+      (data[:avg][type].to_f/data[:scale][type]) * 100
+    end
 end
