@@ -149,6 +149,10 @@ class ovirt::setup {
 		require => Package[ntp]
                 }
 
+    service {"ace" :
+                enable => false
+    }
+
 #	firewall_rule{"http": destination_port => "80"}
 
 }

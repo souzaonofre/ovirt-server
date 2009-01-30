@@ -13,12 +13,12 @@ $ipa_host = 'management.priv.ovirt.org'
 dns::bundled{setup: mgmt_ipaddr=> $mgmt_ipaddr, prov_ipaddr=> $prov_ipaddr, mgmt_dev => 'eth0', prov_dev => 'eth1'}
 
 # dhcp configuration
-$dhcp_interface = 'eth1'
+$dhcp_interface = 'eth0'
 $dhcp_network = '192.168.50'
 $dhcp_start = '3'
-$dhcp_stop = '10'
+$dhcp_stop = '50'
 $dhcp_domain = 'priv.ovirt.org'
-$ntp_server = '192.168.222.211'
+$ntp_server =  $mgmt_ipaddr
 
 $prov_dns_server = ''
 $prov_network_gateway = '192.168.50.1'
@@ -33,7 +33,7 @@ $db_password = 'cobbler'
 
 # FreeIPA configuration
 $realm_name = 'priv.ovirt.org'
-$freeipa_password = 'password'
+$freeipa_password = 'ovirt'
 $ldap_dn = 'cn=ipaConfig,cn=etc,dc=priv,dc=ovirt,dc=org'
 
 include cobbler::bundled
