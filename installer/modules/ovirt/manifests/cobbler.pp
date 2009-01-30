@@ -108,6 +108,18 @@ class cobbler::bundled {
 #	firewall_rule{"25150": destination_port => "25150"}
 #	firewall_rule{"25151": destination_port => "25151"}
 
+      file {"/usr/sbin/cobbler-import":
+              source => "puppet:///ovirt/cobbler-import",
+              mode => 755
+      }
+
+    single_exec {"cobbler-import":
+        command => "/usr/sbin/cobbler-import >> /var/log/cobbler-import.log 2>&1",
+        require => [File["/usr/sbin/cobbler-import"],
+                   Service["cobblerd"]]
+    }
+
+
 }
 
 class cobbler::remote {
