@@ -60,14 +60,14 @@ function add_storage(url)
     if (validate_selected(storage, "storage pool")) {
       $.post(url,
              { resource_ids: storage.toString() },
-              function(data,status){;
-                $(document).trigger('close.facebox');
-                // FIXME: this always reloads the tab for now
-	        grid = $("#storage_grid");
-                if (grid.size()>0 && grid != null) {
-                  grid.flexReload();
-                } else {
-                   $tabs.tabs("load",$tabs.data('selected.tabs'));
+              function(data,status){
+                if (data.success) {
+                  $(document).trigger('close.facebox');
+                  if ($("#storage_tree").size() > 0) {
+                    $('ul.ovirt-tree').trigger('STORAGE_VOLUME', [response.storage]);
+                  } else {
+                    $tabs.tabs("load",$tabs.data('selected.tabs'));
+                  }
                 }
 		if (data.alert) {
 		  $.jGrowl(data.alert);
@@ -206,9 +206,8 @@ function afterStoragePool(response, status){
     ajax_validation(response, status);
     if (response.success) {
       $(document).trigger('close.facebox');
-      grid = $("#storage_grid");
-      if (grid.size()>0 && grid != null) {
-        grid.flexReload();
+      if ($("#storage_tree").size() > 0) {
+        $('ul.ovirt-tree').trigger('STORAGE_VOLUME', [response.new_pool]);
       } else {
         $tabs.tabs("load",$tabs.data('selected.tabs'));
       }

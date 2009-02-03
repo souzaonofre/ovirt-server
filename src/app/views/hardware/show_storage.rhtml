@@ -62,7 +62,8 @@ ${htmlList(pools, id)}
   $(document).ready(function(){
     $('#storage_tree').tree({
       content: {"pools" : <%=  @storage_tree%>},
-      clickHandler: storage_select
+      clickHandler: storage_select,
+      channel: 'STORAGE_VOLUME'
     });
   });
   function add_storage_to_smart_pool(smart_pool)

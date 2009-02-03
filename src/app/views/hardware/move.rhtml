@@ -9,6 +9,7 @@
       $(document).ready(function(){
         $('#move_tree').tree({
           content: {"pools" : <%=  @pools %>},
+          template: 'move_template',
           clickHandler: move_<%= @resource_type %>,
           cacheContent: false
         });
@@ -42,7 +43,7 @@ $('#move_to_new_pool').click(function(){
 </script>
 <ul id="move_tree" class="ovirt-tree"></ul>
 
-<textarea id="tree_template" style="display:none;">
+<textarea id="move_template" style="display:none;">
 {macro htmlList(list, id, isFullList)}
   {if isFullList}
   <ul style="display:none;">

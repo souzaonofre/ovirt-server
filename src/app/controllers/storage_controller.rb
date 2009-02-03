@@ -126,7 +126,8 @@ class StorageController < ApplicationController
       respond_to do |format|
         format.json { render :json => { :object => "storage_pool",
             :success => true,
-            :alert => "Storage Pool was successfully created." } }
+            :alert => "Storage Pool was successfully created.",
+            :new_pool => @storage_pool.storage_tree_element({:filter_unavailable => false, :state => 'new'})} }
         format.xml { render :xml => @storage_pool,
             :status => :created,
             :location => storage_pool_url(@storage_pool)

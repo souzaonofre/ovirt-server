@@ -100,7 +100,7 @@ function processChildren(list, templateObj){
                 walkTree: function(list, lookup, self) {
                     $.each(list, function(n,obj){
                         lookup.push(obj);
-                        if (obj.children.length > 0) self.walkTree(obj.children, lookup, self);
+                        if (obj.children && obj.children.length > 0) self.walkTree(obj.children, lookup, self);
                     });
                     return lookup;
                 },
@@ -179,7 +179,7 @@ function processChildren(list, templateObj){
                       var self = this;
                       $.each(matchedItems, function(n,obj){
                         var existingObj = [];
-                        if(obj.children.length >0) {
+                        if(obj.children && obj.children.length >0) {
                           existingObj = $.grep(obj.children,function(value) {return value.ui_object == data.ui_object;});
                         }
                         if (existingObj.length === 0){

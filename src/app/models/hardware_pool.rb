@@ -60,7 +60,7 @@ class HardwarePool < Pool
     end
   end
 
-  def move_storage(storage_pool_ids, target_pool_id) 
+  def move_storage(storage_pool_ids, target_pool_id)
     storage_pools = StoragePool.find(:all, :conditions => "id in (#{storage_pool_ids.join(', ')})")
     transaction do
       storage_pools.each do |storage_pool|

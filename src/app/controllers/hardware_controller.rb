@@ -299,7 +299,7 @@ class HardwareController < PoolController
     resource_ids = resource_ids_str.split(",").collect {|x| x.to_i}
 
     # if user doesn't have modify permission on both source and destination
-    unless @pool.can_modify(@user) and Pool.find(params[:target_pool_id]).can_modify(@user)
+    unless @pool.can_modify(@user) and Pool.find(target_pool_id).can_modify(@user)
         render :json => { :success => false,
                :alert => "Cannot #{item_action.to_s} #{item_class.table_name.humanize} without admin permissions on both pools" }
         return
@@ -326,7 +326,8 @@ class HardwareController < PoolController
 
     if success
       render :json => { :success => true,
-        :alert => "#{item_action.to_s} #{item_class.table_name.humanize} successful." }
+        :alert => "#{item_action.to_s} #{item_class.table_name.humanize} successful.",
+        :storage => @pool.storage_tree({:filter_unavailable => false, :include_used => true, :state => item_action.to_s})}
     else
       render :json => { :success => false,
          :alert => "#{item_action.to_s} #{item_class.table_name.humanize} failed" +
