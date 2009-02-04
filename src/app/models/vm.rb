@@ -40,6 +40,17 @@ class Vm < ActiveRecord::Base
   validates_format_of :uuid,
      :with => %r([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})
 
+  FORWARD_VNC_PORT_START = 5900
+
+  validates_numericality_of :forward_vnc_port,
+    :message => 'must be >= ' + FORWARD_VNC_PORT_START.to_s,
+    :greater_than_or_equal_to => FORWARD_VNC_PORT_START,
+    :if => Proc.new { |vm| vm.forward_vnc && !vm.forward_vnc_port.nil? }
+
+  validates_uniqueness_of :forward_vnc_port,
+    :message => "is already in use",
+    :if => Proc.new { |vm| vm.forward_vnc && !vm.forward_vnc_port.nil? }
+
   validates_numericality_of :needs_restart,
      :greater_than_or_equal_to => 0,
      :less_than_or_equal_to => 1,
@@ -333,6 +344,18 @@ class Vm < ActiveRecord::Base
       raise "VM must be stopped to delete it"
     end
     super
+  end
+
+  # find the first available vnc port
+  def self.available_forward_vnc_port
+    i = FORWARD_VNC_PORT_START
+    Vm.find(:all,
+            :conditions => "forward_vnc_port is not NULL",
+            :order => 'forward_vnc_port ASC' ).each{ |vm|
+               break if vm.forward_vnc_port > i
+               i = i + 1
+            }
+    return i
   end
 
   protected

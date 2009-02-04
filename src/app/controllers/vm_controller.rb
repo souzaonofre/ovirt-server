@@ -116,6 +116,8 @@ class VmController < ApplicationController
         new_storage_ids = new_storage_ids.sort.collect {|x| x.to_i }
         needs_restart = true unless current_storage_ids == new_storage_ids
       end
+
+      params[:vm][:forward_vnc] = params[:forward_vnc]
       params[:vm][:needs_restart] = 1 if needs_restart
       @vm.update_attributes!(params[:vm])
       _setup_vm_provision(params)
@@ -345,6 +347,7 @@ class VmController < ApplicationController
       vm_resource_pool.create_with_parent(hardware_pool)
       params[:vm][:vm_resource_pool_id] = vm_resource_pool.id
     end
+    params[:vm][:forward_vnc] = params[:forward_vnc]
     @vm = Vm.new(params[:vm])
     @perm_obj = @vm.vm_resource_pool
     @current_pool_id=@perm_obj.id

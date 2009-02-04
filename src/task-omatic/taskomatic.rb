@@ -32,6 +32,7 @@ include Daemonize
 
 require 'task_vm'
 require 'task_storage'
+require 'vnc'
 
 class TaskOmatic
 
@@ -232,6 +233,8 @@ class TaskOmatic
       raise "Error destroying VM: #{result.text}" unless result.status == 0
     end
 
+    VmVnc.close(vm)
+
     # undefine can fail, for instance, if we live migrated from A -> B, and
     # then we are shutting down the VM on B (because it only has "transient"
     # XML).  Therefore, just ignore undefine errors so we do the rest
@@ -303,6 +306,7 @@ class TaskOmatic
     # of places so you'll see a lot of .reloads.
     db_vm.reload
     set_vm_vnc_port(db_vm, result.description) unless result.status != 0
+    VmVnc.forward(db_vm)
 
     # This information is not available via the libvirt interface.
     db_vm.memory_used = db_vm.memory_allocated

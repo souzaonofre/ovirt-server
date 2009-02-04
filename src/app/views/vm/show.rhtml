@@ -88,6 +88,7 @@
     <div id="vms_selection_id" style="display:none"><%= @vm.id %></div>
     <div class="selection_key">
         Uuid:<br/>
+        <%= @vm.forward_vnc ? "VNC uri:<br/>" : "" %>
 	Num vcpus allocated:<br/>
 	Num vcpus used:<br/>
 	Memory allocated:<br/>
@@ -100,6 +101,9 @@
     </div>
     <div class="selection_value">
        <%=h @vm.uuid %><br/>
+       <%= url = request.url
+           url = request.url[0..(url.index('/', 8) - 1)] + ":" + @vm.forward_vnc_port.to_s
+           @vm.forward_vnc ? (url + "<br/>") : "" %>
        <%=h @vm.num_vcpus_allocated %><br/>
        <%=h @vm.num_vcpus_used %><br/>
        <%=h @vm.memory_allocated_in_mb %> MB<br/>

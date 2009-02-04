@@ -95,6 +95,22 @@ class VmTest < Test::Unit::TestCase
        flunk 'Vm must specify valid state' if @vm.valid?
   end
 
+  # ensure duplicate forward_vnc_ports cannot exist
+  def test_invalid_without_unique_forward_vnc_port
+     vm = vms(:production_mysqld_vm)
+     vm.forward_vnc = true
+     vm.forward_vnc_port = 1234 # duplicate
+     assert !vm.valid?, "forward vnc port must be unique"
+  end
+
+  # ensure bad forward_vnc_ports cannot exist
+  def test_invalid_without_bad_forward_vnc_port
+     vm = vms(:production_mysqld_vm)
+     vm.forward_vnc = true
+     vm.forward_vnc_port = 1 # too small
+     assert !vm.valid?, "forward vnc port must be >= 5900"
+  end
+
   # Ensures that, if the VM does not contain the Cobbler prefix, that it
   # does not claim to be a Cobbler VM.
   #

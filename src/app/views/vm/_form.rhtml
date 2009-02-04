@@ -51,6 +51,9 @@
     <div class="clear_row"></div>
     <div class="clear_row"></div>
 
+    <%= check_box_tag_with_label "Forward vm's vnc port locally", "forward_vnc", 1, @vm.forward_vnc %>
+    <div class="clear_row"></div>
+
    <%= check_box_tag_with_label "Start VM Now? (pending current resource availability)", "start_now", nil if create or @vm.state == Vm::STATE_STOPPED %>
    <%= check_box_tag_with_label "Restart VM Now? (pending current resource availability)", "restart_now", nil if @vm.state == Vm::STATE_RUNNING %>
 
