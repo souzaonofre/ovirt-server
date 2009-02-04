@@ -197,7 +197,17 @@ class TaskOmatic
     end
     pools = @session.objects(:class => 'pool', 'node' => node.object_id)
 
-    # FIXME: We need to undefine LVM volumes first.
+    # We do this in two passes, first undefine/destroys LVM pools, then
+    # we do physical pools.
+    pools.each do |pool|
+      # libvirt-qpid sets parentVolume to the name of the parent volume
+      # if this is an LVM pool, else it leaves it empty.
+      if pool.parentVolume != ''
+        result = pool.destroy
+        result = pool.undefine
+      end
+    end
+
     pools.each do |pool|
       result = pool.destroy
       result = pool.undefine
@@ -482,44 +492,18 @@ class TaskOmatic
     raise "Could not find a host within this storage pool to scan the storage server."
   end
 
-  def add_volumes_to_db(db_pool, libvirt_pool, owner = nil, group = nil, mode = nil)
-    # FIXME: this is currently broken if you do something like:
-    # 1.  Add an iscsi pool with 3 volumes (lun-1, lun-2, lun-3)
-    # 2.  Scan it in
-    # 3.  Remove lun-3 from the pool
-    # 4.  Re-scan it
-    # What will happen is that you will still have lun-3 available in the
-    # database, even though it's not available in the pool anymore.  It's a
-    # little tricky, though; we have to make sure that we don't pull the
-    # database entry out from underneath a possibly running VM (or do we?)
-    volumes = @session.objects(:class => 'volume',
-                               'storagePool' => libvirt_pool.remote_pool.object_id)
-    volumes.each do |volume|
-      storage_volume = StorageVolume.factory(db_pool.get_type_label)
-
-      # NOTE: it is safe (and, in fact, necessary) to use
-      # #{storage_volume.volume_name} here without sanitizing it.  This is
-      # because this is *not* based on user modifiable data, but rather, on an
-      # internal implementation detail
-      existing_vol = StorageVolume.find(:first, :conditions =>
-                        ["storage_pool_id = ? AND #{storage_volume.volume_name} = ?",
-                        db_pool.id, volume.name])
-
-      # in this case, this path already exists in the database; just skip
-      next if existing_vol
-
-      storage_volume = StorageVolume.factory(db_pool.get_type_label)
-      storage_volume.path = volume.path
-      storage_volume.size = volume.capacity / 1024
-      storage_volume.storage_pool_id = db_pool.id
-      storage_volume.write_attribute(storage_volume.volume_name, volume.name)
-      storage_volume.lv_owner_perms = owner
-      storage_volume.lv_group_perms = group
-      storage_volume.lv_mode_perms = mode
-      storage_volume.state = StorageVolume::STATE_AVAILABLE
-      puts "saving storage volume to db."
-      storage_volume.save!
-    end
+  def add_volume_to_db(db_pool, volume, owner = nil, group = nil, mode = nil)
+    storage_volume = StorageVolume.factory(db_pool.get_type_label)
+    storage_volume.path = volume.path
+    storage_volume.size = volume.capacity / 1024
+    storage_volume.storage_pool_id = db_pool.id
+    storage_volume.write_attribute(storage_volume.volume_name, volume.name)
+    storage_volume.lv_owner_perms = owner
+    storage_volume.lv_group_perms = group
+    storage_volume.lv_mode_perms = mode
+    storage_volume.state = StorageVolume::STATE_AVAILABLE
+    puts "saving storage volume to db."
+    storage_volume.save!
   end
 
   # The words "pool" and "volume" are ridiculously overloaded in our context.
@@ -540,24 +524,86 @@ class TaskOmatic
     raise "Could not find storage pool" unless db_pool_phys
 
     node = storage_find_suitable_host(db_pool_phys.hardware_pool)
-
-    # FIXME: We may want to scan through all the LVM volumes available
-    # and just update the database with allocation information.
-    # However afaict right now libvirt provides no way for us to know
-    # where an LVM pool/volume sits in terms of its physical pool/volume
-    # so we're kinda screwed for now for updating the database.
-    #
-    #   Ian
+    # FIXME: this is currently broken if you do something like:
+    # 1.  Add an iscsi pool with 3 volumes (lun-1, lun-2, lun-3)
+    # 2.  Scan it in
+    # 3.  Remove lun-3 from the pool
+    # 4.  Re-scan it
+    # What will happen is that you will still have lun-3 available in the
+    # database, even though it's not available in the pool anymore.  It's a
+    # little tricky, though; we have to make sure that we don't pull the
+    # database entry out from underneath a possibly running VM (or do we?)
     begin
       phys_libvirt_pool = LibvirtPool.factory(db_pool_phys)
       phys_libvirt_pool.connect(@session, node)
+      db_pool_phys.state = StoragePool::STATE_AVAILABLE
+      db_pool_phys.save!
 
       begin
-        # OK, the pool is all set.  Add in all of the volumes
-        add_volumes_to_db(db_pool_phys, phys_libvirt_pool)
+        # First we do the physical volumes.
+        volumes = @session.objects(:class => 'volume',
+                                   'storagePool' => phys_libvirt_pool.remote_pool.object_id)
+        volumes.each do |volume|
+          storage_volume = StorageVolume.factory(db_pool_phys.get_type_label)
 
-        db_pool_phys.state = StoragePool::STATE_AVAILABLE
-        db_pool_phys.save!
+          existing_vol = StorageVolume.find(:first, :conditions =>
+                            ["storage_pool_id = ? AND #{storage_volume.volume_name} = ?",
+                            db_pool_phys.id, volume.name])
+
+          # Only add if it's not already there.
+          if not existing_vol
+            add_volume_to_db(db_pool_phys, volume);
+          else
+            puts "volume #{volume.name} already exists in db.."
+          end
+
+          # Now check for an LVM pool carving up this volume.
+          lvm_name = volume.childLVMName
+          next if lvm_name == ''
+
+          puts "Child LVM exists for this volume - #{lvm_name}"
+          lvm_db_pool = LvmStoragePool.find(:first, :conditions =>
+                                          [ "vg_name = ?", lvm_name ])
+          if lvm_db_pool == nil
+            lvm_db_pool = LvmStoragePool.new
+            lvm_db_pool[:type] = "LvmStoragePool"
+            # set the LVM pool to the same hardware pool as the underlying storage
+            lvm_db_pool.hardware_pool_id = db_pool_phys.hardware_pool_id
+            lvm_db_pool.vg_name = lvm_name
+            lvm_db_pool.state = StoragePool::STATE_AVAILABLE
+            lvm_db_pool.save!
+          end
+
+          physical_vol = StorageVolume.find(:first, :conditions =>
+                                            [ "path = ?",  volume.path])
+          if physical_vol == nil
+            # Hm. We didn't find the device in the storage volumes already.
+            # something went wrong internally, and we have to bail
+            raise "Storage internal physical volume error"
+          end
+
+          # OK, put the right lvm_pool_id in place
+          physical_vol.lvm_pool_id = lvm_db_pool.id
+          physical_vol.save!
+
+          lvm_libvirt_pool = LibvirtPool.factory(lvm_db_pool)
+          lvm_libvirt_pool.connect(@session, node)
+
+          lvm_volumes = @session.objects(:class => 'volume',
+                                   'storagePool' => lvm_libvirt_pool.remote_pool.object_id)
+          lvm_volumes.each do |lvm_volume|
+
+            lvm_storage_volume = StorageVolume.factory(lvm_db_pool.get_type_label)
+            existing_vol = StorageVolume.find(:first, :conditions =>
+                              ["storage_pool_id = ? AND #{lvm_storage_volume.volume_name} = ?",
+                              lvm_db_pool.id, lvm_volume.name])
+            if not existing_vol
+              add_volume_to_db(lvm_db_pool, lvm_volume, "0744", "0744", "0744");
+            else
+              puts "volume #{lvm_volume.name} already exists in db.."
+            end
+          end
+        end
       end
     ensure
       phys_libvirt_pool.shutdown
