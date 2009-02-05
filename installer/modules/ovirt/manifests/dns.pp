@@ -19,9 +19,6 @@
 #--
 
 # common featues
-
-import "augeas"
-
 define dns::common($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") {
 
     package {"dnsmasq":
@@ -47,12 +44,13 @@ define dns::common($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") {
         require => [Single_exec["set_hostname"]]
     }
 
-	augeas{"appliance_info":
-	    context => "/files/etc/dnsmasq.conf",
-	    changes => [
-	        "set conf-dir /etc/dnsmasq.d"
-        ],
-        notify => Service[dnsmasq]
+
+    file_replacement {"dnsmasq_configdir":
+        file => "/etc/dnsmasq.conf",
+        pattern => "^#conf-dir=*$",
+        replacement => "conf-dir=/etc/dnsmasq.d",
+        notify => Service[dnsmasq],
+        require => Package["dnsmasq"]
     }
 
     file {"/etc/dhclient.conf":
