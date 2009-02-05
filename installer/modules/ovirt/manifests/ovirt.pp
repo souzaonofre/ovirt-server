@@ -68,6 +68,11 @@ class ovirt::setup {
 		notify => Service[qpidd]
 	}
 
+        file {"/etc/sasl2/qpidd.conf":
+                source => "puppet:///ovirt/sasl2_qpidd.conf",
+                notify => Service["qpidd"]
+        }
+
 	single_exec { "db_migrate" :
 		cwd => "/usr/share/ovirt-server/",
 		command => "/usr/bin/rake db:migrate",
@@ -87,7 +92,8 @@ class ovirt::setup {
 
 	single_exec { "add_host" :
 		command => "/usr/bin/ovirt-add-host $ipa_host /usr/share/ovirt-server/ovirt.keytab",
-		require => Package[ovirt-server]
+		require => Package[ovirt-server],
+		notify => Service[qpidd]
 	}
 
 	exec { "disable_selinux" :
