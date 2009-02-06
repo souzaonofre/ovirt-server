@@ -22,10 +22,10 @@ include Krb5Auth
 
 ENV['KRB5CCNAME'] = '/usr/share/ovirt-server/ovirt-cc'
 
-def get_credentials
+def get_credentials(service = 'libvirt')
   krb5 = Krb5.new
   default_realm = krb5.get_default_realm
-  princ = 'libvirt/' + Socket::gethostname + '@' + default_realm
+  princ = service + '/' + Socket::gethostname + '@' + default_realm
 
   now = Time.now
   renew = true
@@ -45,7 +45,7 @@ def get_credentials
 
   if renew
     begin
-      krb5.get_init_creds_keytab('libvirt/' + Socket::gethostname + '@' + default_realm, '/usr/share/ovirt-server/ovirt.keytab')
+      krb5.get_init_creds_keytab(service + '/' + Socket::gethostname + '@' + default_realm, '/usr/share/ovirt-server/ovirt.keytab')
       krb5.cache(ENV['KRB5CCNAME'])
     rescue
       # well, if we run into an error here, there's not much we can do.  Just

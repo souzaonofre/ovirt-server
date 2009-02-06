@@ -35,7 +35,7 @@ Requires: iscsi-initiator-utils
 Requires: cyrus-sasl-gssapi
 Requires: ovirt-docs
 Requires: qpidd
-Requires: rubygem-qpid
+Requires: ruby-qpid
 Requires: qpidc
 Requires: qmf
 Requires: ruby-qpid

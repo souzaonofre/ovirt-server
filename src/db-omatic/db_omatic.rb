@@ -324,9 +324,11 @@ def main()
         puts "#{Time.now}: db_omatic started."
     end
 
+    get_credentials('qpidd')
+
     dbsync = DbOmatic.new()
     s = Qpid::Qmf::Session.new(:console => dbsync, :rcv_events => false)
-    b = s.add_broker("amqp://guest:guest@localhost:5672")
+    b = s.add_broker("amqp://management.priv.ovirt.org:5672", :mechanism => 'GSSAPI')
 
     dbsync.db_init_cleanup()
 

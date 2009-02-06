@@ -48,7 +48,7 @@ class TaskOmatic
 
     @session = Qpid::Qmf::Session.new()
     # FIXME: Should come from some kind of config or DNS SRV or what have you.
-    @broker = @session.add_broker("amqp://guest:guest@localhost:5672")
+    @broker = @session.add_broker("amqp://management.priv.ovirt.org:5672", :mechanism => 'GSSAPI')
 
     do_daemon = true
 
@@ -754,7 +754,8 @@ class TaskOmatic
 
       tasks.each do |task|
         # make sure we get our credentials up-front
-        get_credentials
+        get_credentials('libvirt')
+        get_credentials('qpidd')
 
         task.time_started = Time.now
 

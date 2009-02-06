@@ -1,10 +1,15 @@
 #!/usr/bin/ruby
 
+$: << File.join(File.dirname(__FILE__), "./dutils")
+
 require "rubygems"
 require "qpid"
+require "dutils"
+
+get_credentials('qpidd')
 
 s = Qpid::Qmf::Session.new()
-b = s.add_broker("amqp://guest:guest@localhost:5672")
+b = s.add_broker("amqp://management.priv.ovirt.org:5672", :mechanism => 'GSSAPI')
 
 while true:
     nodes = s.objects(:class => "node")
