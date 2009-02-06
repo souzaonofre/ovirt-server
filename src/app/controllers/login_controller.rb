@@ -20,14 +20,20 @@
 # Filters added to this controller apply to all controllers in the application.
 # Likewise, all the methods added will be available for all controllers.
 
-class LoginController < ActionController::Base
+class LoginController < ApplicationController
 
   before_filter :is_logged_in, :except => :login
+
   def login
     session[:user] = (ENV["RAILS_ENV"] == "production") ?
     user_from_principal(request.env["HTTP_X_FORWARDED_USER"]) :
       "ovirtadmin"
     redirect_to :controller => "dashboard"
+  end
+
+  def logout
+    session[:user] = nil
+    is_logged_in
   end
 
   def user_from_principal(principal)
