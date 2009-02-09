@@ -87,8 +87,18 @@ class ovirt::setup {
 
         single_exec { "create_ovirtadmin_acct" :
 		command => "/usr/share/ovirt-server/script/grant_admin_privileges ovirtadmin",
-		require => Single_Exec[db_migrate]
+                require => [Single_Exec[db_migrate],Single_exec[set_ldap_hostname],Single_exec[set_ldap_dn]]
 	}
+
+        single_exec { "set_ldap_hostname" :
+                command => "/bin/sed -i -e 's/management.priv.ovirt.org/$ipa_host/' /usr/share/ovirt-server/config/ldap.yml",
+                require => Package[ovirt-server]
+        }
+
+        single_exec { "set_ldap_dn" :
+                command => "/bin/sed -i -e 's/dc=priv,dc=ovirt,dc=org/$short_ldap_dn/' /usr/share/ovirt-server/config/ldap.yml",
+                require => Package[ovirt-server]
+        }
 
 	single_exec { "add_host" :
 		command => "/usr/bin/ovirt-add-host $ipa_host /usr/share/ovirt-server/ovirt.keytab",

@@ -204,7 +204,7 @@ realm_name = prompt_for_answer("Enter your realm name (example: example.com):", 
 
 freeipa_password = prompt_for_answer("NOTE: The following pasword will also be your ovirtadmin password for the web management login\n\
 Enter an administrator password for FreeIPA:", :password => true)
-ldap_dn = "cn=ipaConfig,cn=etc,"
+ldap_dn = ""
 ldap_dn_temp = realm_name.split(".")
 ldap_dn_temp.each do |i|
     ldap_dn += "dc=#{i},"
@@ -275,7 +275,8 @@ $db_password = '<%= db_password %>'
 # FreeIPA configuration
 $realm_name = '<%= realm_name %>'
 $freeipa_password = '<%= freeipa_password %>'
-$ldap_dn = '<%= ldap_dn %>'
+$short_ldap_dn = '<%= ldap_dn %>'
+$ldap_dn = 'cn=ipaConfig,cn=etc,<%= ldap_dn %>'
 
 <% if cobbler_setup == "n" %>
 include cobbler::bundled
