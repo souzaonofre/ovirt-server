@@ -61,6 +61,10 @@ class cobbler::bundled {
 		ensure => installed
 	}
 
+        package {"ovirt-node-image":
+                ensure => installed
+        }
+
 	apache_htdigest{"cobbler_add_user":
 	        digest_file => "/etc/cobbler/users.digest",
 	        digest_username => "$cobbler_user_name",
@@ -116,7 +120,7 @@ class cobbler::bundled {
     single_exec {"cobbler-import":
         command => "/usr/sbin/cobbler-import >> /var/log/cobbler-import.log 2>&1",
         require => [File["/usr/sbin/cobbler-import"],
-                   Service["cobblerd"]]
+                   Service["cobblerd"],Package[ovirt-node-image]]
     }
 
 
