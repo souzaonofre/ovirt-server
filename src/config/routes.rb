@@ -42,8 +42,8 @@ ActionController::Routing::Routes.draw do |map|
   map.connect ':controller/service.wsdl', :action => 'wsdl'
 
   # Install the default route as the lowest priority.
-  map.connect 'graph/flexchart_data/:id/:target/:startTime/:endTime', :controller => 'graph', :action => 'flexchart_data'
-  map.connect 'graph/flexchart_data/:id/:target/:days', :controller => 'graph', :action => 'flexchart_data'
+  map.connect 'graph/flexchart_data/:id/:target/:startTime/:endTime/:dataFunction', :controller => 'graph', :action => 'flexchart_data'
+  map.connect 'graph/host_chart_data/:id/:target/:startTime/:resolution/:dataFunction', :controller => 'graph', :action => 'host_chart_data'
   map.connect ':controller/:action/:id.:format'
   map.connect ':controller/:action/:id'
 

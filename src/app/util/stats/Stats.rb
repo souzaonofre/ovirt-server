@@ -27,6 +27,8 @@ require 'util/stats/StatsRequest'
 
 # This fetches a rolling average, basically average points before and after.
 
+
+
 def fetchRollingAve?(rrdPath, start, endTime, interval, myFunction, lIndex, returnList, aveLen=7)
    final = 0
    my_min = 0
@@ -255,11 +257,11 @@ def fetchData?(node, devClass, instance, counter, startTime, duration, interval,
       sTime = startTime
       eTime = sTime + duration
    end 
-
    # Now mangle based on the intervals
 
    start =  (sTime / interval).to_i * interval 
    endTime =  (eTime / interval).to_i * interval 
+
    rrdBase="/var/lib/collectd/rrd/"
    rrdNode=rrdBase + node + "/"
 
@@ -309,7 +311,7 @@ def fetchData?(node, devClass, instance, counter, startTime, duration, interval,
           myFunction="AVERAGE"
     end
 
-   returnList = StatsDataList.new(node,devClass,instance, counter, localStatus, function)
+   returnList = StatsDataList.new(node,devClass,instance, counter, localStatus, function, interval)
 
    if ( localStatus == StatsStatus::SUCCESS )
       if ( function == DataFunction::RollingPeak) || 
@@ -368,14 +370,23 @@ def  getAggregateStatsData?(statRequestList)
     my_max = 0
     value = 0
 
+    resolution = 0
+
     node = "Aggregate"
-    returnList = StatsDataList.new("Aggregate",0,0, 0, 0, 0)
+    returnList = StatsDataList.new("Aggregate", 0, 0, 0, 0, 0, 0)
     statRequestList.each do |request|
+       #all aggregates need to have the same interval/resolution/precision
+       if resolution == 0
+         resolution = request.get_precision?
+       end
        node = request.get_node?
        counter = request.get_counter?
        tmpList =fetchData?(request.get_node?, request.get_devClass?,request.get_instance?, request.get_counter?, \
                      request.get_starttime?, request.get_duration?,request.get_precision?, request.get_function?)
-
+       #if the interval/resolution/precision varies, raise an exception
+       if request.get_precision? != resolution
+         raise
+       end
        #  Now for something completely different...
        #  The first list back will become our "master"
        #  Each successive list will be proccesed against the master
@@ -458,6 +469,7 @@ def  getAggregateStatsData?(statRequestList)
     end
     returnList.set_min_value(my_min)
     returnList.set_max_value(my_max)
+    returnList.set_resolution(resolution)
     myList << returnList
 
 return myList

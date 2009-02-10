@@ -18,7 +18,7 @@
  also available at http://www.gnu.org/copyleft/gpl.html.
 */
 
-package org.ovirt {
+package org.ovirt.data {
 
   import com.adobe.serialization.json.JSON;
   import flash.events.Event;
@@ -36,11 +36,11 @@ package org.ovirt {
       this.chart = chart;
     }
 
-    public function retrieveData(url:String):void {
+    public function retrieveData(dto:FlexchartDataTransferObject):void {
       var loader:URLLoader = new URLLoader();
       loader.addEventListener(IOErrorEvent.IO_ERROR, this.ioError);
       loader.addEventListener(Event.COMPLETE, dataLoaded);
-      var request:URLRequest = new URLRequest(url);
+      var request:URLRequest = new URLRequest(getUrl(dto));
       loader.load(request);
     }
 
@@ -56,5 +56,11 @@ package org.ovirt {
       //FIXME:
       //do something useful with this error
     }
+
+    //subclasses should override
+    protected function getUrl(dto:FlexchartDataTransferObject):String {
+      return null;
+    }
+
   }
 }

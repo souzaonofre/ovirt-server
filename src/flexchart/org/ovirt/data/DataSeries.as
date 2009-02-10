@@ -35,6 +35,8 @@ package org.ovirt.data {
       this.description = object["description"] as String;
       dataPoints = new Array();
       var inDataPoints:Array = object["vectors"] as Array;
+      var resolution:Number = object["resolution"] as Number;
+
       for (var i:int = 0; i < inDataPoints.length; i++) {
         var value:Number = 0;
         var valuea:Number = (inDataPoints[i] as Array)[1] as Number;
@@ -42,11 +44,17 @@ package org.ovirt.data {
           value = (inDataPoints[i] as Array)[1] as Number;
         }
         var seconds:Number = new Number((inDataPoints[i] as Array)[0]) * 1000;
+	var nodeName:String = (inDataPoints[i] as Array)[2] as String;
+
         dataPoints.push(new DataPoint(new Date(seconds),
                                       value,
-                                      description));
+                                      description,
+                                      resolution,
+				      nodeName));
+
       }
       maxValue = object["max_value"] as Number;
+
     }
 
     public function getDataPoints():Array {
@@ -56,5 +64,6 @@ package org.ovirt.data {
     public function getMaxValue():Number {
       return maxValue;
     }
+
   }
 }

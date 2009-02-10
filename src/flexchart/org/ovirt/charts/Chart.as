@@ -19,44 +19,26 @@
 */
 
 package org.ovirt.charts {
-    import org.ovirt.DataSource;
-    import mx.containers.Box;
-    import org.ovirt.data.DataSeries;
+  import org.ovirt.data.DataSource;
+  import mx.containers.Box;
+  import org.ovirt.data.DataSeries;
+  import org.ovirt.data.FlexchartDataTransferObject;
 
   public class Chart {
 
     protected var container:Box;
-    protected var datasourceUrl:String;
+    protected var dataSource:DataSource;
 
     protected var startTime:Number;
     protected var endTime:Number;
     protected var target:String;
     protected var id:int;
+    protected var dataFunction:String;
+    protected var resolution:int;
 
-    public function Chart(container:Box, datasourceUrl:String) {
-      this.container = container;
-      this.datasourceUrl = datasourceUrl;
-      if (datasourceUrl != null) {
-        var results:Array = datasourceUrl.split("/");
-        if (results != null && results.length > 7) {
-          setId(new int(results[4]));
-          setTarget(results[5] as String);
-          setStartTime(new int(results[6]));
-          setEndTime(new int(results[7]));
-        }
-      }
-    }
-
-    public function addData(dataSeries:DataSeries):void {
-      //override me!
-    }
-
-    public function load():void {
-      var dataSource:DataSource = new DataSource(this);
-      var myString:String = "/ovirt/graph/flexchart_data/" + id + "/" + target +  "/" + startTime  + "/" + endTime;
-      dataSource.retrieveData(myString);
-    }
-
+    /*
+      Inheritable functions that generally do not need overrides
+    */
     public function setStartTime(startTime:Number):void {
       this.startTime = startTime;
     }
@@ -72,5 +54,52 @@ package org.ovirt.charts {
     public function setId(id:int):void {
       this.id = id;
     }
+
+    public function setDataFunction(dataFunction:String):void {
+      this.dataFunction = dataFunction;
+    }
+
+    public function setResolution(resolution:int):void {
+      this.resolution = resolution;
+    }
+
+    public function load():void {
+      var dto:FlexchartDataTransferObject = new FlexchartDataTransferObject();
+      setRequestAttributes(dto);
+      dataSource.retrieveData(dto);
+    }
+
+    /*
+      Constructors
+    */
+    public function Chart(container:Box, datasourceUrl:String) {
+      this.container = container;
+      initializeDataSource();
+      if (datasourceUrl != null) {
+        var results:Array = datasourceUrl.split("/");
+        if (results != null && results.length > 8) {
+          setId(new int(results[4]));
+          setTarget(results[5] as String);
+          setStartTime(new int(results[6]));
+          setEndTime(new int(results[7]));
+          setDataFunction(results[8] as String);
+        }
+      }
+    }
+
+    /*
+      Functions that subclasses should override
+      (ActionScript does not offer abstract methods)
+    */
+    protected function initializeDataSource():void {
+    }
+
+    //subclasses should override this
+    protected function setRequestAttributes(dto:FlexchartDataTransferObject):void {
+    }
+
+    public function addData(dataSeries:DataSeries):void {
+    }
+
   }
 }

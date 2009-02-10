@@ -25,12 +25,17 @@ package org.ovirt.data {
     private var timestamp:Date;
     private var value:Number;
     private var description:String;
+    private var resolution:int;
+    private var nodeName:String;
 
     public function DataPoint (timestamp:Date, value:Number,
-                               description:String) {
+                               description:String, resolution:int,
+			       nodeName:String) {
       this.timestamp = timestamp;
       this.value = value;
       this.description = description;
+      this.resolution = resolution;
+      this.nodeName = nodeName;
     }
 
     public function getTimestamp():Date {
@@ -44,5 +49,14 @@ package org.ovirt.data {
     public function getDescription():String {
       return description;
     }
+
+    public function getResolution():int {
+      return resolution;
+    }
+
+    public function getNodeName():String {
+      return nodeName;
+    }
+
   }
 }

@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2008 Red Hat, Inc.
+ Copyright (C) 2009 Red Hat, Inc.
  Written by Steve Linabery <slinabery@redhat.com>
 
  This program is free software; you can redistribute it and/or modify
@@ -18,30 +18,25 @@
  also available at http://www.gnu.org/copyleft/gpl.html.
 */
 
-//A way to expose some functions that are defined in flexchart.mxml to
-//our ActionScript classes without needing to access Application directly
+package org.ovirt.data {
 
-package org.ovirt {
+  import org.ovirt.charts.Chart;
 
-  import org.ovirt.charts.BarChart;
-  import org.ovirt.charts.HostChart;
+  public class BarChartDataSource extends DataSource {
 
-  public class ApplicationBus {
-
-    private static var _instance:ApplicationBus;
-
-    public static function instance():ApplicationBus {
-      if (_instance == null) {
-        _instance = new ApplicationBus();
-      }
-      return _instance;
+    public function BarChartDataSource(chart:Chart) {
+      super(chart);
     }
 
-    public var mainChartBarClickAction:Function;
-    public var closeHostChart:Function;
-
-    public var mainChart:BarChart;
-    public var hostChart:HostChart;
+    override protected function getUrl(dto:FlexchartDataTransferObject):String {
+      var answer:String = "/ovirt/graph/flexchart_data/" + dto.getId() +
+        "/" + dto.getTarget() +
+        "/" + dto.getStartTime() +
+        "/" + dto.getEndTime() +
+	"/" + dto.getDataFunction();
+      return answer;
+    }
 
   }
+
 }

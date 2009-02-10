@@ -63,7 +63,6 @@ package org.ovirt.elements {
 
 
     private function myResize(event:Event):void {
-       trace(event.type);
        this.height = (dataPoint.getValue() / scale) * parent.height * .9 * -1;
        this.y = parent.height;
     }
@@ -89,6 +88,14 @@ package org.ovirt.elements {
 
     private function destroyTip(event:Event):void {
       ToolTipManager.destroyToolTip(tip);
+    }
+
+    public function getResolution():Number {
+      return dataPoint.getResolution();
+    }
+
+    public function getStartTime():Number {
+      return dataPoint.getTimestamp().getTime();
     }
   }
 }

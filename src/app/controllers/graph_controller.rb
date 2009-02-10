@@ -3,13 +3,14 @@ require 'util/stats/Stats'
 class GraphController < ApplicationController
   layout nil
 
+
   def flexchart_data
     @id = params[:id]
     target = params[:target]
     startTime = Time.at(params[:startTime].to_i)
     endTime = Time.at(params[:endTime].to_i)
     duration = endTime.to_i - startTime.to_i
-
+    dataFunction = DEV_KEY_FUNCTIONS[params[:dataFunction]] ? DEV_KEY_FUNCTIONS[params[:dataFunction]] : DEV_KEY_FUNCTIONS['peak']
     #the maximum number of data points we want in any chart
     maxPoints = 100
     resolution =
@@ -51,7 +52,7 @@ class GraphController < ApplicationController
                                           range[0].to_i,
                                           range[1].to_i - range[0].to_i,
                                           resolution,
-                                          DataFunction::Peak)
+                                          dataFunction)
       }
     }
     statsList = getAggregateStatsData?(requestList)
@@ -62,14 +63,86 @@ class GraphController < ApplicationController
     data.each{ |datum|
       val = datum.get_value?
       val = 0 if (val != 0 && val.nan?)
-      vectors.push [datum.get_timestamp?.to_i, val]
+      vectors.push [datum.get_timestamp?.to_i, val, "n/a"]
     }
     graph = { :vectors => vectors,
       :max_value => stat.get_max_value?,
-      :description => target
+      :description => target,
+      :resolution => stat.get_resolution?
     }
     render :json => graph
   end
+
+  def host_chart_data
+    #expect (pool) id, resolution, startTime, target, dataFunction
+    @id = params[:id]
+    resolution = params[:resolution].to_i
+    startTime = Time.at(params[:startTime].to_i)
+    target = params[:target]
+    dataFunction = params[:dataFunction]
+
+    devclass = DEV_KEY_CLASSES[target]
+    counter = DEV_KEY_COUNTERS[target]
+
+
+    pool = Pool.find(@id)
+    hosts = Host.find(:all,
+                      :include=> :membership_audit_events,
+                      :conditions => ['membership_audit_events.container_target_id = ?',pool])
+
+    requestList = [ ]
+    hosts.each{ |host|
+
+      eventsInRange = host.membership_audit_events.from_pool(pool,
+                                                             startTime,
+                                                             Time.at(startTime.to_i + resolution))
+      excluded = false
+      if eventsInRange.empty?
+        priorAuditEvent = host.membership_audit_events.most_recent_prior_event_from_pool(pool,startTime)
+        if priorAuditEvent.nil? || priorAuditEvent.action == MembershipAuditEvent::LEAVE
+          excluded = true
+        end
+      end
+
+      if (! excluded)
+        requestList.push StatsRequest.new(host.hostname,
+                                          devclass,
+                                          0,
+                                          counter,
+                                          startTime.to_i - resolution,
+                                          resolution,
+                                          resolution,
+                                          dataFunction)
+      end
+    }
+
+    statsLists = getStatsData?(requestList)
+    vectors = [ ]
+
+    myMax = 0
+    statsLists.each { |statsList|
+      nodeName = statsList.get_node?.to_s
+      data = statsList.get_data?
+
+      myVal = data[0].get_value?
+      myTime = data[0].get_timestamp?.to_i
+      if myVal.is_a?(Float) && myVal.nan?
+        myVal = 0
+      end
+      myMax = [myMax, myVal].max
+      vectors.push [myTime, myVal, nodeName.to_s]
+    }
+
+
+    graph = { :vectors => vectors,
+      :max_value => myMax,
+      :description => target,
+      :resolution => resolution
+    }
+
+    render :json => graph
+  end
+
 
   def get_ranges_from_event_list(list, priorEvent, startTime, endTime)
 
@@ -506,6 +579,14 @@ class GraphController < ApplicationController
       DEV_KEY_COUNTERS = { 'cpu' => CpuCounter::CalcUsed, 'memory' => MemCounter::Used, 'disk' => DiskCounter::Ops_read, 
                  'load' => LoadCounter::Load_1min, 'netin' => NicCounter::Octets_rx, 'netout' => NicCounter::Octets_tx }
       DEV_COUNTER_KEYS = DEV_KEY_COUNTERS.invert
+
+      DEV_KEY_FUNCTIONS = { 'average' => DataFunction::Average,
+        'peak' => DataFunction::Peak,
+        'min' => DataFunction::Min,
+        'rolling avg' => DataFunction::RollingAverage,
+        'rolling peak' => DataFunction::RollingPeak,
+        'rolling min' => DataFunction::RollingMin }
+      DEV_FUNCTION_KEYS = DEV_KEY_FUNCTIONS.invert
 
       def _create_host_snapshot_requests(hostname, duration, resolution)
         requestList = []
