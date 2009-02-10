@@ -61,7 +61,7 @@ define dns::common($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") {
 
     file_append {"dhclient_config":
         file => "/etc/dhclient.conf",
-        line => "prepend domain-name-servers $prov_ipaddr",
+        line => "prepend domain-name-servers $prov_ipaddr;",
         require => [Single_exec["set_hostname"], Package["dnsmasq"], File["/etc/dhclient.conf"]]  ,
         notify => Service[dnsmasq],
     }
