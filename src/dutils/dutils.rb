@@ -18,6 +18,8 @@
 
 require 'active_record_env'
 require 'krb5_auth'
+require 'resolv'
+
 include Krb5Auth
 
 ENV['KRB5CCNAME'] = '/usr/share/ovirt-server/ovirt-cc'
@@ -56,3 +58,33 @@ def get_credentials(service = 'libvirt')
     end
   end
 end
+
+# Returns the server and port of the specified service using DNS SRV records
+# to perform the look up.
+#
+# For example:
+#
+# server, port = get_srv('qpidd', 'tcp')
+#
+def get_srv(service, proto)
+  server = nil
+  port = nil
+
+  Resolv::DNS.open do |dns|
+    begin
+      hostname = Socket.gethostbyname(Socket.gethostname).first
+      lst = hostname.split('.')
+      lst.shift
+      domainname = lst.join('.')
+      res = dns.getresource("_#{service}._#{proto}.#{domainname}", Resolv::DNS::Resource::IN::SRV)
+      server = res.target.to_s
+      port = res.port
+    rescue => ex
+      puts "Error looking up SRV record: #{ex}"
+    end
+    dns.close
+  end
+
+  return server, port
+end
+

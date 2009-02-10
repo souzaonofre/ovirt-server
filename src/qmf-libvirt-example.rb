@@ -8,8 +8,11 @@ require "dutils"
 
 get_credentials('qpidd')
 
+server, port = get_srv('qpidd', 'tcp')
+raise "Unable to determine qpid server from DNS SRV record" if not server
+
 s = Qpid::Qmf::Session.new()
-b = s.add_broker("amqp://management.priv.ovirt.org:5672", :mechanism => 'GSSAPI')
+b = s.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
 
 while true:
     nodes = s.objects(:class => "node")

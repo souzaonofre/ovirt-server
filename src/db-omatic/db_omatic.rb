@@ -327,8 +327,12 @@ def main()
     get_credentials('qpidd')
 
     dbsync = DbOmatic.new()
+
+    server, port = get_srv('qpidd', 'tcp')
+    raise "Unable to determine qpid server from DNS SRV record" if not server
+
     s = Qpid::Qmf::Session.new(:console => dbsync, :rcv_events => false)
-    b = s.add_broker("amqp://management.priv.ovirt.org:5672", :mechanism => 'GSSAPI')
+    b = s.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
 
     dbsync.db_init_cleanup()
 

@@ -47,8 +47,11 @@ class TaskOmatic
     @nth_host = 0
 
     @session = Qpid::Qmf::Session.new()
-    # FIXME: Should come from some kind of config or DNS SRV or what have you.
-    @broker = @session.add_broker("amqp://management.priv.ovirt.org:5672", :mechanism => 'GSSAPI')
+
+    server, port = get_srv('qpidd', 'tcp')
+    raise "Unable to determine qpid server from DNS SRV record" if not server
+
+    @broker = @session.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
 
     do_daemon = true
 
