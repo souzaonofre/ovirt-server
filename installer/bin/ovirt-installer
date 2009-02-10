@@ -174,13 +174,9 @@ if dhcp_setup == "n"
     dhcp_start = prompt_for_answer("Enter the dhcp pool start address (example: 3):", :regex => OCTET)
     dhcp_stop = prompt_for_answer("Enter the dhcp pool end addess (example: 100):", :regex => OCTET)
     dhcp_domain = prompt_for_answer("Enter the dhcp domain you wish to use (example: example.com):", :default => dnsdomainname.chomp, :regex => IP_OR_FQDN)
+    prov_dns_server = prov_ip.scan(/\s*inet addr:([\d.]+)/)
     prov_network_gateway = prompt_for_answer("Enter the network gateway for your provisioning network (example: 192.168.50.254):", :default => default_gw.chomp, :regex => IP_OR_FQDN)
     tftp_setup = prompt_yes_no("Provide pxe/tftp capability?")
-
-    if sep_networks == "y"
-        prov_ip = `ifconfig #{prov_dev}`
-        prov_dns_server = prov_ip.scan(/\s*inet addr:([\d.]+)/)
-    end
 end
 
 # Cobbler Configuration
@@ -255,11 +251,9 @@ $dhcp_stop = '<%= dhcp_stop %>'
 $dhcp_domain = '<%= dhcp_domain %>'
 $ntp_server = '<%= mgmt_ipaddr %>'
 $prov_network_gateway = '<%= prov_network_gateway %>'
+$prov_dns_server = '<%= prov_dns_server %>'
 <% if tftp_setup == "y" %>
 include tftp::bundled
-<% end %>
-<% if sep_networks == "y" %>
-$prov_dns_server = '<%= prov_dns_server %>'
 <% end %>
 <% end %>
 
