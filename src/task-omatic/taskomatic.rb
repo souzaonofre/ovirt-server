@@ -756,9 +756,6 @@ class TaskOmatic
       end
 
       tasks.each do |task|
-        # make sure we get our credentials up-front
-        get_credentials('libvirt')
-        get_credentials('qpidd')
 
         task.time_started = Time.now
 
@@ -818,6 +815,9 @@ class TaskOmatic
     end
   end
 end
+
+get_credentials('libvirt')
+get_credentials('qpidd')
 
 taskomatic = TaskOmatic.new()
 taskomatic.mainloop()
