@@ -45,15 +45,13 @@ class postgres::bundled{
         }
 
         single_exec {"create_ovirt_db":
-		command => "/usr/bin/createdb ovirt",
-		require => [Exec[postgres_add_all_trust], Service[postgresql]],
-		user => "postgres"
+		command => "/usr/bin/createdb ovirt -U postgres",
+		require => [Exec[postgres_add_all_trust], Service[postgresql]]
         }
 
 	single_exec {"create_ovirt_development_db":
-                command => "/usr/bin/createdb ovirt_development",
-                require => [Exec[postgres_add_all_trust], Service[postgresql]],
-                user => "postgres"
+                command => "/usr/bin/createdb ovirt_development -U postgres",
+                require => [Exec[postgres_add_all_trust], Service[postgresql]]
         }
 
 	postgres_execute_command {"ovirt_db_create_role":
