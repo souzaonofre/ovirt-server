@@ -67,24 +67,32 @@ end
 # server, port = get_srv('qpidd', 'tcp')
 #
 def get_srv(service, proto)
-  server = nil
-  port = nil
 
-  Resolv::DNS.open do |dns|
-    begin
-      hostname = Socket.gethostbyname(Socket.gethostname).first
-      lst = hostname.split('.')
-      lst.shift
-      domainname = lst.join('.')
-      res = dns.getresource("_#{service}._#{proto}.#{domainname}", Resolv::DNS::Resource::IN::SRV)
-      server = res.target.to_s
-      port = res.port
-    rescue => ex
-      puts "Error looking up SRV record: #{ex}"
+  hostname = Socket.gethostbyname(Socket.gethostname).first
+  lst = hostname.split('.')
+  lst.shift
+  domainname = lst.join('.')
+
+  srv = "_#{service}._#{proto}.#{domainname}"
+
+  (1..2).each do
+    Resolv::DNS.open do |dns|
+      begin
+        res = dns.getresource(srv, Resolv::DNS::Resource::IN::SRV)
+        server = res.target.to_s
+        port = res.port
+
+        return server, port
+      rescue => ex
+        puts "Error looking up SRV record: #{ex}"
+      end
+      dns.close
     end
-    dns.close
+
+    # Try again without the domain name
+    srv = "_#{service}._#{proto}"
   end
 
-  return server, port
+  return nil, nil
 end
 
