@@ -97,7 +97,7 @@ if File.exist?("/usr/sbin/selinuxenabled")
             exit(0)
         else
             @cli.say("Disabling SELinux")
-            system "/usr/sbin/lokkit --selinuxtype=disabled"
+            system "/usr/sbin/lokkit --selinuxtype=permissive"
             system "/usr/sbin/setenforce 0"
         end
     end
