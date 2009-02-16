@@ -28,6 +28,7 @@ require 'monitor'
 require 'dutils'
 require 'optparse'
 require 'daemons'
+require 'logger'
 include Daemonize
 
 require 'task_vm'
@@ -79,10 +80,11 @@ class TaskOmatic
       pwd = Dir.pwd
       daemonize
       Dir.chdir(pwd)
-      lf = open($logfile, 'a')
-      $stdout = lf
-      $stderr = lf
+      @logger = Logger.new($logfile)
+    else
+      @logger = Logger.new(STDERR)
     end
+
 
     # this has to be after daemonizing now because it could take a LONG time to
     # actually connect if qpidd isn't running yet etc.
@@ -104,9 +106,12 @@ class TaskOmatic
         @broker = @session.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
 
         # Connection succeeded, go about our business.
+        @logger.info "Connected to amqp://#{server}:#{port}"
         return
+
       rescue Exception => msg
-        puts "Error connecting to qpidd: #{msg}"
+        @logger.error "Error connecting to qpidd: #{msg}"
+        @logger.error msg.backtrace
       end
       sleep(sleepy)
       sleepy *= 2
@@ -116,7 +121,7 @@ class TaskOmatic
         # Could also be a credentials problem?  Try to get them again..
         get_credentials('qpidd')
       rescue Exception => msg
-        puts "Error getting qpidd credentials: #{msg}"
+        @logger.error "Error getting qpidd credentials: #{msg}"
       end
     end
   end
@@ -182,7 +187,7 @@ class TaskOmatic
       if db_pool == nil
         # Hum.  Specified by the VM description, but not in the storage pool?
         # continue on and hope for the best
-        puts "Couldn't find pool for volume #{db_volume.path}; skipping"
+        @logger.error "Couldn't find pool for volume #{db_volume.path}; skipping"
         next
       end
 
@@ -254,7 +259,7 @@ class TaskOmatic
     db_vm = task.vm
     vm = @session.object(:class => 'domain', 'uuid' => db_vm.uuid)
     if !vm
-      puts "VM already shut down?"
+      @logger.error "VM already shut down?"
       return
     end
 
@@ -287,7 +292,7 @@ class TaskOmatic
     # we can tell if this domain was migrated; that way, we can tell the
     # difference between a real undefine failure and one because of migration
     result = vm.undefine
-    puts "Error undefining VM: #{result.text}" unless result.status == 0
+    @logger.info "Error undefining VM: #{result.text}" unless result.status == 0
 
     teardown_storage_pools(node)
 
@@ -415,7 +420,7 @@ class TaskOmatic
     raise "Unable to locate VM to save" unless dom
 
     filename = "/tmp/#{dom.uuid}.save"
-    puts "saving vm #{dom.name} to #{filename}"
+    @logger.info "saving vm #{dom.name} to #{filename}"
     result = dom.save(filename)
     raise "Error saving VM: #{result.text}" unless result.status == 0
 
@@ -431,7 +436,7 @@ class TaskOmatic
     raise "Unable to locate VM to restore" unless dom
 
     filename = "/tmp/#{dom.uuid}.save"
-    puts "restoring vm #{dom.name} from #{filename}"
+    @logger.info "restoring vm #{dom.name} from #{filename}"
     result = dom.restore("/tmp/" + dom.uuid + ".save")
     raise "Error restoring VM: #{result.text}" unless result.status == 0
 
@@ -445,7 +450,7 @@ class TaskOmatic
     src_node = @session.object(:object_id => vm.node)
     raise "Unable to find node that VM is on??" unless src_node
 
-    puts "Migrating domain lookup complete, domain is #{vm}"
+    @logger.info "Migrating domain lookup complete, domain is #{vm}"
 
     vm_orig_state = db_vm.state
     set_vm_state(db_vm, Vm::STATE_MIGRATING)
@@ -485,13 +490,12 @@ class TaskOmatic
       # difference between a real undefine failure and one because of migration
       result = vm.undefine
 
-      # Note this is just a puts!  Not a raise! :)
-      puts "Error undefining old vm after migrate: #{result.text}" unless result.status == 0
+      @logger.info "Error undefining old vm after migrate: #{result.text}" unless result.status == 0
 
       # See if we can take down storage pools on the src host.
       teardown_storage_pools(src_node)
     rescue => ex
-      puts "Error: #{ex}"
+      @logger.error "Error: #{ex}"
       set_vm_state(db_vm, vm_orig_state)
       raise ex
     end
@@ -503,7 +507,7 @@ class TaskOmatic
   end
 
   def task_migrate_vm(task)
-    puts "migrate_vm"
+    @logger.info "migrate_vm"
 
     # here, we are given an id for a VM to migrate; we have to lookup which
     # physical host it is running on
@@ -514,10 +518,10 @@ class TaskOmatic
   def storage_find_suitable_host(hardware_pool)
     # find all of the hosts in the same pool as the storage
     hardware_pool.hosts.each do |host|
-      puts "storage_find_suitable_host: host #{host.hostname} uuid #{host.uuid}"
-      puts "host.is_disabled is #{host.is_disabled}"
+      @logger.info "storage_find_suitable_host: host #{host.hostname} uuid #{host.uuid}"
+      @logger.info "host.is_disabled is #{host.is_disabled}"
       if host.is_disabled.to_i != 0
-        puts "host #{host.hostname} is disabled"
+        @logger.info "host #{host.hostname} is disabled"
         next
       end
       node = @session.object(:class => 'node', 'hostname' => host.hostname)
@@ -537,7 +541,7 @@ class TaskOmatic
     storage_volume.lv_group_perms = group
     storage_volume.lv_mode_perms = mode
     storage_volume.state = StorageVolume::STATE_AVAILABLE
-    puts "saving storage volume to db."
+    @logger.info "saving storage volume to db."
     storage_volume.save!
   end
 
@@ -553,7 +557,7 @@ class TaskOmatic
   #                   represented in the database
 
   def task_refresh_pool(task)
-    puts "refresh_pool"
+    @logger.info "refresh_pool"
 
     db_pool_phys = task.storage_pool
     raise "Could not find storage pool" unless db_pool_phys
@@ -589,14 +593,14 @@ class TaskOmatic
           if not existing_vol
             add_volume_to_db(db_pool_phys, volume);
           else
-            puts "volume #{volume.name} already exists in db.."
+            @logger.error "volume #{volume.name} already exists in db.."
           end
 
           # Now check for an LVM pool carving up this volume.
           lvm_name = volume.childLVMName
           next if lvm_name == ''
 
-          puts "Child LVM exists for this volume - #{lvm_name}"
+          @logger.info "Child LVM exists for this volume - #{lvm_name}"
           lvm_db_pool = LvmStoragePool.find(:first, :conditions =>
                                           [ "vg_name = ?", lvm_name ])
           if lvm_db_pool == nil
@@ -635,7 +639,7 @@ class TaskOmatic
             if not existing_vol
               add_volume_to_db(lvm_db_pool, lvm_volume, "0744", "0744", "0744");
             else
-              puts "volume #{lvm_volume.name} already exists in db.."
+              @logger.error "volume #{lvm_volume.name} already exists in db.."
             end
           end
         end
@@ -646,7 +650,7 @@ class TaskOmatic
   end
 
   def task_create_volume(task)
-    puts "create_volume"
+    @logger.info "create_volume"
 
     db_volume = task.storage_volume
     raise "Could not find storage volume to create" unless db_volume
@@ -671,9 +675,9 @@ class TaskOmatic
           volume = @session.object(:object_id => volume_id)
           raise "Unable to find newly created volume" unless volume
 
-          puts "  volume:"
+          @logger.info "  volume:"
           for (key, val) in volume.properties
-            puts "    property: #{key}, #{val}"
+            @logger.info "    property: #{key}, #{val}"
           end
 
           # FIXME: Should have this too I think..
@@ -698,7 +702,7 @@ class TaskOmatic
   end
 
   def task_delete_volume(task)
-    puts "delete_volume"
+    @logger.info "delete_volume"
 
     db_volume = task.storage_volume
     raise "Could not find storage volume to create" unless db_volume
@@ -712,7 +716,7 @@ class TaskOmatic
       if db_volume[:type] == "LvmStorageVolume"
         phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume)
         phys_libvirt_pool.connect(@session, node)
-        puts "connected to lvm pool.."
+        @logger.info "connected to lvm pool.."
       end
 
       begin
@@ -723,7 +727,7 @@ class TaskOmatic
           volume = @session.object(:class => 'volume',
                                    'storagePool' => libvirt_pool.remote_pool.object_id,
                                    'path' => db_volume.path)
-          puts "Unable to find volume to delete" unless volume
+          @logger.error "Unable to find volume to delete" unless volume
 
           # FIXME: we actually probably want to zero out the whole volume
           # here, so we aren't potentially leaking data from one user
@@ -771,18 +775,18 @@ class TaskOmatic
         tasks = Task.find(:all, :conditions =>
                           [ "state = ?", Task::STATE_QUEUED ])
       rescue => ex
-        puts "1 #{ex.class}: #{ex.message}"
+        @logger.error "1 #{ex.class}: #{ex.message}"
         if Task.connected?
           begin
             ActiveRecord::Base.connection.reconnect!
           rescue => norecon
-            puts "2 #{norecon.class}: #{norecon.message}"
+            @logger.error "2 #{norecon.class}: #{norecon.message}"
           end
         else
           begin
             database_connect
           rescue => ex
-            puts "3 #{ex.class}: #{ex.message}"
+            @logger.error "3 #{ex.class}: #{ex.message}"
           end
         end
       end
@@ -822,13 +826,13 @@ class TaskOmatic
               task_delete_volume(task)
             when HostTask::ACTION_CLEAR_VMS: task_clear_vms_host(task)
           else
-            puts "unknown task " + task.action
+            @logger.error "unknown task " + task.action
             state = Task::STATE_FAILED
             task.message = "Unknown task type"
           end
         rescue => ex
-          puts "Task action processing failed: #{ex.class}: #{ex.message}"
-          puts ex.backtrace
+          @logger.error "Task action processing failed: #{ex.class}: #{ex.message}"
+          @logger.error ex.backtrace
           state = Task::STATE_FAILED
           task.message = ex.message
         end
@@ -836,7 +840,7 @@ class TaskOmatic
         task.state = state
         task.time_ended = Time.now
         task.save!
-        puts "done"
+        @logger.info "done"
       end
       # FIXME: here, we clean up "orphaned" tasks.  These are tasks
       # that we had to orphan (set task_target to nil) because we were
