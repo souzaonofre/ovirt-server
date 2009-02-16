@@ -11,8 +11,10 @@ get_credentials('qpidd')
 server, port = get_srv('qpidd', 'tcp')
 raise "Unable to determine qpid server from DNS SRV record" if not server
 
+srv = "amqp://#{server}:#{port}"
+puts "Connecting to #{srv}.."
 s = Qpid::Qmf::Session.new()
-b = s.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
+b = s.add_broker(srv, :mechanism => 'GSSAPI')
 
 while true:
     nodes = s.objects(:class => "node")
