@@ -66,6 +66,10 @@ define dns::common($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") {
         notify => Service[dnsmasq],
     }
 
+    single_exec {"make_dnsmasq_start_earlier":
+        command => "/bin/mv /etc/rc3.d/S99dnsmasq /etc/rc3.d/S95dnsmasq;/bin/mv /etc/rc5.d/S99dnsmasq /etc/rc5.d/S95dnsmasq",
+        require => Package["dnsmasq"]
+    }
 }
 
 define dns::bundled($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") {
