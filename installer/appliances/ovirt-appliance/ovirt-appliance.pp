@@ -35,6 +35,7 @@ $db_password = 'cobbler'
 $realm_name = 'priv.ovirt.org'
 $freeipa_password = 'ovirt'
 $ldap_dn = 'cn=ipaConfig,cn=etc,dc=priv,dc=ovirt,dc=org'
+$short_ldap_dn = 'dc=priv,dc=ovirt,dc=org'
 
 include cobbler::bundled
 include dhcp::bundled
