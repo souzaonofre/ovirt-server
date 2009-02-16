@@ -47,11 +47,7 @@ class TaskOmatic
     @nth_host = 0
 
     @session = Qpid::Qmf::Session.new()
-
-    server, port = get_srv('qpidd', 'tcp')
-    raise "Unable to determine qpid server from DNS SRV record" if not server
-
-    @broker = @session.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
+    @broker = nil
 
     do_daemon = true
 
@@ -86,6 +82,42 @@ class TaskOmatic
       lf = open($logfile, 'a')
       $stdout = lf
       $stderr = lf
+    end
+
+    # this has to be after daemonizing now because it could take a LONG time to
+    # actually connect if qpidd isn't running yet etc.
+    qpid_ensure_connected
+
+  end
+
+  def qpid_ensure_connected()
+
+    return if @broker and @broker.connected?
+
+    sleepy = 2
+
+    while true do
+      begin
+        server, port = get_srv('qpidd', 'tcp')
+        raise "Unable to determine qpid server from DNS SRV record" if not server
+
+        @broker = @session.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
+
+        # Connection succeeded, go about our business.
+        return
+      rescue Exception => msg
+        puts "Error connecting to qpidd: #{msg}"
+      end
+      sleep(sleepy)
+      sleepy *= 2
+      sleepy = 120 if sleepy > 120
+
+      begin
+        # Could also be a credentials problem?  Try to get them again..
+        get_credentials('qpidd')
+      rescue Exception => msg
+        puts "Error getting qpidd credentials: #{msg}"
+      end
     end
   end
 
@@ -754,6 +786,8 @@ class TaskOmatic
           end
         end
       end
+
+      qpid_ensure_connected
 
       tasks.each do |task|
 
