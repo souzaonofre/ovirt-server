@@ -6,11 +6,11 @@ firewall::setup{'setup': status => 'disabled'}
 
 # dns configuration
 $mgmt_ipaddr = '192.168.50.2'
-$prov_ipaddr = ''
+$prov_ipaddr = '192.168.50.2'
 $ovirt_host = 'management.priv.ovirt.org'
 $ipa_host = 'management.priv.ovirt.org'
 
-dns::bundled{setup: mgmt_ipaddr=> $mgmt_ipaddr, prov_ipaddr=> $prov_ipaddr, mgmt_dev => 'eth0', prov_dev => 'eth1'}
+dns::bundled{setup: mgmt_ipaddr=> $mgmt_ipaddr, prov_ipaddr=> $prov_ipaddr, mgmt_dev => 'eth0', prov_dev => 'eth0'}
 
 # dhcp configuration
 $dhcp_interface = 'eth0'
@@ -20,7 +20,7 @@ $dhcp_stop = '50'
 $dhcp_domain = 'priv.ovirt.org'
 $ntp_server =  $mgmt_ipaddr
 
-$prov_dns_server = ''
+$prov_dns_server = '192.168.50.2'
 $prov_network_gateway = '192.168.50.1'
 # cobbler configuration
 $cobbler_hostname = 'localhost'
