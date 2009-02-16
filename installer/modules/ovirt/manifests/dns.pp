@@ -76,6 +76,13 @@ define dns::bundled($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") 
 		command => "/bin/echo $mgmt_ipaddr $ipa_host >> /etc/hosts",
 		notify => [Service[dnsmasq], Single_exec["add_dns_server_to_resolv.conf"]]
 	}
+
+	augeas{"set_system_hostname":
+	    context => "/files/etc/sysconfig/network",
+	    changes => [
+	        "set HOSTNAME $ipa_host"
+        ]
+    }
 }
 
 define dns::remote($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") {

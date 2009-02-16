@@ -4,6 +4,5 @@ domain=<%= dhcp_domain %>
 dhcp-option=option:router,<%= prov_network_gateway %>
 dhcp-option=option:ntp-server,<%= ntp_server %>
 dhcp-option=12
-no-resolv
 local=/<%= dhcp_domain %>/
 server=<%= prov_dns_server %>
