@@ -222,8 +222,10 @@ template = <<END_OF_TEMPLATE
 import 'ovirt'
 import 'firewall'
 firewall::setup{'setup':
-    status => 'disabled'
+    status => 'enabled'
 }
+
+firewall_rule{"ssh": destination_port => "22"}
 
 #DNS Configuration
 $mgmt_ipaddr = '<%= mgmt_ipaddr %>'

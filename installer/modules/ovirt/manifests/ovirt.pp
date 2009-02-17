@@ -175,6 +175,11 @@ class ovirt::setup {
                 enable => false
     }
 
-#	firewall_rule{"http": destination_port => "80"}
+        firewall_rule{"http": destination_port => "80"}
+        firewall_rule {"https": destination_port => '443'}
+        firewall_rule {"host-browser": destination_port => '12120'}
+        firewall_rule {"qpidd": destination_port => '5672'}
+        firewall_rule {"collectd": destination_port => '25826', protocol => 'udp'}
+        firewall_rule {"ntpd": destination_port => '123', protocol => 'udp'}
 
 }

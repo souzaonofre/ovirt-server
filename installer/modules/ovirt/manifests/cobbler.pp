@@ -108,9 +108,8 @@ class cobbler::bundled {
         require => Package["cobbler"]
     }
 
-#       firewall_rule{"69": destination_port => "69"}
-#	firewall_rule{"25150": destination_port => "25150"}
-#	firewall_rule{"25151": destination_port => "25151"}
+	firewall_rule{"25150": destination_port => "25150"}
+	firewall_rule{"25151": destination_port => "25151"}
 
       file {"/usr/sbin/cobbler-import":
               source => "puppet:///ovirt/cobbler-import",

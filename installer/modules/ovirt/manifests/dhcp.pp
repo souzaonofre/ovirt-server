@@ -31,4 +31,8 @@ class dhcp::bundled {
                 command => "/usr/share/ace/modules/ovirt/files/dns_entries.sh $dhcp_start $dhcp_stop $dhcp_network $dhcp_domain",
 	}
 
+        firewall_rule {"tftp": destination_port => '69', protocol => 'udp'}
+        firewall_rule {"dhcpd": destination_port => '68', protocol => 'udp'}
+        firewall_rule {"bootp": destination_port => '67', protocol => 'udp'}
+
 }

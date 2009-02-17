@@ -2,7 +2,8 @@
 import 'ovirt'
 import 'firewall'
 
-firewall::setup{'setup': status => 'disabled'}
+firewall::setup{'setup': status => 'enabled'}
+firewall_rule{"ssh": destination_port => "22"}
 
 # dns configuration
 $mgmt_ipaddr = '192.168.50.2'

@@ -89,8 +89,12 @@ class freeipa::bundled{
                 require => Single_exec[ipa_ovirtadmin_group]
         }
 
-#	firewall_rule{"krb5": destination_port => "88"}
-#	firewall_rule {"ldap": destination_port => '389'}
+       firewall_rule{"krb5": destination_port => "88"}
+       firewall_rule {"ldap": destination_port => '389'}
+       firewall_rule {"freeip-636": destination_port => '636'}
+       firewall_rule {"freeipa-464": destination_port => '464'}
+       firewall_rule {"freeipa-88-udp": destination_port => '88', protocol => 'udp'}
+       firewall_rule {"freeipa-464-udp": destination_port => '464', protocol => 'udp'}
 
 }
 

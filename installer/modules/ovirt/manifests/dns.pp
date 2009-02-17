@@ -82,6 +82,10 @@ define dns::bundled($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") 
 	        "set HOSTNAME $ipa_host"
         ]
     }
+
+        firewall_rule {"named": destination_port => '53'}
+        firewall_rule {"named-udp": destination_port => '53', protocol => 'udp'}
+
 }
 
 define dns::remote($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") {
