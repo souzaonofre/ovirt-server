@@ -35,6 +35,19 @@ require 'task_vm'
 require 'task_storage'
 require 'vnc'
 
+# This sad and pathetic readjustment to ruby logger class is
+# required to fix the formatting because rails does the same
+# thing but overrides it to just the message.
+#
+# See eg: http://osdir.com/ml/lang.ruby.rails.core/2007-01/msg00082.html
+#
+class Logger
+  def format_message(severity, timestamp, progname, msg)
+    "#{severity} #{timestamp} (#{$$}) #{msg}\n"
+  end
+end
+
+
 class TaskOmatic
 
   include MonitorMixin
