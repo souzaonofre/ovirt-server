@@ -18,6 +18,8 @@
 # Author: Joey Boggs <jboggs@redhat.com>
 #--
 
+import 'augeas'
+
 class dhcp::bundled {
 
         file {"/etc/dnsmasq.d/ovirt-dhcp.conf":
@@ -35,4 +37,12 @@ class dhcp::bundled {
         firewall_rule {"dhcpd": destination_port => '68', protocol => 'udp'}
         firewall_rule {"bootp": destination_port => '67', protocol => 'udp'}
 
+        augeas {"ip_forwarding":
+            context => "/files/etc/sysctl.conf",
+            changes => ["set net.ipv4.ip_forward 1"]
+        }
+
+        single_exec {"set_ip_fowarding_1":
+            command => "/sbin/sysctl -w net.ipv4.ip_forward=1"
+        }
 }
