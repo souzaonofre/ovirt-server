@@ -282,6 +282,8 @@ include cobbler::remote
 <% end %>
 <% if dhcp_setup == "n" %>
 include dhcp::bundled
+firewall_rule{"nat-forward": chain => "FORWARD", in_interface => "<%= prov_dev %>", out_interface => "<%= mgmt_dev %>", protocol => ""}
+firewall_rule{"nat-postrouting": table => "nat", chain => "POSTROUTING", out_interface => "<%= mgmt_dev %>", protocol => "", action => "MASQUERADE"}
 <% end %>
 include postgres::bundled
 include freeipa::bundled
