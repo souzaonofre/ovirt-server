@@ -180,7 +180,7 @@ if dhcp_setup == "n"
 end
 
 # Cobbler Configuration
-cobbler_setup = prompt_yes_no("Do you have a cobbler already that you wish to use?")
+cobbler_setup = prompt_yes_no("Do you have a cobbler server already that you wish to use?")
 
 if cobbler_setup == "y"
     cobbler_hostname = prompt_for_answer("Enter the hostname of your cobbler server:", :regex => IP_OR_FQDN)

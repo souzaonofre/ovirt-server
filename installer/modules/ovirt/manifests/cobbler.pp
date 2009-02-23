@@ -119,7 +119,7 @@ class cobbler::bundled {
     single_exec {"cobbler-import":
         command => "/usr/sbin/cobbler-import >> /var/log/cobbler-import.log 2>&1",
         require => [File["/usr/sbin/cobbler-import"],
-                   Service["cobblerd"],Package[ovirt-node-image]]
+                   Service["cobblerd"],Package[ovirt-node-image],Package[livecd-tools]]
     }
 
 

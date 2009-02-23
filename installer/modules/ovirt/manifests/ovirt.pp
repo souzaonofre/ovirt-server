@@ -57,6 +57,9 @@ class ovirt::setup {
 	        ensure => installed;
 	}
 
+        package {"livecd-tools":
+                ensure => installed;
+        }
 	file {"/etc/collectd.conf":
 		source => "puppet:///ovirt/collectd.conf",
 		notify => Service[collectd],
