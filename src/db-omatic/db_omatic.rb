@@ -40,7 +40,7 @@ class DbOmatic < Qpid::Qmf::Console
         @cached_objects = {}
         @heartbeats = {}
         @broker = nil
-        @session = Qpid::Qmf::Session.new()
+        @session = Qpid::Qmf::Session.new(:console => self)
 
         do_daemon = true
 
@@ -183,7 +183,7 @@ class DbOmatic < Qpid::Qmf::Console
             host_info[:synced] = true
         else
             # FIXME: This would be a newly registered host.  We could put it in the database.
-            @logger.info "Unknown host, probably not registered yet??"
+            @logger.info "Unknown host #{host_info['hostname']}, probably not registered yet??"
             # XXX: So it turns out this can happen as there is a race condition on bootup
             # where the registration takes longer than libvirt-qpid does to relay information.
             # So in this case, we mark this object as not synced so it will get resynced
@@ -206,41 +206,58 @@ class DbOmatic < Qpid::Qmf::Console
 
             if values == nil
                 values = {}
-                @cached_objects[obj.object_id.to_s] = values
 
                 # Save the agent and broker bank so that we can tell what objects
                 # are expired when the heartbeat for them stops.
                 values[:broker_bank] = obj.object_id.broker_bank
                 values[:agent_bank] = obj.object_id.agent_bank
+                values[:obj_key] = obj.object_id.to_s
                 values[:class_type] = obj.klass_key[1]
                 values[:timed_out] = false
                 values[:synced] = false
                 @logger.info "New object type #{type}"
 
                 new_object = true
+
+                if type == "node"
+                    # It's a new node object..
+                    # We want to make sure there are no old objects for this same host name
+                    # that can mess up our timeouts etc.  It's also good bookkeeping.
+                    @cached_objects.each do |objkey, o|
+                        if o[:class_type] == 'node' and o['hostname'] == obj.hostname
+                            @logger.info "Old object for host #{o['hostname']} exists, removing it from cache"
+                            @cached_objects.delete(objkey)
+                        end
+                    end
+                end
+
+                # Same thing for domains..
+                if type == "domain"
+                    @cached_objects.each do |objkey, o|
+                        if o[:class_type] == 'domain' and o['uuid'] == obj.uuid and o['name'] == obj.name
+                            @logger.info "Old object for domain #{o['name']} exists, removing it from cache"
+                            @cached_objects.delete(objkey)
+                        end
+                    end
+                end
+
+                @cached_objects[obj.object_id.to_s] = values
             end
 
-            domain_state_change = false
+            update_domain = false
 
             obj.properties.each do |key, newval|
                 if values[key.to_s] != newval
                     values[key.to_s] = newval
                     #puts "new value for property #{key} : #{newval}"
                     if type == "domain" and key.to_s == "state"
-                        domain_state_change = true
+                        update_domain = true
                     end
                 end
             end
 
-            if domain_state_change
-                update_domain_state(values)
-            end
-
-            if new_object
-                if type == "node"
-                    update_host_state(values, Host::STATE_AVAILABLE)
-                end
-            end
+            update_host_state(values, Host::STATE_AVAILABLE) if new_object and type == 'node'
+            update_domain_state(values) if update_domain
         end
     end
 
@@ -291,8 +308,9 @@ class DbOmatic < Qpid::Qmf::Console
                @cached_objects[objkey][:agent_bank] == agent.agent_bank
 
                 values = @cached_objects[objkey]
-                @logger.info "Marking object of type #{values[:class_type]} as timed out."
                 if values[:timed_out] == false
+                    @logger.info "Marking object of type #{values[:class_type]} with key #{objkey} as timed out."
+
                     if values[:class_type] == 'node'
                         update_host_state(values, Host::STATE_UNAVAILABLE)
                     elsif values[:class_type] == 'domain'
