@@ -182,4 +182,12 @@ class ovirt::setup {
         firewall_rule {"collectd": destination_port => '25826', protocol => 'udp'}
         firewall_rule {"ntpd": destination_port => '123', protocol => 'udp'}
 
+    exec{"refresh-iptables":
+                command => "/usr/local/bin/iptables-update.sh",
+                require => [Service["ovirt-mongrel-rails"],Service["ovirt-taskomatic"],Service["ovirt-db-omatic"]]
+    }
+    exec{"iptables-save":
+                command => "/sbin/iptables-save > /etc/sysconfig/iptables",
+                require => Exec["refresh-iptables"]
+    }
 }
