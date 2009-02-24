@@ -1,4 +1,6 @@
 interface=<%= dhcp_interface %>
+bind-interfaces
+except-interface=lo
 dhcp-range=<%= dhcp_network %>.<%= dhcp_start %>,<%= dhcp_network%>.<%= dhcp_stop %>
 domain=<%= dhcp_domain %>
 dhcp-option=option:router,<%= prov_network_gateway %>
