@@ -116,11 +116,6 @@ class ovirt::setup {
 		notify => Service[qpidd]
 	}
 
-	exec { "disable_selinux" :
-		command => "/usr/sbin/lokkit --selinux=disabled",
-        require => Package["ovirt-server"]
-	}
-
 	service {"httpd" :
                 enable => true,
                 require => Package[httpd],
@@ -128,8 +123,7 @@ class ovirt::setup {
         }
 
 	service {"libvirt" :
-                enable => false,
-                require => Package[libvirt],
+                require => Package[libvirt]
         }
 
         service {"ovirt-host-browser" :
