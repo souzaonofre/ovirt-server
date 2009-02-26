@@ -45,11 +45,16 @@ class Vm < ActiveRecord::Base
   validates_numericality_of :forward_vnc_port,
     :message => 'must be >= ' + FORWARD_VNC_PORT_START.to_s,
     :greater_than_or_equal_to => FORWARD_VNC_PORT_START,
-    :if => Proc.new { |vm| vm.forward_vnc && !vm.forward_vnc_port.nil? }
+    :if => Proc.new { |vm| vm.forward_vnc &&
+                           !vm.forward_vnc_port.nil? &&
+                           vm.forward_vnc_port != 0 }
 
   validates_uniqueness_of :forward_vnc_port,
     :message => "is already in use",
-    :if => Proc.new { |vm| vm.forward_vnc && !vm.forward_vnc_port.nil? }
+    :if => Proc.new { |vm| vm.forward_vnc &&
+                           !vm.forward_vnc_port.nil? &&
+                           vm.forward_vnc_port != 0 }
+
 
   validates_numericality_of :needs_restart,
      :greater_than_or_equal_to => 0,
