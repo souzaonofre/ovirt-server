@@ -20,6 +20,13 @@
 
 class ovirt::setup {
 
+	file_replacement{"ovirt_httpd_config_change":
+	        file => "/etc/httpd/conf.d/ovirt-server.conf",
+	        pattern => "192\.168\.50\.2",
+	        replacement => "$mgmt_ipaddr",
+		require => Package[ovirt-server]
+        }
+
         package {"ovirt-server":
 		ensure => installed,
 		require => Single_exec[set_pw_expiration]
