@@ -61,21 +61,10 @@ cobbler system add --netboot-enabled=1 --profile=oVirt-Node-$node_arch \
 cobbler system add --netboot-enabled=1 --profile=oVirt-Node-$node_arch \
     --name=node5 --mac=00:16:3e:12:34:59 --kopts="ovirt_init=scsi"
 
-# TODO use Augeas 0.3.0 Inifile lens
-sed -i -e "s/^module = authn_denyall.*/module = authn_configfile/" \
-    /etc/cobbler/modules.conf
-sed -i -e "s/^server:.*/server: '192.168.50.2'/" \
-    -e "s/^next_server:.*/next_server: '192.168.50.2'/" \
-    /etc/cobbler/settings
 sed -i -e '/kernel /a \\tIPAPPEND 2' /etc/cobbler/pxe/pxesystem.template
 sed -i -e "s/^ONTIMEOUT.*/ONTIMEOUT oVirt-Node-$node_arch/" \
     /etc/cobbler/pxe/pxedefault.template
 
 service cobblerd restart
 cobbler sync
-cobbler list
 
-set +x
-set +e
-echo "Add new oVirt Nodes as Cobbler systems to make them PXE boot oVirt Node image directly."
-echo "oVirt-Node-$node_arch is also default boot option in Cobbler menu"

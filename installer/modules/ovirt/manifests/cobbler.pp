@@ -121,7 +121,29 @@ class cobbler::bundled {
         require => [File["/usr/sbin/cobbler-import"],
                    Service["cobblerd"],Package[ovirt-node-image],Package[livecd-tools]]
     }
+        file_replacement{"settings_auth_module":
+                file => "/etc/cobbler/settings",
+                pattern => "module = authn_denyall",
+                replacement => "module = authn_configfile",
+                require => Package[cobbler],
+                notify => Service[cobblerd]
+        }
 
+        file_replacement{"settings_server":
+                file => "/etc/cobbler/settings",
+                pattern => "server: 127.0.0.1",
+                replacement => "server: $mgmt_ipaddr",
+                require => Package[cobbler],
+                notify => Service[cobblerd]
+        }
+
+        file_replacement{"settings_next_server":
+                file => "/etc/cobbler/settings",
+                pattern => "next_server: 127.0.0.1",
+                replacement => "next_server: $mgmt_ipaddr",
+                require => Package[cobbler],
+                notify => Service[cobblerd]
+        }
 
 }
 
