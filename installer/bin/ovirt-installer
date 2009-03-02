@@ -91,12 +91,12 @@ end
 if File.exist?("/usr/sbin/selinuxenabled")
     sestatus = system "/usr/sbin/selinuxenabled"
     if sestatus == true
-        selinux_disable = prompt_yes_no("SELinux enabled, would you like to disable it?", :default => "y")
-        if selinux_disable == "n"
-            @cli.say("Please disable selinux prior to running the installer again")
+        selinux_permissive = prompt_yes_no("SELinux enforing, would you like to set it permissive?", :default => "y")
+        if selinux_permissive == "n"
+            @cli.say("SELinux must be permissive or disabled prior to running the installer again")
             exit(0)
         else
-            @cli.say("Disabling SELinux")
+            @cli.say("Setting SELinux permissive")
             system "/usr/sbin/lokkit --selinux=permissive"
             system "/usr/sbin/setenforce 0"
         end
