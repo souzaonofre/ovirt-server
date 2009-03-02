@@ -315,9 +315,6 @@ class TaskOmatic
   def task_start_vm(task)
     db_vm = find_vm(task, false)
 
-    # Kinda silly?  I dunno about these intermediate states..
-    set_vm_state(db_vm, Vm::STATE_STARTING)
-
     vm = @session.object(:class => "domain", 'uuid' => db_vm.uuid)
 
     if vm
@@ -750,7 +747,10 @@ class TaskOmatic
           # 2)  This could potentially take quite a while, so we want to spawn
           # off another thread to do it
           # result = volume.delete
-          raise "Error deleting volume: #{result.text}" unless result.status == 0
+
+          # If we don't find the volume we assume there was some error setting
+          # it up, so just carry on here..
+          volume.delete if volume
 
           # Note: we have to nil out the task_target because when we delete the
           # volume object, that also deletes all dependent tasks (including this
