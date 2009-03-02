@@ -292,7 +292,7 @@ END_OF_TEMPLATE
 
 # Generate the file and output it.
 FileUtils.mkdir_p("/usr/share/ace/appliances/ovirt")
-config_file = File.new("/usr/share/ace/appliances/ovirt/ovirt.pp", "w")
+config_file = File.new("/usr/share/ace/appliances/ovirt/ovirt.pp", "w", 0600)
 config_file.write(ERB.new(template, 0, "%>").result)
 config_file.close()
 
