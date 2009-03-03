@@ -168,9 +168,9 @@ class LibvirtPool
     @vol_xml.root.add_element("capacity", {"unit" => "K"}).add_text(size.to_s)
     @vol_xml.root.add_element("target")
     @vol_xml.root.elements["target"].add_element("permissions")
-    @vol_xml.root.elements["target"].elements["permissions"].add_element("owner").add_text(owner)
-    @vol_xml.root.elements["target"].elements["permissions"].add_element("group").add_text(group)
-    @vol_xml.root.elements["target"].elements["permissions"].add_element("mode").add_text(mode)
+    @vol_xml.root.elements["target"].elements["permissions"].add_element("owner").add_text(owner) if owner
+    @vol_xml.root.elements["target"].elements["permissions"].add_element("group").add_text(group) if group
+    @vol_xml.root.elements["target"].elements["permissions"].add_element("mode").add_text(mode) if mode
   end
 
   def shutdown
@@ -260,6 +260,13 @@ class NFSLibvirtPool < LibvirtPool
     # FIXME: we have to add the format as raw here because of a bug in libvirt;
     # if you specify a volume with no format, it will crash libvirtd
     @vol_xml.root.elements["target"].add_element("format", {"type" => "raw"})
+
+    # FIXME: Add allocation 0 element so that we create a sparse file.
+    # This was done because qmf was timing out waiting for the create
+    # operation to complete.  This needs to be fixed in a better way
+    # however.  We want to have non-sparse files for performance reasons.
+    @vol_xml.root.add_element("allocation").add_text('0')
+
     result = @remote_pool.createVolumeXML(@vol_xml.to_s)
     raise "Error creating remote pool: #{result.text}" unless result.status == 0
     return result.volume
