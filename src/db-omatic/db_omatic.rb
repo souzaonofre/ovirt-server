@@ -40,7 +40,6 @@ class DbOmatic < Qpid::Qmf::Console
         @cached_objects = {}
         @heartbeats = {}
         @broker = nil
-        @session = Qpid::Qmf::Session.new(:console => self)
 
         do_daemon = true
 
@@ -74,49 +73,33 @@ class DbOmatic < Qpid::Qmf::Console
         end
         @logger.info "dbomatic started."
 
-        get_credentials('qpidd')
+        ensure_credentials
 
         database_connect
-        qpid_ensure_connected
 
+        server, port = nil
+        (1..4).each do
+            server, port = get_srv('qpidd', 'tcp')
+            break if server
+            @logger.error "Unable to determine qpid server from DNS SRV record" if not server
+            sleep(10)
+        end
+
+        raise "Unable to determine server and port from DNS SRV records" if not server
+
+        @logger.info "Connecting to amqp://#{server}:#{port}"
+        @session = Qpid::Qmf::Session.new(:console => self, :manage_connections => true)
+        @broker = @session.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
     end
 
 
-    # FIXME: This should move into a library but I think we'll need
-    # to make some sort of singleton class for these applications so we can
-    # share the logger and qpid variables etc.  It's getting to show itself
-    # as a problem but I don't want to go crazy right now as we're supposed
-    # to be in freeze. :)
-    def qpid_ensure_connected()
+    def ensure_credentials()
+        get_credentials('qpidd')
 
-        return if @broker and @broker.connected?
-
-        sleepy = 2
-
-        while true do
-            begin
-                server, port = get_srv('qpidd', 'tcp')
-                raise "Unable to determine qpid server from DNS SRV record" if not server
-
-                @broker = @session.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
-
-                # Connection succeeded, go about our business.
-                @logger.info "Connected to amqp://#{server}:#{port}"
-                return
-
-            rescue Exception => msg
-                @logger.error "Error connecting to qpidd: #{msg}"
-                @logger.error msg.backtrace
-            end
-            sleep(sleepy)
-            sleepy *= 2
-            sleepy = 120 if sleepy > 120
-
-            begin
-                # Could also be a credentials problem?  Try to get them again..
+        Thread.new do
+            while true do
+                sleep(3600)
                 get_credentials('qpidd')
-            rescue Exception => msg
-                @logger.error "Error getting qpidd credentials: #{msg}"
             end
         end
     end
@@ -368,8 +351,6 @@ class DbOmatic < Qpid::Qmf::Console
     def check_heartbeats()
         while true
             sleep(5)
-
-            qpid_ensure_connected
 
             synchronize do
                 # Get seconds from the epoch
