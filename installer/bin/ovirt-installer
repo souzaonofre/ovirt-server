@@ -91,7 +91,7 @@ end
 if File.exist?("/usr/sbin/selinuxenabled")
     sestatus = system "/usr/sbin/selinuxenabled"
     if sestatus == true
-        selinux_permissive = prompt_yes_no("SELinux enforing, would you like to set it permissive?", :default => "y")
+        selinux_permissive = prompt_yes_no("SELinux enforcing, would you like to set it permissive?", :default => "y")
         if selinux_permissive == "n"
             @cli.say("SELinux must be permissive or disabled prior to running the installer again")
             exit(0)
