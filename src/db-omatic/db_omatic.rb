@@ -332,7 +332,6 @@ class DbOmatic < Qpid::Qmf::Console
 
                 values = @cached_objects[objkey]
                 if values[:timed_out] == true or values[:synced] == false
-                    @logger.info "Marking object of type #{values[:class_type]} as in service."
                     if values[:class_type] == 'node'
                         update_host_state(values, Host::STATE_AVAILABLE)
                     elsif values[:class_type] == 'domain'
