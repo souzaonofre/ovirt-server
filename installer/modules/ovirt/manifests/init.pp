@@ -6,4 +6,4 @@ import "ovirt/freeipa.pp"
 import "ovirt/ovirt.pp"
 import "ovirt/postgres.pp"
 import "appliance_base/single_exec.pp"
-
+import "ovirt/appliance.pp"

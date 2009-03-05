@@ -44,3 +44,4 @@ include tftp::bundled
 include postgres::bundled
 include freeipa::bundled
 include ovirt::setup
+include appliance::bundled

@@ -1,0 +1,4 @@
+#!/bin/bash
+for i in `seq 1 5`; do /bin/dd if=/dev/null of=/ovirtiscsi/iSCSI$i bs=1 count=1 seek=5G; done
+for i in `seq 1 5`; do /bin/dd if=/dev/zero of=/ovirtnfs/disk$i.dsk bs=1 count=1 seek=5G; done
+
