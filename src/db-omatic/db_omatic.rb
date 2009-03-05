@@ -78,14 +78,14 @@ class DbOmatic < Qpid::Qmf::Console
         database_connect
 
         server, port = nil
-        (1..4).each do
+        sleepy = 5
+        while true do
             server, port = get_srv('qpidd', 'tcp')
             break if server
-            @logger.error "Unable to determine qpid server from DNS SRV record" if not server
-            sleep(10)
+            @logger.error "Unable to determine qpid server from DNS SRV record, retrying.." if not server
+            sleep(sleepy)
+            sleepy *= 2 if sleepy < 120
         end
-
-        raise "Unable to determine server and port from DNS SRV records" if not server
 
         @logger.info "Connecting to amqp://#{server}:#{port}"
         @session = Qpid::Qmf::Session.new(:console => self, :manage_connections => true)

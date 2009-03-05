@@ -98,11 +98,13 @@ class TaskOmatic
     ensure_credentials
 
     server, port = nil
-    (1..4).each do
+    sleepy = 5
+    while true do
       server, port = get_srv('qpidd', 'tcp')
       break if server
-      @logger.error "Unable to determine qpid server from DNS SRV record" if not server
-      sleep(10)
+      @logger.error "Unable to determine qpid server from DNS SRV record, retrying.." if not server
+      sleep(sleepy)
+      sleepy *= 2 if sleepy < 120
     end
 
     @session = Qpid::Qmf::Session.new(:manage_connections => true)
