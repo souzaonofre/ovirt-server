@@ -164,6 +164,22 @@ class DbOmatic < Qpid::Qmf::Console
             #db_host.is_disabled = 0
             db_host.save
             host_info[:synced] = true
+
+            if state == Host::STATE_AVAILABLE
+                # At this point we want to set all domains that are
+                # unreachable to stopped.  If a domain is indeed running
+                # then dbomatic will see that and set it either before
+                # or after.  If the node was rebooted, the VMs will all
+                # be gone and dbomatic won't see them so we need to set
+                # them to stopped.
+                db_vm = Vm.find(:all, :conditions => ["host_id = ? AND state = ?", db_host.id, Vm::STATE_UNREACHABLE])
+                db_vm.each do |vm|
+                    @logger.info "Moving vm #{vm.description} in state #{vm.state} to state stopped."
+                    vm.state = Vm::STATE_STOPPED
+                    vm.save!
+                end
+            end
+
         else
             # FIXME: This would be a newly registered host.  We could put it in the database.
             @logger.info "Unknown host #{host_info['hostname']}, probably not registered yet??"
