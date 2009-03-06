@@ -7,7 +7,7 @@
         {:action => 'edit', :id => @network.id },
          :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
 
-  <%= link_to image_tag("icon_edit.png") + "Edit IP Addresses",
+  <%= link_to image_tag("icon_edit.png") + "Edit Routing Info",
         {:action => 'edit_network_ip_addresses', :id => @network.id },
          :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
 <%- end -%>
@@ -17,13 +17,16 @@
     Type:<br/>
     Boot Type:<br/>
     IP Addresses:<br/>
+    Usage(s):<br/>
 </div>
 <div class="selection_value">
     <%=h @network.name %><br/>
     <%=h @network.type %><br/>
     <%=h @network.boot_type.label %><br/>
     <%=@network.ip_addresses.collect{ |ip|
-         ip.address}.join("<br/>") %>
+         ip.address}.join("<br/>") %><br/>
+    <%=@network.usages.collect{ |usage|
+         usage.label}.join(" ") %><br/>
 </div>
 
 <%- content_for :right do -%>

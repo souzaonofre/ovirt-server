@@ -29,6 +29,8 @@ class Vm < ActiveRecord::Base
   end
   has_and_belongs_to_many :storage_volumes
 
+  belongs_to :network
+
   has_many :smart_pool_tags, :as => :tagged, :dependent => :destroy
   has_many :smart_pools, :through => :smart_pool_tags
 

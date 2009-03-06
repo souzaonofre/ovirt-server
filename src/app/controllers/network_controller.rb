@@ -272,7 +272,16 @@ class NetworkController < ApplicationController
      @nic = Nic.find(params[:id])
      @network = @nic.physical_network
 
-     @networks = PhysicalNetwork.find(:all)
+     # filter out networks already assigned to nics on host
+     network_conditions = []
+     @nic.host.nics.each { |nic|
+        unless nic.physical_network.nil? || nic.id == @nic.id
+          network_conditions.push(" id != " + nic.physical_network.id.to_s)
+        end
+     }
+     network_conditions = network_conditions.join(" AND ")
+
+     @networks = PhysicalNetwork.find(:all, :conditions => network_conditions)
      network_options
 
      render :layout => false
@@ -281,14 +290,16 @@ class NetworkController < ApplicationController
    def update_nic
     begin
      network_options
-     @network = Network.find(params[:nic][:physical_network_id])
 
-     if @network.boot_type.id == @static_boot_type.id
-       if params[:ip_address][:id] == "New"
-         _create_ip_address
-       elsif params[:ip_address][:id] != ""
-         _update_ip_address(params[:ip_address][:id])
-       end
+     unless params[:nic][:physical_network_id].nil? || params[:nic][:physical_network_id].to_i == 0
+      @network = Network.find(params[:nic][:physical_network_id])
+      if @network.boot_type.id == @static_boot_type.id
+        if params[:ip_address][:id] == "New"
+          _create_ip_address
+        elsif params[:ip_address][:id] != ""
+          _update_ip_address(params[:ip_address][:id])
+        end
+      end
      end
 
      @nic = Nic.find(params[:id])
@@ -313,13 +324,31 @@ class NetworkController < ApplicationController
    ########################## Bonding related actions
 
    def new_bonding
-     unless params[:host_id]
+    unless params[:host_id]
       flash[:notice] = "Host is required."
       redirect_to :controller => 'dashboard'
     end
 
     @host = Host.find(params[:host_id])
-    @networks = Vlan.find(:all)
+
+    # FIXME when bonding_nics table is removed, and
+    # bondings_id column added to nics table, simplify
+    # (select where bonding.nil?)
+    @nics = []
+    @host.nics.each{ |nic|
+      @nics.push(nic) if nic.bondings.nil? || nic.bondings.size == 0
+    }
+
+    # filter out networks already assigned to bondings on host
+    network_conditions = []
+    @host.bondings.each { |bonding|
+       unless bonding.vlan.nil?
+         network_conditions.push(" id != " + bonding.vlan.id.to_s)
+       end
+    }
+    network_conditions = network_conditions.join(" AND ")
+
+    @networks = Vlan.find(:all, :conditions => network_conditions)
     network_options
 
     render :layout => false
@@ -328,13 +357,15 @@ class NetworkController < ApplicationController
    def create_bonding
     begin
      network_options
-     @network = Network.find(params[:bonding][:vlan_id])
 
-     if @network.boot_type.id == @static_boot_type.id
-       if params[:ip_address][:id] == "New"
-         _create_ip_address
-       elsif params[:ip_address][:id] != ""
-         _update_ip_address(params[:ip_address][:id])
+     unless params[:bonding][:vlan_id].nil? || params[:bonding][:vlan_id].to_i == 0
+       @network = Network.find(params[:bonding][:vlan_id])
+       if @network.boot_type.id == @static_boot_type.id
+         if params[:ip_address][:id] == "New"
+           _create_ip_address
+         elsif params[:ip_address][:id] != ""
+           _update_ip_address(params[:ip_address][:id])
+         end
        end
      end
 
@@ -368,7 +399,29 @@ class NetworkController < ApplicationController
      @network = @bonding.vlan
 
      @host = @bonding.host
-     @networks = Vlan.find(:all)
+
+     # FIXME when bonding_nics table is removed, and
+     # bondings_id column added to nics table, simplify
+     # (select where bonding.nil? or bonding has nic)
+     @nics = []
+     @host.nics.each{ |nic|
+       if nic.bondings.nil? ||
+          nic.bondings.size == 0 ||
+          nic.bondings[0].id == @bonding.id
+        @nics.push(nic)
+       end
+     }
+
+     # filter out networks already assigned to bondings on host
+     network_conditions = []
+     @host.bondings.each { |bonding|
+        unless bonding.vlan.nil? || bonding.id == @bonding.id
+          network_conditions.push(" id != " + bonding.vlan.id.to_s)
+        end
+     }
+     network_conditions = network_conditions.join(" AND ")
+
+     @networks = Vlan.find(:all, :conditions => network_conditions)
      network_options
 
      render :layout => false
@@ -377,13 +430,15 @@ class NetworkController < ApplicationController
    def update_bonding
     begin
      network_options
-     @network = Network.find(params[:bonding][:vlan_id])
 
-     if @network.boot_type.id == @static_boot_type.id
-       if params[:ip_address][:id] == "New"
-         _create_ip_address
-       elsif params[:ip_address][:id] != ""
-         _update_ip_address(params[:ip_address][:id])
+     unless params[:bonding][:vlan_id].nil? || params[:bonding][:vlan_id].to_i == 0
+       @network = Network.find(params[:bonding][:vlan_id])
+       if @network.boot_type.id == @static_boot_type.id
+         if params[:ip_address][:id] == "New"
+           _create_ip_address
+         elsif params[:ip_address][:id] != ""
+           _update_ip_address(params[:ip_address][:id])
+         end
        end
      end
 
@@ -394,13 +449,13 @@ class NetworkController < ApplicationController
      alert = "Bonding was successfully updated."
      render :json => { :object => "bonding", :success => true,
                        :alert => alert  }
-    rescue
+    rescue Exception => e
      if @ip_address and @ip_address.errors.size != 0
         render :json => { :object => "ip_address", :success => false,
                           :errors =>
                             @ip_address.errors.localize_error_messages.to_a}
      else
-        render :json => { :object => "bonding", :success => false,
+       render :json => { :object => "bonding", :success => false,
                           :errors =>
                           @bonding.errors.localize_error_messages.to_a }
      end

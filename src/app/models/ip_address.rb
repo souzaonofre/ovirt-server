@@ -24,8 +24,4 @@ class IpAddress < ActiveRecord::Base
    belongs_to :network
    belongs_to :nic
    belongs_to :bonding
-
-   def validate
-     errors.add("id", "ip must be associated with foreign entity") if network_id.nil? and nic_id.nil? and bonding_id.nil?
-   end
 end

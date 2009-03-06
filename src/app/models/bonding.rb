@@ -37,10 +37,12 @@ class Bonding < ActiveRecord::Base
   belongs_to :vlan
   has_many :ip_addresses, :dependent => :destroy
 
+  # FIXME bondings_nics table should just be replaced with
+  # bonding_id column in nics table, and relationship changed
+  # here to has_many
   has_and_belongs_to_many :nics,
     :join_table  => 'bondings_nics',
     :foreign_key => :bonding_id
-
 
   validates_presence_of :name,
     :message => 'A name is required.'
@@ -57,8 +59,9 @@ class Bonding < ActiveRecord::Base
   validates_presence_of :bonding_type_id,
     :message => 'A bonding type must be specified.'
 
-  validates_presence_of :vlan_id,
-    :message => 'A vlan must be specified.'
+  validates_uniqueness_of :vlan_id,
+    :scope => :host_id,
+    :unless => Proc.new { |bonding| bonding.vlan.nil? }
 
   # verify arp ping address to be ipv4 if set
   validates_format_of :arp_ping_address,

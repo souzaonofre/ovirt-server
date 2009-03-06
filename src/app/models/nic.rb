@@ -22,6 +22,9 @@ class Nic < ActiveRecord::Base
   belongs_to :physical_network
   has_many :ip_addresses, :dependent => :destroy
 
+  # FIXME bondings_nics table should just be replaced with
+  # bonding_id column in nics table, and relationship changed
+  # here to belongs_to
   has_and_belongs_to_many :bondings, :join_table => 'bondings_nics'
 
   validates_presence_of :mac,
@@ -33,11 +36,12 @@ class Nic < ActiveRecord::Base
   validates_presence_of :host_id,
     :message => 'A host must be specified.'
 
-  validates_presence_of :physical_network_id,
-    :message => 'A network must be specified.'
-
   validates_numericality_of :bandwidth,
      :greater_than_or_equal_to => 0
+
+  validates_uniqueness_of :physical_network_id,
+     :scope => :host_id,
+     :unless => Proc.new { |nic| nic.physical_network_id.nil? }
 
   # validate 'bridge' or 'usage_type' attribute ?
 

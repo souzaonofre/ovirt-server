@@ -75,9 +75,9 @@ class BondingTest < ActiveSupport::TestCase
     flunk 'Bonding must specify bonding type' if @bonding.valid?
   end
 
-  def test_valid_fails_without_vlan
+  def test_valid_without_vlan
     @bonding.vlan = nil
-    flunk 'Bonding must specify vlan' if @bonding.valid?
+    flunk 'Bonding should not require vlan' if !@bonding.valid?
   end
 
   # Ensures that an arp ping address must have the correct format

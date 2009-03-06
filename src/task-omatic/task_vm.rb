@@ -87,9 +87,12 @@ def create_vm_xml(name, uuid, memAllocated, memUsed, vcpus, bootDevice,
     which_device += 1
   end
 
-  doc.root.elements["devices"].add_element("interface", {"type" => "bridge"})
-  doc.root.elements["devices"].elements["interface"].add_element("mac", {"address" => macAddr})
-  doc.root.elements["devices"].elements["interface"].add_element("source", {"bridge" => bridge})
+  unless macAddr.nil? || bridge.nil? || macAddr == "" || bridge == ""
+    doc.root.elements["devices"].add_element("interface", {"type" => "bridge"})
+    doc.root.elements["devices"].elements["interface"].add_element("mac", {"address" => macAddr})
+    doc.root.elements["devices"].elements["interface"].add_element("source", {"bridge" => bridge})
+  end
+
   doc.root.elements["devices"].add_element("input", {"type" => "mouse", "bus" => "ps2"})
   doc.root.elements["devices"].add_element("graphics", {"type" => "vnc", "port" => "-1", "listen" => "0.0.0.0"})
 

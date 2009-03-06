@@ -335,6 +335,7 @@ class VmController < ApplicationController
     end
     @perm_obj = @vm.vm_resource_pool
     @current_pool_id=@perm_obj.id
+    @networks = Network.find(:all).collect{ |net| [net.name, net.id] }
     _setup_provisioning_options
   end
   def pre_create
@@ -361,6 +362,7 @@ class VmController < ApplicationController
     @vm = Vm.find(params[:id])
     @perm_obj = @vm.vm_resource_pool
     @current_pool_id=@perm_obj.id
+    @networks = Network.find(:all).collect{ |net| [net.name, net.id] }
     _setup_provisioning_options
   end
   def pre_vm_action

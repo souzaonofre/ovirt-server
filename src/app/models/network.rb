@@ -22,6 +22,8 @@ class Network < ActiveRecord::Base
 
   has_and_belongs_to_many :usages, :join_table => 'networks_usages'
 
+  has_many :vms
+
   validates_presence_of :type,
     :message => 'A type must be specified.'
   validates_presence_of :name,

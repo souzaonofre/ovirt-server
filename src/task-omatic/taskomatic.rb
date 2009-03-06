@@ -330,10 +330,31 @@ class TaskOmatic
     volumes << image_volume if image_volume
     storagedevs = connect_storage_pools(node, volumes)
 
-    # FIXME: get rid of the hardcoded bridge
+    # determine if vm has been assigned to physical or
+    # virtual network and assign nic / bonding accordingly
+    # FIXME instead of trying to find a nic or bonding here, given
+    # a specified host and network, we should try earlier on to find a host
+    # that has a nic / bonding on the specified network
+
+    net_device = "breth0"  # FIXME remove this default value at some point, tho net_device can't be nil
+    unless db_vm.network.nil?
+      if db_vm.network.class == PhysicalNetwork
+         device = Nic.find(:first,
+                           :conditions => ["host_id = ? AND physical_network_id = ?",
+                                           db_host.id, db_vm.network_id ])
+         net_device = device.interface_name unless device.nil?
+
+      else
+         device = Bonding.find(:first,
+                               :conditions => ["host_id = ? AND vlan_id = ?",
+                                               db_host.id, db_vm.network_id])
+         net_device = device.interface_name unless device.nil?
+      end
+    end
+
     xml = create_vm_xml(db_vm.description, db_vm.uuid, db_vm.memory_allocated,
               db_vm.memory_used, db_vm.num_vcpus_allocated, db_vm.boot_device,
-              db_vm.vnic_mac_addr, "breth0", storagedevs)
+              db_vm.vnic_mac_addr, net_device, storagedevs)
 
     result = node.domainDefineXML(xml.to_s)
     raise "Error defining virtual machine: #{result.text}" unless result.status == 0
