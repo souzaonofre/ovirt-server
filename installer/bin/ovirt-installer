@@ -127,10 +127,11 @@ else
     end
 end
 
-mgmt_dev = prompt_for_answer("Enter your management interface (example: eth0):")
-prov_dev = prompt_for_answer("Enter your provisioning interface, this may also be your management interface:", :default => mgmt_dev)
-
-sep_networks = (mgmt_dev == prov_dev) ? "n" : "y"
+mgmt_dev = prompt_for_answer("Enter your management interface:", :default => "eth0")
+# For now only supporting one network interface
+#prov_dev = prompt_for_answer("Enter your provisioning interface, this may also be your management interface:", :default => mgmt_dev)
+prov_dev = mgmt_dev
+#sep_networks = (mgmt_dev == prov_dev) ? "n" : "y"
 
 ovirt_host = prompt_for_answer("Enter the hostname of the oVirt management server (example: management.example.com):", :regex => IP_OR_FQDN)
 ipa_host = ovirt_host
