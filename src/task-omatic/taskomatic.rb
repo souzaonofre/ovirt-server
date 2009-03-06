@@ -353,12 +353,14 @@ class TaskOmatic
     # of places so you'll see a lot of .reloads.
     db_vm.reload
     set_vm_vnc_port(db_vm, result.description) unless result.status != 0
-    VmVnc.forward(db_vm)
 
     # This information is not available via the libvirt interface.
     db_vm.memory_used = db_vm.memory_allocated
     db_vm.boot_device = Vm::BOOT_DEV_HD
     db_vm.host_id = db_host.id
+    db_vm.save!
+
+    VmVnc.forward(db_vm)
 
     # We write the new state here even though dbomatic will set it soon anyway.
     # This is just to let the UI know that it's good to go right away and really
