@@ -283,7 +283,7 @@ class TaskOmatic
       raise "Error destroying VM: #{result.text}" unless result.status == 0
     end
 
-    VmVnc.close(vm)
+    VmVnc.close(db_vm)
 
     # undefine can fail, for instance, if we live migrated from A -> B, and
     # then we are shutting down the VM on B (because it only has "transient"
