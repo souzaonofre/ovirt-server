@@ -27,11 +27,6 @@ class VmVnc
 
     VNC_DEBUG = false
 
-    # FIXME can this be retreived in any way
-    # since machine will have both external
-    # and internal network interface
-    LOCAL_IP = '192.168.50.2'
-
     def self.debug(msg)
       puts "\n" + msg + "\n" if VNC_DEBUG
     end
@@ -81,8 +76,10 @@ class VmVnc
     def self.get_nat_rules(vm)
       ip = find_host_ip(vm.host.hostname)
 
+      server,port = get_srv('ovirt', 'tcp')
+      local_ip = find_host_ip(server)
       return " -p tcp --dport " + vm.forward_vnc_port.to_s + " -j DNAT --to " + ip + ":" + vm.vnc_port.to_s,
-             " -d " + ip + " -p tcp --dport " + vm.vnc_port.to_s + " -j SNAT --to " + LOCAL_IP
+             " -d " + ip + " -p tcp --dport " + vm.vnc_port.to_s + " -j SNAT --to " + local_ip
     end
 
     def self.run_command(cmd)
