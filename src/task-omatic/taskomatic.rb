@@ -33,7 +33,6 @@ include Daemonize
 
 require 'task_vm'
 require 'task_storage'
-require 'vnc'
 
 # This sad and pathetic readjustment to ruby logger class is
 # required to fix the formatting because rails does the same
@@ -283,8 +282,6 @@ class TaskOmatic
       raise "Error destroying VM: #{result.text}" unless result.status == 0
     end
 
-    VmVnc.close(db_vm)
-
     # undefine can fail, for instance, if we live migrated from A -> B, and
     # then we are shutting down the VM on B (because it only has "transient"
     # XML).  Therefore, just ignore undefine errors so we do the rest
@@ -380,8 +377,6 @@ class TaskOmatic
     db_vm.boot_device = Vm::BOOT_DEV_HD
     db_vm.host_id = db_host.id
     db_vm.save!
-
-    VmVnc.forward(db_vm)
 
     # We write the new state here even though dbomatic will set it soon anyway.
     # This is just to let the UI know that it's good to go right away and really

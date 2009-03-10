@@ -67,19 +67,32 @@ class VmVnc
        vm.save!
     end
 
-    def self.get_forward_rules(vm)
-      ip = find_host_ip(vm.host.hostname)
-      return " -d " + ip + " -p tcp --dport " + vm.vnc_port.to_s + " -j ACCEPT",
-             " -s " + ip + " -p tcp --sport " + vm.vnc_port.to_s + " -j ACCEPT"
+    def self.get_forward_rules(vm, history_record = nil)
+      if history_record.nil?
+        ip = find_host_ip(vm.host.hostname)
+        vnc_port = vm.vnc_port.to_s
+      else
+        ip = find_host_ip(history_record.host.hostname)
+        vnc_port = history_record.vnc_port.to_s
+      end
+
+      return " -d " + ip + " -p tcp --dport " + vnc_port + " -j ACCEPT",
+             " -s " + ip + " -p tcp --sport " + vnc_port + " -j ACCEPT"
     end
 
-    def self.get_nat_rules(vm)
-      ip = find_host_ip(vm.host.hostname)
+    def self.get_nat_rules(vm, history_record = nil)
+      if history_record.nil?
+        ip = find_host_ip(vm.host.hostname)
+        vnc_port = vm.vnc_port.to_s
+      else
+        ip = find_host_ip(history_record.host.hostname)
+        vnc_port = history_record.vnc_port.to_s
+      end
 
       server,port = get_srv('ovirt', 'tcp')
       local_ip = find_host_ip(server)
-      return " -p tcp --dport " + vm.forward_vnc_port.to_s + " -j DNAT --to " + ip + ":" + vm.vnc_port.to_s,
-             " -d " + ip + " -p tcp --dport " + vm.vnc_port.to_s + " -j SNAT --to " + local_ip
+      return " -p tcp --dport " + vm.forward_vnc_port.to_s + " -j DNAT --to " + ip + ":" + vnc_port,
+             " -d " + ip + " -p tcp --dport " + vnc_port + " -j SNAT --to " + local_ip
     end
 
     def self.run_command(cmd)
@@ -120,18 +133,18 @@ class VmVnc
        run_command(postrouting_rule)
     end
 
-    def self.close(vm)
+    def self.close(vm, history_record = nil)
        return unless vm.forward_vnc
 
        unless port_open?(vm.forward_vnc_port)
          raise "Port not open " + vm.forward_vnc_port.to_s
        end
 
-       forward_rule1, forward_rule2 = get_forward_rules(vm)
+       forward_rule1, forward_rule2 = get_forward_rules(vm, history_record)
        forward_rule1 = IPTABLES_CMD + " -D FORWARD " + forward_rule1
        forward_rule2 = IPTABLES_CMD + " -D FORWARD " + forward_rule2
 
-       prerouting_rule, postrouting_rule = get_nat_rules(vm)
+       prerouting_rule, postrouting_rule = get_nat_rules(vm, history_record)
        prerouting_rule = IPTABLES_CMD + " -t nat -D PREROUTING " + prerouting_rule
        postrouting_rule = IPTABLES_CMD + " -t nat -D POSTROUTING " + postrouting_rule
 
@@ -147,5 +160,14 @@ class VmVnc
 
 
        deallocate_forward_vnc_port(vm)
+    end
+
+    # should be used in cases which
+    # closing iptables ports is not needed
+    # (ex. on server startup)
+    def self.deallocate_all
+        Vm.find(:all).each{ |vm|
+          deallocate_forward_vnc_port(vm)
+        }
     end
 end

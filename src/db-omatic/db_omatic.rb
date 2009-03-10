@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 
 $: << File.join(File.dirname(__FILE__), "../dutils")
+$: << File.join(File.dirname(__FILE__), ".")
 
 require "rubygems"
 require "qpid"
@@ -9,6 +10,7 @@ require 'dutils'
 require 'daemons'
 require 'optparse'
 require 'logger'
+require 'vnc'
 
 include Daemonize
 
@@ -156,7 +158,10 @@ class DbOmatic < Qpid::Qmf::Console
                history.save!
              end
 
+             VmVnc.forward(vm)
           elsif state != Vm::STATE_PENDING
+             VmVnc.close(vm, history)
+
              unless history.nil? # throw an exception if this fails?
                history.time_ended = Time.now
                history.state = state
@@ -378,6 +383,12 @@ class DbOmatic < Qpid::Qmf::Console
             host.state = Host::STATE_UNAVAILABLE
             host.save
         end
+
+        begin
+           VmVnc.deallocate_all
+         rescue Exception => e # just log any errors here
+            @logger.error "Error with closing all VM VNCs operation: " + e
+         end
 
         db_vm = Vm.find(:all)
         db_vm.each do |vm|
