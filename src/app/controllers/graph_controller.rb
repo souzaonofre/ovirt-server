@@ -7,8 +7,8 @@ class GraphController < ApplicationController
   def flexchart_data
     @id = params[:id]
     target = params[:target]
-    startTime = Time.at(params[:startTime].to_i)
-    endTime = Time.at(params[:endTime].to_i)
+    startTime = Time.at(params[:startTime].to_i).utc
+    endTime = Time.at(params[:endTime].to_i).utc
     duration = endTime.to_i - startTime.to_i
     dataFunction = DEV_KEY_FUNCTIONS[params[:dataFunction]] ? DEV_KEY_FUNCTIONS[params[:dataFunction]] : DEV_KEY_FUNCTIONS['peak']
     #the maximum number of data points we want in any chart
@@ -77,7 +77,7 @@ class GraphController < ApplicationController
     #expect (pool) id, resolution, startTime, target, dataFunction
     @id = params[:id]
     resolution = params[:resolution].to_i
-    startTime = Time.at(params[:startTime].to_i)
+    startTime = Time.at(params[:startTime].to_i).utc
     target = params[:target]
     dataFunction = params[:dataFunction]
 
@@ -95,7 +95,7 @@ class GraphController < ApplicationController
 
       eventsInRange = host.membership_audit_events.from_pool(pool,
                                                              startTime,
-                                                             Time.at(startTime.to_i + resolution))
+                                                             Time.at(startTime.to_i + resolution).utc)
       excluded = false
       if eventsInRange.empty?
         priorAuditEvent = host.membership_audit_events.most_recent_prior_event_from_pool(pool,startTime)
