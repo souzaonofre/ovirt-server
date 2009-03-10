@@ -23,6 +23,6 @@ class AddStoragePoolCapacity < ActiveRecord::Migration
   end
 
   def self.down
-    drop_column :storage_pools, :capacity
+    remove_column :storage_pools, :capacity
   end
 end

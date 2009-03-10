@@ -23,8 +23,8 @@ class AddVmVnc < ActiveRecord::Migration
   end
 
   def self.down
-   drop_column :vms, :forward_vnc
-   drop_column :vms, :forward_vnc_port
+   remove_column :vms, :forward_vnc
+   remove_column :vms, :forward_vnc_port
   end
 end
 

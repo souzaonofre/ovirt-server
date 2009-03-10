@@ -23,6 +23,6 @@ class AddPoolLoad < ActiveRecord::Migration
   end
 
   def self.down
-    drop_column :pools, :load_average
+    remove_column :pools, :load_average
   end
 end
