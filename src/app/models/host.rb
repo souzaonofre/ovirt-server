@@ -54,6 +54,15 @@ class Host < ActiveRecord::Base
   has_many :smart_pool_tags, :as => :tagged, :dependent => :destroy
   has_many :smart_pools, :through => :smart_pool_tags
 
+  # reverse cronological collection of vm history
+  # each collection item contains vm that was running on host
+  # time started, and time ended (see VmHostHistory)
+  has_many :vm_host_histories,
+           :order => 'time_started DESC',
+           :dependent => :destroy
+
+  alias history vm_host_histories
+
   acts_as_xapian :texts => [ :hostname, :uuid, :hypervisor_type, :arch ],
                  :values => [ [ :created_at, 0, "created_at", :date ],
                               [ :updated_at, 1, "updated_at", :date ] ],

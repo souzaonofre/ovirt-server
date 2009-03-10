@@ -34,6 +34,15 @@ class Vm < ActiveRecord::Base
   has_many :smart_pool_tags, :as => :tagged, :dependent => :destroy
   has_many :smart_pools, :through => :smart_pool_tags
 
+  # reverse cronological collection of vm history
+  # each collection item contains host vm was running on,
+  # time started, and time ended (see VmHostHistory)
+  has_many :vm_host_histories,
+           :order => 'time_started DESC',
+           :dependent => :destroy
+
+  alias history vm_host_histories
+
   validates_presence_of :uuid, :description, :num_vcpus_allocated,
                         :boot_device, :memory_allocated_in_mb,
                         :memory_allocated, :vnic_mac_addr,

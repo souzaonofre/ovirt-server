@@ -141,6 +141,33 @@ class DbOmatic < Qpid::Qmf::Console
             end
         end
 
+        begin
+          # find open vm host history for this vm,
+          history = VmHostHistory.find(:first, :conditions => ["vm_id = ? AND time_ended is NULL", vm.id])
+
+          if state == Vm::STATE_RUNNING
+             if history.nil?
+               history = VmHostHistory.new
+               history.vm = vm
+               history.host = vm.host
+               history.vnc_port = vm.vnc_port
+               history.state = state
+               history.time_started = Time.now
+               history.save!
+             end
+
+          elsif state != Vm::STATE_PENDING
+             unless history.nil? # throw an exception if this fails?
+               history.time_ended = Time.now
+               history.state = state
+               history.save!
+             end
+          end
+
+        rescue Exception => e # just log any errors here
+            @logger.error "Error with VM #{domain['name']} operation: " + e
+        end
+
         @logger.info "Updating VM #{domain['name']} to state #{state}"
         vm.state = state
         vm.save
