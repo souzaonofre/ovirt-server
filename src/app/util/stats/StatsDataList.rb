@@ -20,7 +20,7 @@
 
 #define class StatsData  List
 class StatsDataList
-  def initialize(node, devClass, instance, counter, status, function, resolution)
+  def initialize(node, devClass, instance, counter, status, function, interval)
     # Instance variables  
     @node = node
     @devClass = devClass
@@ -31,7 +31,7 @@ class StatsDataList
     @function = function
     @min_value = 0
     @max_value = 0
-    @resolution = 0
+    @interval = 0
   end
   
   def get_node?()  
@@ -90,11 +90,11 @@ class StatsDataList
     return @max_value
   end
 
-  def set_resolution(value)
-    @resolution = value
+  def set_interval(value)
+    @interval = value
   end
 
-  def get_resolution?()
-    return @resolution
+  def get_interval?()
+    return @interval
   end
 end

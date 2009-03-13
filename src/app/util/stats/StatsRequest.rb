@@ -36,7 +36,11 @@ class StatsRequest
     @precision = precision
     @function = function
   end  
-  
+
+  def set_precision (newPrecision)
+    @precision = newPrecision
+  end
+
   def get_node?()  
     return @node
   end  

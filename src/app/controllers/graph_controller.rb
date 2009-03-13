@@ -55,7 +55,7 @@ class GraphController < ApplicationController
                                           dataFunction)
       }
     }
-    statsList = getAggregateStatsData?(requestList)
+    statsList = getPaddedAggregateStatsData?(requestList,startTime,endTime)
 
     stat = statsList[0]
     vectors = [ ]
@@ -68,7 +68,7 @@ class GraphController < ApplicationController
     graph = { :vectors => vectors,
       :max_value => stat.get_max_value?,
       :description => target,
-      :resolution => stat.get_resolution?
+      :resolution => stat.get_interval?
     }
     render :json => graph
   end

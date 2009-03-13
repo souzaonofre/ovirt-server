@@ -24,7 +24,6 @@ require 'util/stats/StatsData'
 require 'util/stats/StatsDataList'
 require 'util/stats/StatsRequest'
 
-
 # This fetches a rolling average, basically average points before and after.
 
 
@@ -42,6 +41,7 @@ def fetchRollingAve?(rrdPath, start, endTime, interval, myFunction, lIndex, retu
 
    (fstart, fend, names, data, interval) = RRD.fetch(rrdPath, "--start", start.to_s, \
                              "--end", endTime.to_s, myFunction, "-r", interval.to_s)
+   returnList.set_interval interval
    i = 0
    # For some reason, we get an extra datapoint at the end.  Just chop it off now...
    data.delete_at(-1)
@@ -110,6 +110,7 @@ def fetchRollingCalcUsedData?(rrdPath, start, endTime, interval, myFunction, lIn
 
    (fstart, fend, names, data, interval) = RRD.fetch(rrdPath, "--start", start.to_s, \
                              "--end", endTime.to_s, lFunc, "-r", interval.to_s)
+   returnList.set_interval interval
    i = 0
    # For some reason, we get an extra datapoint at the end.  Just chop it off now...
    data.delete_at(-1)
@@ -177,6 +178,7 @@ def fetchCalcUsedData?(rrdPath, start, endTime, interval, myFunction, lIndex, re
 
    (fstart, fend, names, data, interval) = RRD.fetch(rrdPath, "--start", start.to_s, \
                                   "--end", endTime.to_s, lFunc, "-r", interval.to_s)
+   returnList.set_interval interval
    i = 0 
    # For some reason, we get an extra datapoint at the end.  Just chop it off now...
    data.delete_at(-1)
@@ -214,6 +216,7 @@ def fetchRegData?(rrdPath, start, endTime, interval, myFunction, lIndex, returnL
 
    (fstart, fend, names, data, interval) = RRD.fetch(rrdPath, "--start", start.to_s, "--end", \
                                                endTime.to_s, myFunction, "-r", interval.to_s)
+   returnList.set_interval interval
    i = 0 
    # For some reason, we get an extra datapoint at the end.  Just chop it off now...
    data.delete_at(-1)
@@ -473,5 +476,89 @@ def  getAggregateStatsData?(statRequestList)
     myList << returnList
 
 return myList
+
+end
+
+# This function also aggregates all of the values returned into one list before
+# returning.  It is up to the caller to ensure that the request list has
+# "like" items.  For instance if you request CPU Utilization and Network bytes,
+# this function will be happy to aggregate them for you...
+# This function, however, also takes a start and end time, and will pad with
+# zero data points to fill any gaps in the returned data. It also returns
+# the data points with regular temporal spacing based on the oldest/coarsest
+# resolution available in the data.
+def getPaddedAggregateStatsData?(statRequestList, startTime, endTime)
+
+  fetchResults = []
+  myList = []
+  my_min = 0
+  my_max = 0
+  interval = 0
+
+  node = "Aggregate"
+  returnList = StatsDataList.new("Aggregate", 0, 0, 0, 0, 0, 0)
+  statRequestList.each do |request|
+    node = request.get_node?
+    counter = request.get_counter?
+
+    #Later time-ranged requests might have a finer resolution than earlier
+    #time-ranged requests. We assume that the ActiveRecord sql will order
+    #these by ascending startTime, and that the oldest rrd data will always
+    #have the coarsest resolution.
+    if request.get_precision? < interval
+      request.set_precision interval
+    end
+    tmpResult = fetchData?(request.get_node?, request.get_devClass?,
+                           request.get_instance?, request.get_counter?,
+                           request.get_starttime?, request.get_duration?,
+                           request.get_precision?, request.get_function?)
+    fetchResults.push tmpResult
+
+    if interval == 0
+      interval = tmpResult.get_interval?
+    end
+  end
+
+  if interval != 0
+
+    sTime =  (startTime.to_i / interval).to_i * interval
+    eTime =  (endTime.to_i / interval).to_i * interval
+    pointCount = ((eTime - sTime) / interval) + 1
+
+    #ensure the results are sorted for the following loop
+    fetchResults.sort! {|x,y|
+      xTime = x.get_data?.empty? ? 0 : x.get_data?[0].get_timestamp?
+      yTime = y.get_data?.empty? ? 0 : y.get_data?[0].get_timestamp?
+      xTime <=> yTime
+    }
+
+    myCount = 0
+    while myCount < pointCount do
+      myTime = sTime + interval * (myCount + 1)
+      newDatum = StatsData.new(myTime,0)
+
+      fetchResults.each do |result|
+        if (! result.get_data?.empty?) &&
+            result.get_data?[0].get_timestamp? == myTime
+
+          datum = result.get_data?.shift
+          myValue = datum.get_value?.is_a?(Float) && datum.get_value?.nan? ? 0 : datum.get_value?
+          newDatum.set_value(newDatum.get_value? + myValue)
+        end
+      end
+      returnList.append_data(newDatum)
+
+      my_min = [my_min, newDatum.get_value?].min
+      my_max = [my_max, newDatum.get_value?].max
+      myCount += 1
+    end
+
+    returnList.set_min_value(my_min)
+    returnList.set_max_value(my_max)
+    returnList.set_interval(interval)
+  end
+
+  myList << returnList
+  return myList
 
 end
