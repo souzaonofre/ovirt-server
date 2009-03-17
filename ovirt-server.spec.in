@@ -128,7 +128,6 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 %{__rm} -f %{buildroot}%{app_root}/task-omatic/.gitignore
 
 %{__cp} -a %{pbuild}/scripts/ovirt-add-host %{buildroot}%{_bindir}
-%{__cp} -a %{pbuild}/scripts/ovirt-server-install %{buildroot}%{_sbindir}
 %{__cp} -a %{pbuild}/scripts/ovirt-reindex-search %{buildroot}%{_sbindir}
 %{__cp} -a %{pbuild}/scripts/ovirt-update-search %{buildroot}%{_sbindir}
 %{__rm} -rf %{buildroot}%{app_root}/tmp
@@ -195,7 +194,6 @@ fi
 
 %files
 %defattr(-,root,root,0755)
-%{_sbindir}/ovirt-server-install
 %{_sbindir}/ovirt-reindex-search
 %{_sbindir}/ovirt-update-search
 %{_bindir}/ovirt-add-host
