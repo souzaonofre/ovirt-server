@@ -6,12 +6,12 @@ firewall::setup{'setup': status => 'enabled'}
 firewall_rule{"ssh": destination_port => "22"}
 
 # dns configuration
-$mgmt_ipaddr = '192.168.50.2'
-$prov_ipaddr = '192.168.50.2'
+$guest_ipaddr = '192.168.50.2'
+$admin_ipaddr = '192.168.50.2'
 $ovirt_host = 'management.priv.ovirt.org'
 $ipa_host = 'management.priv.ovirt.org'
 
-dns::bundled{setup: mgmt_ipaddr=> $mgmt_ipaddr, prov_ipaddr=> $prov_ipaddr, mgmt_dev => 'eth0', prov_dev => 'eth0'}
+dns::bundled{setup: guest_ipaddr=> $guest_ipaddr, admin_ipaddr=> $admin_ipaddr, guest_dev => 'eth0', admin_dev => 'eth0'}
 
 # dhcp configuration
 $dhcp_interface = 'eth0'
@@ -19,10 +19,10 @@ $dhcp_network = '192.168.50'
 $dhcp_start = '3'
 $dhcp_stop = '50'
 $dhcp_domain = 'priv.ovirt.org'
-$ntp_server =  $mgmt_ipaddr
+$ntp_server =  $guest_ipaddr
 
-$prov_dns_server = '192.168.50.2'
-$prov_network_gateway = '192.168.50.1'
+$admin_dns_server = '192.168.50.2'
+$admin_network_gateway = '192.168.50.1'
 # cobbler configuration
 $cobbler_hostname = 'localhost'
 $cobbler_user_name = 'cobbler'

@@ -20,10 +20,17 @@
 
 class ovirt::setup {
 
-	file_replacement{"ovirt_httpd_config_change":
+	file_replacement{"ovirt_httpd_config_change_guest_net":
 	        file => "/etc/httpd/conf.d/ovirt-server.conf",
-	        pattern => "192\.168\.50\.2",
-	        replacement => "$mgmt_ipaddr",
+	        pattern => "GuestNetIpAddress",
+	        replacement => "$guest_httpd_ipaddr",
+		require => Package[ovirt-server]
+        }
+
+	file_replacement{"ovirt_httpd_config_change_admin_net":
+	        file => "/etc/httpd/conf.d/ovirt-server.conf",
+	        pattern => "AdminNetIpAddress",
+	        replacement => "$admin_ipaddr",
 		require => Package[ovirt-server]
         }
 

@@ -132,7 +132,7 @@ class cobbler::bundled {
         file_replacement{"settings_server":
                 file => "/etc/cobbler/settings",
                 pattern => "server: 127.0.0.1",
-                replacement => "server: $mgmt_ipaddr",
+                replacement => "server: $guest_ipaddr",
                 require => Package[cobbler],
                 notify => Service[cobblerd]
         }
@@ -140,7 +140,7 @@ class cobbler::bundled {
         file_replacement{"settings_next_server":
                 file => "/etc/cobbler/settings",
                 pattern => "next_server: 127.0.0.1",
-                replacement => "next_server: $mgmt_ipaddr",
+                replacement => "next_server: $guest_ipaddr",
                 require => Package[cobbler],
                 notify => Service[cobblerd]
         }

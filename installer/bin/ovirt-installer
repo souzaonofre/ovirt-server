@@ -127,11 +127,13 @@ else
     end
 end
 
-mgmt_dev = prompt_for_answer("Enter your management interface:", :default => "eth0")
-# For now only supporting one network interface
-#prov_dev = prompt_for_answer("Enter your provisioning interface, this may also be your management interface:", :default => mgmt_dev)
-prov_dev = mgmt_dev
-#sep_networks = (mgmt_dev == prov_dev) ? "n" : "y"
+guest_httpd_dev = prompt_for_answer("Enter the interface for the Guest network:", :default => "eth0")
+admin_dev = prompt_for_answer("Enter the interface for the Admin network (this may be the same as the Guest network interface):", :default => "eth0")
+
+#FIXME: correctly configure separate networks.
+#For now, define admin and guest networks to be the same
+guest_dev = admin_dev
+#sep_networks = (guest_dev == admin_dev) ? "n" : "y"
 
 ovirt_host = prompt_for_answer("Enter the hostname of the oVirt management server (example: management.example.com):", :regex => IP_OR_FQDN)
 ipa_host = ovirt_host
@@ -144,39 +146,41 @@ File.open('/etc/resolv.conf').each_line{ |line|
 }
 dns_servers = prompt_yes_no("Use this systems's dns servers?")
 
-mgmt_ip = `ifconfig #{mgmt_dev}`
-mgmt_ipaddr= mgmt_ip.scan(/\s*inet addr:([\d.]+)/)
-prov_ip = `ifconfig #{prov_dev}`
-prov_ipaddr= prov_ip.scan(/\s*inet addr:([\d.]+)/)
+guest_httpd_ip = `ifconfig #{guest_httpd_dev}`
+guest_httpd_ipaddr = guest_httpd_ip.scan(/\s*inet addr:([\d.]+)/)
+guest_ip = `ifconfig #{guest_dev}`
+guest_ipaddr = guest_ip.scan(/\s*inet addr:([\d.]+)/)
+admin_ip = `ifconfig #{admin_dev}`
+admin_ipaddr = admin_ip.scan(/\s*inet addr:([\d.]+)/)
 
 if dns_servers == "y"
-    mgmt_ipaddr_lookup = Socket.getaddrinfo(mgmt_ipaddr.to_s,nil)
-    mgmt_hostname = mgmt_ipaddr_lookup[1][2]
-    if mgmt_hostname.to_s != ipa_host.to_s
-        @cli.say("Reverse dns lookup for #{mgmt_ipaddr} failed, exiting")
+    guest_ipaddr_lookup = Socket.getaddrinfo(guest_ipaddr.to_s,nil)
+    guest_hostname = guest_ipaddr_lookup[1][2]
+    if guest_hostname.to_s != ipa_host.to_s
+        @cli.say("Reverse dns lookup for #{guest_ipaddr} failed, exiting")
         exit(0)
     end
 
     ipa_host_lookup = Socket.getaddrinfo(ipa_host,nil)
     ipa_hostip = ipa_host_lookup[1][3]
-    if ipa_hostip.to_s != mgmt_ipaddr.to_s
+    if ipa_hostip.to_s != guest_ipaddr.to_s
          @cli.say("Forward dns lookup for #{ipa_host} failed, exiting")
          exit(0)
     end
 end
 
 # DHCP Configuration
-dhcp_setup = prompt_yes_no("Does your provisioning network already have dhcp?")
+dhcp_setup = prompt_yes_no("Does your Admin network already have dhcp?")
 if dhcp_setup == "n"
     dnsdomainname = `/bin/dnsdomainname`
     default_gw = `route -n | grep 'UG'|awk {'print $2'}`
-    dhcp_interface = prov_dev
+    dhcp_interface = admin_dev
     dhcp_network = prompt_for_answer("Enter the first 3 octets of the dhcp network you wish to use (example: 192.168.50):", :regex => THREE_OCTETS)
     dhcp_start = prompt_for_answer("Enter the dhcp pool start address (example: 3):", :regex => OCTET)
     dhcp_stop = prompt_for_answer("Enter the dhcp pool end addess (example: 100):", :regex => OCTET)
     dhcp_domain = prompt_for_answer("Enter the dhcp domain you wish to use (example: example.com):", :default => dnsdomainname.chomp, :regex => IP_OR_FQDN)
-    prov_dns_server = prov_ip.scan(/\s*inet addr:([\d.]+)/)
-    prov_network_gateway = prompt_for_answer("Enter the network gateway for your provisioning network (example: 192.168.50.254):", :default => default_gw.chomp, :regex => IP_OR_FQDN)
+    admin_dns_server = admin_ip.scan(/\s*inet addr:([\d.]+)/)
+    admin_network_gateway = prompt_for_answer("Enter the network gateway for your Admin network (example: 192.168.50.254):", :default => default_gw.chomp, :regex => IP_OR_FQDN)
     tftp_setup = prompt_yes_no("Provide pxe/tftp capability?")
 end
 
@@ -229,8 +233,9 @@ firewall::setup{'setup':
 firewall_rule{"ssh": destination_port => "22"}
 
 #DNS Configuration
-$mgmt_ipaddr = '<%= mgmt_ipaddr %>'
-$prov_ipaddr = '<%= prov_ipaddr %>'
+$guest_httpd_ipaddr = '<%= guest_httpd_ipaddr %>'
+$guest_ipaddr = '<%= guest_ipaddr %>'
+$admin_ipaddr = '<%= admin_ipaddr %>'
 $ovirt_host = '<%= ovirt_host %>'
 $ipa_host = '<%= ipa_host %>'
 
@@ -239,10 +244,10 @@ dns::bundled{setup:
 <% else %>
 dns::remote{setup:
 <% end %>
-    mgmt_ipaddr=> $mgmt_ipaddr,
-    prov_ipaddr=> $prov_ipaddr,
-    mgmt_dev => '<%= mgmt_dev %>',
-    prov_dev => '<%= prov_dev %>'
+    guest_ipaddr=> $guest_ipaddr,
+    admin_ipaddr=> $admin_ipaddr,
+    guest_dev => '<%= guest_dev %>',
+    admin_dev => '<%= admin_dev %>'
 }
 
 # DHCP Configuration
@@ -252,9 +257,9 @@ $dhcp_network = '<%= dhcp_network %>'
 $dhcp_start = '<%= dhcp_start %>'
 $dhcp_stop = '<%= dhcp_stop %>'
 $dhcp_domain = '<%= dhcp_domain %>'
-$ntp_server = '<%= mgmt_ipaddr %>'
-$prov_network_gateway = '<%= prov_network_gateway %>'
-$prov_dns_server = '<%= prov_dns_server %>'
+$ntp_server = '<%= guest_ipaddr %>'
+$admin_network_gateway = '<%= admin_network_gateway %>'
+$admin_dns_server = '<%= admin_dns_server %>'
 <% if tftp_setup == "y" %>
 include tftp::bundled
 <% end %>
@@ -283,8 +288,8 @@ include cobbler::remote
 <% end %>
 <% if dhcp_setup == "n" %>
 include dhcp::bundled
-firewall_rule{"nat-forward": chain => "FORWARD", in_interface => "<%= prov_dev %>", out_interface => "<%= mgmt_dev %>", protocol => ""}
-firewall_rule{"nat-postrouting": table => "nat", chain => "POSTROUTING", out_interface => "<%= mgmt_dev %>", protocol => "", action => "MASQUERADE"}
+firewall_rule{"nat-forward": chain => "FORWARD", in_interface => "<%= admin_dev %>", out_interface => "<%= guest_dev %>", protocol => ""}
+firewall_rule{"nat-postrouting": table => "nat", chain => "POSTROUTING", out_interface => "<%= guest_dev %>", protocol => "", action => "MASQUERADE"}
 <% end %>
 include postgres::bundled
 include freeipa::bundled

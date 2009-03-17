@@ -22,7 +22,7 @@
 
 import "augeas"
 
-define dns::common($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") {
+define dns::common($guest_ipaddr="", $admin_ipaddr="",$guest_dev="",$admin_dev="") {
 
     package {"dnsmasq":
         ensure => installed,
@@ -43,7 +43,7 @@ define dns::common($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") {
     }
 
     single_exec {"add_dns_server_to_resolv.conf":
-        command => "/bin/sed -e '1i nameserver $prov_ipaddr' -i /etc/resolv.conf",
+        command => "/bin/sed -e '1i nameserver $admin_ipaddr' -i /etc/resolv.conf",
         require => [Single_exec["set_hostname"]]
     }
 
@@ -61,18 +61,18 @@ define dns::common($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") {
 
     file_append {"dhclient_config":
         file => "/etc/dhclient.conf",
-        line => "prepend domain-name-servers $prov_ipaddr;",
+        line => "prepend domain-name-servers $admin_ipaddr;",
         require => [Single_exec["set_hostname"], Package["dnsmasq"], File["/etc/dhclient.conf"]]  ,
         notify => Service[dnsmasq],
     }
 }
 
-define dns::bundled($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") {
+define dns::bundled($guest_ipaddr="", $admin_ipaddr="",$guest_dev="",$admin_dev="") {
 
-    dns::common{"setup": mgmt_ipaddr=>$mgmt_ipaddr, prov_ipaddr=>$prov_ipaddr, mgmt_dev=>$mgmt_dev, prov_dev=>$prov_dev}
+    dns::common{"setup": guest_ipaddr=>$guest_ipaddr, admin_ipaddr=>$admin_ipaddr, guest_dev=>$guest_dev, admin_dev=>$admin_dev}
 
-	single_exec {"add_mgmt_server_to_etc_hosts":
-		command => "/bin/echo $mgmt_ipaddr $ipa_host >> /etc/hosts",
+	single_exec {"add_guest_server_to_etc_hosts":
+		command => "/bin/echo $guest_ipaddr $ipa_host >> /etc/hosts",
 		notify => [Service[dnsmasq], Single_exec["add_dns_server_to_resolv.conf"]]
 	}
 
@@ -88,7 +88,7 @@ define dns::bundled($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") 
 
 }
 
-define dns::remote($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") {
+define dns::remote($guest_ipaddr="", $admin_ipaddr="",$guest_dev="",$admin_dev="") {
 
 #    On the pxe server you will need to ensure that the
 #    next server option points to the ip address of the tftp server
@@ -106,6 +106,6 @@ define dns::remote($mgmt_ipaddr="", $prov_ipaddr="",$mgmt_dev="",$prov_dev="") {
 # Also A records must be present for each oVirt node. Without this they are unable
 # to determine their hostname and locate the management server.
 
-    dns::common{"setup": mgmt_ipaddr=>$mgmt_ipaddr, prov_ipaddr=>$prov_ipaddr, mgmt_dev=>$mgmt_dev, prov_dev=>$prov_dev}
+    dns::common{"setup": guest_ipaddr=>$guest_ipaddr, admin_ipaddr=>$admin_ipaddr, guest_dev=>$guest_dev, admin_dev=>$admin_dev}
 
 }

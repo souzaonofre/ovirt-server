@@ -56,7 +56,7 @@ class freeipa::bundled{
 
 	single_exec {"dnsmasq_restart":
                 command => "/usr/bin/pkill dnsmasq;/etc/init.d/dnsmasq start",
-                require => [Single_exec[add_mgmt_server_to_etc_hosts],Package[dnsmasq]]
+                require => [Single_exec[add_guest_server_to_etc_hosts],Package[dnsmasq]]
 	}
 
         single_exec {"ipa_server_install":
