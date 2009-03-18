@@ -75,23 +75,30 @@ class DbOmatic < Qpid::Qmf::Console
         end
         @logger.info "dbomatic started."
 
-        ensure_credentials
+        begin
+            ensure_credentials
 
-        database_connect
+            database_connect
 
-        server, port = nil
-        sleepy = 5
-        while true do
-            server, port = get_srv('qpidd', 'tcp')
-            break if server
-            @logger.error "Unable to determine qpid server from DNS SRV record, retrying.." if not server
-            sleep(sleepy)
-            sleepy *= 2 if sleepy < 120
+            server, port = nil
+            sleepy = 5
+            while true do
+                server, port = get_srv('qpidd', 'tcp')
+                break if server
+                @logger.error "Unable to determine qpid server from DNS SRV record, retrying.." if not server
+                sleep(sleepy)
+                sleepy *= 2 if sleepy < 120
+            end
+
+            @logger.info "Connecting to amqp://#{server}:#{port}"
+            @session = Qpid::Qmf::Session.new(:console => self, :manage_connections => true)
+            @broker = @session.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
+
+            db_init_cleanup
+        rescue Exception => ex
+            @logger.error "Error in db-omatic: #{ex}"
+            @logger.error ex.backtrace
         end
-
-        @logger.info "Connecting to amqp://#{server}:#{port}"
-        @session = Qpid::Qmf::Session.new(:console => self, :manage_connections => true)
-        @broker = @session.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
     end
 
 
@@ -403,30 +410,35 @@ class DbOmatic < Qpid::Qmf::Console
     # and makes sure all the agents are still reporting.  If they aren't they get marked as
     # down.
     def check_heartbeats()
-        while true
-            sleep(5)
+        begin
+            while true
+                sleep(5)
 
-            synchronize do
-                # Get seconds from the epoch
-                t = Time.new.to_i
+                synchronize do
+                    # Get seconds from the epoch
+                    t = Time.new.to_i
 
-                @heartbeats.keys.each do | key |
-                    agent, timestamp = @heartbeats[key]
+                    @heartbeats.keys.each do | key |
+                        agent, timestamp = @heartbeats[key]
 
-                    # Heartbeats from qpid are in microseconds, we just need seconds..
-                    s = timestamp / 1000000000
-                    delta = t - s
+                        # Heartbeats from qpid are in microseconds, we just need seconds..
+                        s = timestamp / 1000000000
+                        delta = t - s
 
-                    if delta > 30
-                        # No heartbeat for 30 seconds.. deal with dead/disconnected agent.
-                        agent_disconnected(agent)
+                        if delta > 30
+                            # No heartbeat for 30 seconds.. deal with dead/disconnected agent.
+                            agent_disconnected(agent)
 
-                        @heartbeats.delete(key)
-                    else
-                        agent_connected(agent)
+                            @heartbeats.delete(key)
+                        else
+                            agent_connected(agent)
+                        end
                     end
                 end
             end
+        rescue Exception => ex
+            @logger.error "Error in db-omatic: #{ex}"
+            @logger.error ex.backtrace
         end
     end
 end
@@ -436,10 +448,9 @@ def main()
 
     dbsync = DbOmatic.new()
 
-    dbsync.db_init_cleanup()
-
     # Call into mainloop..
     dbsync.check_heartbeats()
+
 end
 
 main()
