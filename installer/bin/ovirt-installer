@@ -124,6 +124,12 @@ if (prompt_yes_no(welcome, :default => "y") == "n")
     exit(0)
 end
 
+modssl_check = `rpm -q mod_ssl`
+if modssl_check !~ /(not installed)/
+    puts "\nmod_ssl package must be removed prior to installing, to remove run: rpm -e mod_ssl\n\n"
+    exit
+end
+
 if File.exist?("/usr/sbin/selinuxenabled")
     sestatus = system "/usr/sbin/selinuxenabled"
     if sestatus == true
