@@ -34,6 +34,13 @@ class ovirt::setup {
 		require => Package[ovirt-server]
         }
 
+	file_replacement{"ovirt_httpd_config_change_server_fqdn":
+	        file => "/etc/httpd/conf.d/ovirt-server.conf",
+	        pattern => "AdminNodeFQDN",
+	        replacement => "$ovirt_host",
+		require => Package[ovirt-server]
+        }
+
         package {"ovirt-server":
 		ensure => installed,
 		require => Single_exec[set_pw_expiration]
