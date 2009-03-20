@@ -61,7 +61,7 @@ class cobbler::bundled {
 		ensure => installed
 	}
 
-        package {"ovirt-node-image":
+        package {"ovirt-node-image-pxe":
                 ensure => installed
         }
 
@@ -119,7 +119,7 @@ class cobbler::bundled {
     single_exec {"cobbler-import":
         command => "/usr/sbin/cobbler-import >> /var/log/cobbler-import.log 2>&1",
         require => [File["/usr/sbin/cobbler-import"],
-                   Service["cobblerd"],Package[ovirt-node-image],Package[livecd-tools]]
+                   Service["cobblerd"],Package[ovirt-node-image-pxe],Package[livecd-tools]]
     }
         file_replacement{"settings_auth_module":
                 file => "/etc/cobbler/settings",

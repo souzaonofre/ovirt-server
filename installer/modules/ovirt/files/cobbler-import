@@ -44,11 +44,6 @@ done
 node_arch=$(rpm -q --qf "%{arch}" ovirt-node-image)
 node_dir=/usr/share/ovirt-node-image
 
-# Create PXE images from oVirt ISO
-pushd $node_dir
-ovirt-pxe ovirt-node-image.iso
-popd
-
 cobbler distro add --name="oVirt-Node-$node_arch" --arch=$node_arch \
     --initrd=$node_dir/tftpboot/initrd0.img --kernel=$node_dir/tftpboot/vmlinuz0 \
     --kopts="rootflags=loop root=/ovirt-node-image.iso rootfstype=iso9660 ro console=tty0 console=ttyS0,115200n8"
