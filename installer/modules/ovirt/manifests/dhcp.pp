@@ -31,6 +31,7 @@ class dhcp::bundled {
 
 	single_exec {"dns_entries":
                 command => "/usr/share/ace/modules/ovirt/files/dns_entries.sh $dhcp_start $dhcp_stop $dhcp_network $dhcp_domain",
+                notify => Service[dnsmasq]
 	}
 
         firewall_rule {"tftp": destination_port => '69', protocol => 'udp'}
