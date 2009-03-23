@@ -24,8 +24,11 @@ class Permission < ActiveRecord::Base
   has_many   :child_permissions, :dependent => :destroy,
              :class_name => "Permission", :foreign_key => "inherited_from_id"
 
+  validates_presence_of :pool_id
 
+  validates_presence_of :uid
   validates_uniqueness_of :uid, :scope => [:pool_id, :inherited_from_id]
+
 
   ROLE_SUPER_ADMIN = "Super Admin"
   ROLE_ADMIN       = "Administrator"
@@ -44,6 +47,10 @@ class Permission < ActiveRecord::Base
             ROLE_USER        => [PRIV_VIEW, PRIV_VM_CONTROL],
             ROLE_MONITOR     => [PRIV_VIEW]}
  
+
+  validates_inclusion_of :user_role,
+     :in => ROLES.keys
+
   def self.invert_roles
     return_hash = {}
     ROLES.each do |role, privs|

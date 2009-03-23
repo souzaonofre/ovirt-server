@@ -22,6 +22,12 @@ require File.dirname(__FILE__) + '/../test_helper'
 class PoolTest < Test::Unit::TestCase
   fixtures :pools
 
+  def setup
+     @pool = Pool.new(
+       :name => 'foobar',
+       :type => 'DirectoryPool' )
+  end
+
   # Replace this with your real tests.
   def test_get_name
     assert_equal(pools(:corp_com_prod).name, 'Production Operations')
@@ -29,5 +35,20 @@ class PoolTest < Test::Unit::TestCase
 
   def test_get_parent
     assert_equal(pools(:corp_com_prod).parent.name, 'corp.com')
+  end
+
+  def test_valid_fails_without_name
+     @pool.name = ''
+     flunk "Pool must specify name" if @pool.valid?
+  end
+
+  def test_valid_fails_without_unique_name
+     @pool.name = 'root'
+     flunk "Pool must specify unique name" if @pool.valid?
+  end
+
+  def test_valid_fails_with_invalid_type
+     @pool.name = 'foobar'
+     flunk "Pool must specify valid type" if @pool.valid?
   end
 end

@@ -31,3 +31,12 @@ bootp_physical_network_one:
   name: BOOTP Physical Network 1
   boot_type: boot_type_bootp
 
+default_physical_network:
+  type: PhysicalNetwork
+  name: Default Physical Network
+  boot_type: boot_type_dhcp
+
+default_vlan:
+  type: Vlan
+  name: Default VLAN
+  boot_type: boot_type_dhcp

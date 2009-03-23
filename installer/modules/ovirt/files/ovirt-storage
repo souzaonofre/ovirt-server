@@ -1,0 +1,73 @@
+#!/bin/bash
+#
+# ovirt-storage Set up storage for oVirt Server Appliance
+#
+# chkconfig: 3 96 4
+# description: oVirt Appliance Storage Services
+#
+
+# Source functions library
+. /etc/init.d/functions
+TARGET_ID=32101
+
+prog="ovirt-storage"
+num_iscsi_luns=5
+
+start() {
+    echo -n "Starting $prog: "
+
+    # Set up the fake iscsi target
+    tgtadm --lld iscsi --op new --mode target --tid $TARGET_ID \
+        -T ovirtpriv:storage
+
+    #
+    # Now associate them to the LVs
+    #
+    for i in `seq 1 $num_iscsi_luns` ; do
+        tgtadm --lld iscsi --op new --mode logicalunit --tid $TARGET_ID \
+            --lun $i -b /ovirtiscsi/iSCSI$i
+    done
+
+    #
+    # Now make them available
+    #
+    tgtadm --lld iscsi --op bind --mode target --tid $TARGET_ID -I ALL
+
+    echo_success
+    echo
+}
+
+stop() {
+    echo -n "Stopping $prog: "
+
+    # stop access to the iscsi target
+    tgtadm --lld iscsi --op unbind --mode target --tid $TARGET_ID -I ALL
+
+    # unbind the LUNs
+    for i in `seq 1 $num_iscsi_luns` ; do
+        tgtadm --lld iscsi --op delete --mode logicalunit --tid $TARGET_ID --lun $i
+    done
+
+    # shutdown the target
+    tgtadm --lld iscsi --op delete --mode target --tid $TARGET_ID
+
+    echo_success
+    echo
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 2
+esac
+

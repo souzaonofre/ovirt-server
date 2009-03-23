@@ -31,6 +31,14 @@ class PoolController < ApplicationController
     :include => [ :storage_pools, :hosts, :quota ]
   }
 
+  include TaskActions
+  def tasks_query_obj
+    @pool.tasks
+  end
+  def tasks_conditions
+    {}
+  end
+
   def show
     respond_to do |format|
       format.html {
@@ -54,41 +62,10 @@ class PoolController < ApplicationController
   end
 
   def users_json
-    json_list(@pool.permissions,
-              [:grid_id, :uid, :user_role, :source])
-  end
-
-  def show_tasks
-    @task_states = [["Queued", Task::STATE_QUEUED],
-                    ["Running", Task::STATE_RUNNING],
-                    ["Paused", Task::STATE_PAUSED],
-                    ["Finished", Task::STATE_FINISHED],
-                    ["Failed", Task::STATE_FAILED],
-                    ["Canceled", Task::STATE_CANCELED, "break"],
-                    ["Show All", ""]]
-    params[:page]=1
-    params[:sortname]="tasks.created_at"
-    params[:sortorder]="desc"
-    @tasks = tasks_internal
-    show
-  end
-
-  def tasks
-    render :json => tasks_internal.to_json
-  end
-
-  def tasks_internal
-    @task_state = params[:task_state]
-    @task_state ||=Task::STATE_QUEUED
-    conditions = {}
-    conditions[:type] = @task_type unless @task_type.empty?
-    conditions[:state] = @task_state unless @task_state.empty?
-    find_opts = {:include => [:storage_pool, :host, :vm]}
-    find_opts[:conditions] = conditions unless conditions.empty?
     attr_list = []
-    attr_list << :id if params[:checkboxes]
-    attr_list += [:type_label, :task_obj, :action, :state, :user, :created_at, :args, :message]
-    json_hash(@pool.tasks, attr_list, [:all], find_opts)
+    attr_list << :grid_id if params[:checkboxes]
+    attr_list += [:uid, :user_role, :source]
+    json_list(@pool.permissions, attr_list)
   end
 
   def hosts_json(args)
@@ -128,7 +105,6 @@ class PoolController < ApplicationController
   def pre_new
     @parent = Pool.find(params[:parent_id])
     @perm_obj = @parent
-    @redir_controller = @perm_obj.get_controller
     @current_pool_id=@parent.id
   end
   def pre_create
@@ -139,7 +115,6 @@ class PoolController < ApplicationController
       @parent = Pool.find(params[:parent_id])
     end
     @perm_obj = @parent
-    @redir_controller = @perm_obj.get_controller
     @current_pool_id=@parent.id
   end
   def pre_show_pool

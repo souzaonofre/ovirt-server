@@ -6,22 +6,22 @@
 </div>
 
 <textarea id="tree_template" style="display:none;">
-{macro htmlList(list, isFullList)}
+{macro htmlList(list, id, isFullList)}
   {if isFullList}
   <ul style="display:none;">
   {/if}
     {for item in list}
       <li>
         <span class="hitarea {if item.children.length > 0} expandable{/if}">&nbsp;</span>
-        <div id="tree_${item.type}_${item.id}">
+        <div id="${id}-${item.ui_object}">
           <input class="grid_checkbox" type="checkbox"
-            name="grid_checkbox${item.type}_${item.id}"
+            name="grid_checkbox${item.ui_object}"
             value="${item.id}"
             {if !item.is_pool}disabled="disabled" style="display:none"{/if}
             {if item.selected}checked="checked"{/if}/> ${item.name} {if item.size}(${item.size} GB){/if}
         </div>
         {if item.children.length > 0}
-          ${htmlList(item.children, true)}
+          ${htmlList(item.children, id, true)}
         {/if}
       </li>
     {/for}
@@ -30,7 +30,7 @@
   {/if}
 {/macro}
 
-${htmlList(pools)}
+${htmlList(pools, id)}
 </textarea>
 
 <script type="text/javascript">
@@ -63,11 +63,13 @@ ${htmlList(pools)}
   }
   function smart_storage_select(e, elem)
   {
-    $('#smart_storage_tree_form ul.ovirt-tree li div').removeClass('current');
-    $(elem)
+    if ($(e.target).is('div') && $(e.target).parent().is('li')){
+      $('#smart_storage_tree_form .current').removeClass('current');
+      $(e.target)
       .addClass('current');
-    $('#smart_storage_selection').load('<%= url_for :controller => "search", :action => "single_result" %>',
-                { class_and_id: elem.id.substring(elem.id.indexOf("_")+1)});
+      $('#smart_storage_selection').load('<%= url_for :controller => "search", :action => "single_result" %>',
+                { class_and_id: e.target.id.substring(e.target.id.indexOf("-")+1)});
+    }
   }
 
 </script>

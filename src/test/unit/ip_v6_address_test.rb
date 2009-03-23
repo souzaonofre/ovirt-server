@@ -23,7 +23,8 @@ class IpV6AddressTest < ActiveSupport::TestCase
   def setup
     @address = IpV6Address.new(:address => 'fe80:0:0:0:200:f8ff:fe21:67cf',
                               :gateway => ':::::::717',
-                              :prefix  => '0000:0000:0000:0000:1234:1234:1234:1234')
+                              :prefix  => '0000:0000:0000:0000:1234:1234:1234:1234',
+                              :nic_id => 1)
   end
 
   # Ensures that the address must be provided.

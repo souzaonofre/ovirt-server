@@ -18,4 +18,9 @@
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
 class BootType < ActiveRecord::Base
+  validates_presence_of :label
+  validates_uniqueness_of :label,
+    :message => 'Label must be unique'
+  validates_inclusion_of :proto,
+    :in => %w( static dhcp bootp )
 end

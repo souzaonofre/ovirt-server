@@ -7,7 +7,7 @@
 <div class="selected_popup_content_left">Network:</div>
 <div class="selected_popup_content_right">
     <%= select_with_label "", target, network_id,
-    @networks.collect { |n| [n.name + ' - ' + n.boot_type.label, n.id ] } %>
+    @networks.collect { |n| [n.name + ' - ' + n.boot_type.label, n.id ] }.insert(0, "") %>
 
 </div>
 

@@ -11,6 +11,8 @@ production_httpd_vm:
   boot_device: hd
   host: prod_corp_com
   vm_resource_pool: corp_com_production_vmpool
+  forward_vnc: true
+  forward_vnc_port: 5900
 production_mysqld_vm:
   uuid: 89e62d32-04d9-4351-b573-b1a253397296
   description: production mysqld appliance

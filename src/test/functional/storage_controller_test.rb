@@ -69,11 +69,11 @@ class StorageControllerTest < Test::Unit::TestCase
     assert_not_nil assigns(:storage_pools)
   end
 
-  def test_create
+  def test_create_storage_controller
     hw_pool = HardwarePool.get_default_pool
     num_storage_volumes = StoragePool.count
 
-    post :create, :storage_type => 'NFS', :storage_pool => { :hardware_pool => hw_pool, :ip_addr => '111.121.131.141', :export_path => '/tmp/path' }
+    post :create, :storage_type => 'NFS', :storage_pool => { :hardware_pool => hw_pool, :ip_addr => '111.121.131.141', :export_path => '/tmp/path', :state => 'available', :capacity => 1024 }
 
     assert_response :success
 

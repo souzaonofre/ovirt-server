@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 
 $: << File.join(File.dirname(__FILE__), "../dutils")
+$: << File.join(File.dirname(__FILE__), ".")
 
 require "rubygems"
 require "qpid"
@@ -8,7 +9,25 @@ require 'monitor'
 require 'dutils'
 require 'daemons'
 require 'optparse'
+require 'logger'
+require 'vnc'
+
 include Daemonize
+
+
+# This sad and pathetic readjustment to ruby logger class is
+# required to fix the formatting because rails does the same
+# thing but overrides it to just the message.
+#
+# See eg: http://osdir.com/ml/lang.ruby.rails.core/2007-01/msg00082.html
+#
+class Logger
+  def format_message(severity, timestamp, progname, msg)
+    "#{severity} #{timestamp} (#{$$}) #{msg}\n"
+  end
+end
+
+$logfile = '/var/log/ovirt-server/db-omatic.log'
 
 
 class DbOmatic < Qpid::Qmf::Console
@@ -22,18 +41,82 @@ class DbOmatic < Qpid::Qmf::Console
         super()
         @cached_objects = {}
         @heartbeats = {}
+        @broker = nil
 
-        database_connect
+        do_daemon = true
+
+        opts = OptionParser.new do |opts|
+            opts.on("-h", "--help", "Print help message") do
+                puts opts
+                exit
+            end
+            opts.on("-n", "--nodaemon", "Run interactively (useful for debugging)") do |n|
+                do_daemon = false
+            end
+        end
+        begin
+            opts.parse!(ARGV)
+        rescue OptionParser::InvalidOption
+            puts opts
+            exit
+        end
+
+        if do_daemon
+            # XXX: This gets around a problem with paths for the database stuff.
+            # Normally daemonize would chdir to / but the paths for the database
+            # stuff are relative so it breaks it.. It's either this or rearrange
+            # things so the db stuff is included after daemonizing.
+            pwd = Dir.pwd
+            daemonize
+            Dir.chdir(pwd)
+            @logger = Logger.new($logfile)
+        else
+            @logger = Logger.new(STDERR)
+        end
+        @logger.info "dbomatic started."
+
+        begin
+            ensure_credentials
+
+            database_connect
+
+            server, port = nil
+            sleepy = 5
+            while true do
+                server, port = get_srv('qpidd', 'tcp')
+                break if server
+                @logger.error "Unable to determine qpid server from DNS SRV record, retrying.." if not server
+                sleep(sleepy)
+                sleepy *= 2 if sleepy < 120
+            end
+
+            @logger.info "Connecting to amqp://#{server}:#{port}"
+            @session = Qpid::Qmf::Session.new(:console => self, :manage_connections => true)
+            @broker = @session.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
+
+            db_init_cleanup
+        rescue Exception => ex
+            @logger.error "Error in db-omatic: #{ex}"
+            @logger.error ex.backtrace
+        end
     end
 
-    def log(s)
-        puts "#{Time.now}: #{s}"
+
+    def ensure_credentials()
+        get_credentials('qpidd')
+
+        Thread.new do
+            while true do
+                sleep(3600)
+                get_credentials('qpidd')
+            end
+        end
     end
 
     def update_domain_state(domain, state_override = nil)
         vm = Vm.find(:first, :conditions => [ "uuid = ?", domain['uuid'] ])
         if vm == nil
-            log "VM Not found in database, must be created by user; ignoring."
+            @logger.info "VM Not found in database, must be created by user; ignoring."
 
             #XXX: I mark this one as 'synced' here even though we couldn't sync
             #it because there really should be a db entry for every vm unless it
@@ -67,7 +150,37 @@ class DbOmatic < Qpid::Qmf::Console
             end
         end
 
-        log "Updating VM #{domain['name']} to state #{state}"
+        begin
+          # find open vm host history for this vm,
+          history = VmHostHistory.find(:first, :conditions => ["vm_id = ? AND time_ended is NULL", vm.id])
+
+          if state == Vm::STATE_RUNNING
+             if history.nil?
+               history = VmHostHistory.new
+               history.vm = vm
+               history.host = vm.host
+               history.vnc_port = vm.vnc_port
+               history.state = state
+               history.time_started = Time.now
+               history.save!
+             end
+
+             VmVnc.forward(vm)
+          elsif state != Vm::STATE_PENDING
+             VmVnc.close(vm, history)
+
+             unless history.nil? # throw an exception if this fails?
+               history.time_ended = Time.now
+               history.state = state
+               history.save!
+             end
+          end
+
+        rescue Exception => e # just log any errors here
+            @logger.error "Error with VM #{domain['name']} operation: " + e
+        end
+
+        @logger.info "Updating VM #{domain['name']} to state #{state}"
         vm.state = state
         vm.save
 
@@ -77,7 +190,7 @@ class DbOmatic < Qpid::Qmf::Console
     def update_host_state(host_info, state)
         db_host = Host.find(:first, :conditions => [ "hostname = ?", host_info['hostname'] ])
         if db_host
-            log "Marking host #{host_info['hostname']} as state #{state}."
+            @logger.info "Marking host #{host_info['hostname']} as state #{state}."
             db_host.state = state
             db_host.hypervisor_type = host_info['hypervisorType']
             db_host.arch = host_info['model']
@@ -90,9 +203,25 @@ class DbOmatic < Qpid::Qmf::Console
             #db_host.is_disabled = 0
             db_host.save
             host_info[:synced] = true
+
+            if state == Host::STATE_AVAILABLE
+                # At this point we want to set all domains that are
+                # unreachable to stopped.  If a domain is indeed running
+                # then dbomatic will see that and set it either before
+                # or after.  If the node was rebooted, the VMs will all
+                # be gone and dbomatic won't see them so we need to set
+                # them to stopped.
+                db_vm = Vm.find(:all, :conditions => ["host_id = ? AND state = ?", db_host.id, Vm::STATE_UNREACHABLE])
+                db_vm.each do |vm|
+                    @logger.info "Moving vm #{vm.description} in state #{vm.state} to state stopped."
+                    vm.state = Vm::STATE_STOPPED
+                    vm.save!
+                end
+            end
+
         else
             # FIXME: This would be a newly registered host.  We could put it in the database.
-            log "Unknown host, probably not registered yet??"
+            @logger.info "Unknown host #{host_info['hostname']}, probably not registered yet??"
             # XXX: So it turns out this can happen as there is a race condition on bootup
             # where the registration takes longer than libvirt-qpid does to relay information.
             # So in this case, we mark this object as not synced so it will get resynced
@@ -115,41 +244,58 @@ class DbOmatic < Qpid::Qmf::Console
 
             if values == nil
                 values = {}
-                @cached_objects[obj.object_id.to_s] = values
 
                 # Save the agent and broker bank so that we can tell what objects
                 # are expired when the heartbeat for them stops.
                 values[:broker_bank] = obj.object_id.broker_bank
                 values[:agent_bank] = obj.object_id.agent_bank
+                values[:obj_key] = obj.object_id.to_s
                 values[:class_type] = obj.klass_key[1]
                 values[:timed_out] = false
                 values[:synced] = false
-                log "New object type #{type}"
+                @logger.info "New object type #{type}"
 
                 new_object = true
+
+                if type == "node"
+                    # It's a new node object..
+                    # We want to make sure there are no old objects for this same host name
+                    # that can mess up our timeouts etc.  It's also good bookkeeping.
+                    @cached_objects.each do |objkey, o|
+                        if o[:class_type] == 'node' and o['hostname'] == obj.hostname
+                            @logger.info "Old object for host #{o['hostname']} exists, removing it from cache"
+                            @cached_objects.delete(objkey)
+                        end
+                    end
+                end
+
+                # Same thing for domains..
+                if type == "domain"
+                    @cached_objects.each do |objkey, o|
+                        if o[:class_type] == 'domain' and o['uuid'] == obj.uuid and o['name'] == obj.name
+                            @logger.info "Old object for domain #{o['name']} exists, removing it from cache"
+                            @cached_objects.delete(objkey)
+                        end
+                    end
+                end
+
+                @cached_objects[obj.object_id.to_s] = values
             end
 
-            domain_state_change = false
+            update_domain = false
 
             obj.properties.each do |key, newval|
                 if values[key.to_s] != newval
                     values[key.to_s] = newval
-                    #log "new value for property #{key} : #{newval}"
+                    #puts "new value for property #{key} : #{newval}"
                     if type == "domain" and key.to_s == "state"
-                        domain_state_change = true
+                        update_domain = true
                     end
                 end
             end
 
-            if domain_state_change
-                update_domain_state(values)
-            end
-
-            if new_object
-                if type == "node"
-                    update_host_state(values, Host::STATE_AVAILABLE)
-                end
-            end
+            update_host_state(values, Host::STATE_AVAILABLE) if new_object and type == 'node'
+            update_domain_state(values) if update_domain
         end
     end
 
@@ -173,7 +319,7 @@ class DbOmatic < Qpid::Qmf::Console
             obj.statistics.each do |key, newval|
                 if values[key.to_s] != newval
                     values[key.to_s] = newval
-                    #log "new value for statistic #{key} : #{newval}"
+                    #puts "new value for statistic #{key} : #{newval}"
                 end
             end
         end
@@ -200,8 +346,9 @@ class DbOmatic < Qpid::Qmf::Console
                @cached_objects[objkey][:agent_bank] == agent.agent_bank
 
                 values = @cached_objects[objkey]
-                log "Marking object of type #{values[:class_type]} as timed out."
                 if values[:timed_out] == false
+                    @logger.info "Marking object of type #{values[:class_type]} with key #{objkey} as timed out."
+
                     if values[:class_type] == 'node'
                         update_host_state(values, Host::STATE_UNAVAILABLE)
                     elsif values[:class_type] == 'domain'
@@ -223,7 +370,6 @@ class DbOmatic < Qpid::Qmf::Console
 
                 values = @cached_objects[objkey]
                 if values[:timed_out] == true or values[:synced] == false
-                    log "Marking object of type #{values[:class_type]} as in service."
                     if values[:class_type] == 'node'
                         update_host_state(values, Host::STATE_AVAILABLE)
                     elsif values[:class_type] == 'domain'
@@ -240,14 +386,20 @@ class DbOmatic < Qpid::Qmf::Console
     def db_init_cleanup()
         db_host = Host.find(:all)
         db_host.each do |host|
-            log "Marking host #{host.hostname} unavailable"
+            @logger.info "Marking host #{host.hostname} unavailable"
             host.state = Host::STATE_UNAVAILABLE
             host.save
         end
 
+        begin
+           VmVnc.deallocate_all
+         rescue Exception => e # just log any errors here
+            @logger.error "Error with closing all VM VNCs operation: " + e
+         end
+
         db_vm = Vm.find(:all)
         db_vm.each do |vm|
-            log "Marking vm #{vm.description} as stopped."
+            @logger.info "Marking vm #{vm.description} as stopped."
             vm.state = Vm::STATE_STOPPED
             vm.save
         end
@@ -258,80 +410,47 @@ class DbOmatic < Qpid::Qmf::Console
     # and makes sure all the agents are still reporting.  If they aren't they get marked as
     # down.
     def check_heartbeats()
-        while true
-            sleep(5)
+        begin
+            while true
+                sleep(5)
 
-            synchronize do
-                # Get seconds from the epoch
-                t = Time.new.to_i
+                synchronize do
+                    # Get seconds from the epoch
+                    t = Time.new.to_i
 
-                @heartbeats.keys.each do | key |
-                    agent, timestamp = @heartbeats[key]
+                    @heartbeats.keys.each do | key |
+                        agent, timestamp = @heartbeats[key]
 
-                    # Heartbeats from qpid are in microseconds, we just need seconds..
-                    s = timestamp / 1000000000
-                    delta = t - s
+                        # Heartbeats from qpid are in microseconds, we just need seconds..
+                        s = timestamp / 1000000000
+                        delta = t - s
 
-                    if delta > 30
-                        # No heartbeat for 30 seconds.. deal with dead/disconnected agent.
-                        agent_disconnected(agent)
+                        if delta > 30
+                            # No heartbeat for 30 seconds.. deal with dead/disconnected agent.
+                            agent_disconnected(agent)
 
-                        @heartbeats.delete(key)
-                    else
-                        agent_connected(agent)
+                            @heartbeats.delete(key)
+                        else
+                            agent_connected(agent)
+                        end
                     end
                 end
             end
+        rescue Exception => ex
+            @logger.error "Error in db-omatic: #{ex}"
+            @logger.error ex.backtrace
         end
     end
 end
 
 
-$logfile = '/var/log/ovirt-server/db-omatic.log'
-
 def main()
 
-    do_daemon = true
-
-    opts = OptionParser.new do |opts|
-        opts.on("-h", "--help", "Print help message") do
-            puts opts
-            exit
-        end
-        opts.on("-n", "--nodaemon", "Run interactively (useful for debugging)") do |n|
-            do_daemon = false
-        end
-    end
-    begin
-        opts.parse!(ARGV)
-    rescue OptionParser::InvalidOption
-        puts opts
-        exit
-    end
-
-    if do_daemon
-        # XXX: This gets around a problem with paths for the database stuff.
-        # Normally daemonize would chdir to / but the paths for the database
-        # stuff are relative so it breaks it.. It's either this or rearrange
-        # things so the db stuff is included after daemonizing.
-        pwd = Dir.pwd
-        daemonize
-        Dir.chdir(pwd)
-
-        lf = open($logfile, 'a')
-        $stdout = lf
-        $stderr = lf
-        puts "#{Time.now}: db_omatic started."
-    end
-
     dbsync = DbOmatic.new()
-    s = Qpid::Qmf::Session.new(:console => dbsync, :rcv_events => false)
-    b = s.add_broker("amqp://localhost:5672")
-
-    dbsync.db_init_cleanup()
 
     # Call into mainloop..
     dbsync.check_heartbeats()
+
 end
 
 main()

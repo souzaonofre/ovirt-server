@@ -29,4 +29,13 @@ class LvmStorageVolume < StorageVolume
   def volume_create_params
     return lv_name, size, lv_owner_perms, lv_group_perms, lv_mode_perms
   end
+
+  validates_presence_of :lv_name
+  validates_presence_of :lv_owner_perms
+  validates_presence_of :lv_group_perms
+  validates_presence_of :lv_mode_perms
+
+  def ui_parent
+    storage_pool.source_volumes[0][:type].to_s + '_' +storage_pool.source_volumes[0].id.to_s
+  end
 end

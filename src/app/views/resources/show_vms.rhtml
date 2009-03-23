@@ -1,21 +1,25 @@
 <div id="toolbar_nav">
 <ul>
-    <li><a href="<%= url_for :controller => 'vm', :action => 'new', :vm_resource_pool_id => @pool %>" rel="facebox[.bolder]"><%= image_tag "icon_addhost.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Add Virtual Machine</a></li>
-    <li>
-       <%= image_tag "icon_move.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Actions &nbsp;&nbsp;&nbsp;<%= image_tag "icon_toolbar_arrow.gif", :style => "vertical-align:middle;" %>
-       <ul>
-        <% @actions.each_index { |index| %>
-            <li onClick="vm_actions('<%=@actions[index][1]%>')"
-            <% if (index == @actions.length - 1) or @actions[index].length == 4 %>
-                style="border-bottom: 1px solid #CCCCCC;"
-            <% end %>
-               >
-                 <%= image_tag @actions[index][2]%>
-                 <%=@actions[index][0]%>
-            </li>
-        <% } %>
-       </ul>
-    </li>
+    <%if @can_modify -%>
+      <li><a href="<%= url_for :controller => 'vm', :action => 'new', :vm_resource_pool_id => @pool %>" rel="facebox[.bolder]"><%= image_tag "icon_addhost.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Add Virtual Machine</a></li>
+    <% end -%>
+    <%if @can_control_vms and -%>
+      <li>
+         <%= image_tag "icon_move.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Actions &nbsp;&nbsp;&nbsp;<%= image_tag "icon_toolbar_arrow.gif", :style => "vertical-align:middle;" %>
+         <ul>
+          <% @actions.each_index { |index| %>
+              <li onClick="vm_actions('<%=@actions[index][1]%>')"
+              <% if (index == @actions.length - 1) or @actions[index].length == 4 %>
+                  style="border-bottom: 1px solid #CCCCCC;"
+              <% end %>
+                 >
+                   <%= image_tag @actions[index][2]%>
+                   <%=@actions[index][0]%>
+              </li>
+          <% } %>
+         </ul>
+      </li>
+    <% end -%>
     <li>
        <%= image_tag "icon_smartpool.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Add to Smart Pool &nbsp;&nbsp;&nbsp;<%= image_tag "icon_toolbar_arrow.gif", :style => "vertical-align:middle;" %>
        <ul>
@@ -31,7 +35,9 @@
         <% } %>
        </ul>
     </li>
-    <li><a href="#" onClick="delete_vms()"><%= image_tag "icon_delete_white.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Delete</a></li>
+    <%if @can_modify -%>
+      <li><a href="#" onClick="delete_vms()"><%= image_tag "icon_delete_white.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Delete</a></li>
+    <% end -%>
 </ul>
 </div>
 <script type="text/javascript">
@@ -118,8 +124,10 @@
           
        <div class="no-grid-items-text">
             No vms found in this pool. <br/><br/>
-            <%= image_tag "icon_addhost.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;
-            <a href="<%= url_for :controller => 'vm', :action => 'new', :vm_resource_pool_id => @pool %>" rel="facebox[.bolder]">Add first virtual machine to resource pool</a></li>
+            <%if @can_modify -%>
+              <%= image_tag "icon_addhost.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;
+              <a href="<%= url_for :controller => 'vm', :action => 'new', :vm_resource_pool_id => @pool %>" rel="facebox[.bolder]">Add first virtual machine to resource pool</a></li>
+            <% end -%>
        </div>
     </div>
   </div>

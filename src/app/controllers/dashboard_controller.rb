@@ -18,19 +18,37 @@
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
 class DashboardController < ApplicationController
+
+  include TaskActions
+  def tasks_query_obj
+    Task
+  end
+  def tasks_conditions
+    {:user => get_login_user}
+  end
+
   def index
-    @default_pool = HardwarePool.get_default_pool
-    set_perms(@default_pool)
-    #remove these soon
-    @hardware_pools = HardwarePool.find(:all)
-    @available_hosts = Host.find(:all)
-    @available_storage_volumes = StorageVolume.find(:all)
-    @storage_pools = StoragePool.find(:all)
-    @hosts = Host.find(:all)
-    @storage_volumes = StorageVolume.find(:all)
-    @vms = Vm.find(:all)
-    if params[:ajax]
-      render :layout => 'tabs-and-content' #:template => 'hardware/show.html.erb'
+    @task_types = Task::TASK_TYPES_OPTIONS
+    @user = get_login_user
+    show_tasks
+  end
+
+  def show
+    respond_to do |format|
+      format.html {
+        render :layout => 'tabs-and-content' if params[:ajax]
+        render :layout => 'help-and-content' if params[:nolayout]
+      }
+      format.xml {
+        render :xml => @pool.to_xml(XML_OPTS)
+      }
     end
   end
+
+  def tasks_internal
+    @task_type = params[:task_type]
+    @task_type ||=""
+    super
+  end
+
 end

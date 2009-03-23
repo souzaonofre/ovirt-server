@@ -9,7 +9,7 @@
 <div id="select-host-nic" class="popup-content-selection">
 <%= select_with_label "NICs", "nic", "id",
         @host.nics.
-          collect{ |nic| [nic.mac, nic.id] }.
+          collect{ |nic| [nic.interface_name.to_s + " " + nic.mac, nic.id] }.
           insert(0, "") %>
 </div>
 

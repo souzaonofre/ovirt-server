@@ -19,7 +19,7 @@
 <tbody>
 <% for storage_volume in type_volumes %>
 <tr class="<%= cycle('odd','even', :name => type_volumes) %>">
-  <% vol_hash = { :controller => 'storage', :action => 'show_volume', :id => storage_volume }
+  <% vol_hash = { :controller => 'storage_volume', :action => 'show', :id => storage_volume }
      vol_hash[:vm_id] = vm_id if defined? vm_id
   %>
   <td style="text-align:left;"><%= link_to storage_volume.storage_pool.ip_addr, vol_hash, { :class => "show" } %>

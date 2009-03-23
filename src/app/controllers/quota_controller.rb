@@ -84,12 +84,10 @@ class QuotaController < ApplicationController
   def pre_new
     @quota = Quota.new( { :pool_id => params[:pool_id]})
     @perm_obj = @quota.pool
-    @redir_controller = @perm_obj.get_controller
   end
   def pre_create
     @quota = Quota.new(params[:quota])
     @perm_obj = @quota.pool
-    @redir_controller = @perm_obj.get_controller
   end
   def pre_show
     @quota = Quota.find(params[:id])
@@ -98,7 +96,6 @@ class QuotaController < ApplicationController
   def pre_edit
     @quota = Quota.find(params[:id])
     @perm_obj = @quota.pool
-    @redir_controller = @perm_obj.get_controller
   end
 
 end

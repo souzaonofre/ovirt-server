@@ -10,4 +10,9 @@ class IpAddressTest < ActiveSupport::TestCase
   def test_can_get_ipaddress_object
     assert_equal ip_addresses(:ip_v4_mailserver_nic_one).address, '172.31.0.15'
   end
+
+  def test_valid_fails_without_foreign_entity
+     @ip_address = IpAddress.new
+     flunk "Ip Address must be associated with network, nic, or bonding" if @ip_address.valid?
+  end
 end

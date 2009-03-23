@@ -19,8 +19,36 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class BootTypeTest < ActiveSupport::TestCase
-  # Replace this with your real tests.
-  def test_truth
-    assert true
-  end
+  fixtures :boot_types
+
+   def setup
+       @boot_type = BootType.new(
+            :label => 'TestBootType',
+            :proto => 'static' )
+   end
+
+   def test_valid_fails_without_label
+      @boot_type.label = ''
+
+      flunk 'Boot type must have label' if @boot_type.valid?
+   end
+
+   def test_valid_fails_without_unique_label
+     @boot_type.label = 'Static IP'
+
+      flunk 'Boot type must have unique label' if @boot_type.valid?
+   end
+
+   def test_valid_fails_with_bad_proto
+     @boot_type.proto = 'foobar'
+
+      flunk 'Boot type must have valid proto' if @boot_type.valid?
+   end
+
+   def test_find_all_for_boot_type
+      result = BootType.find(:all)
+
+      assert_equal 3, result.size, "Did not find right number of boot types"
+   end
+
 end

@@ -250,26 +250,19 @@ class HostBrowser
         puts "Saving new CPU records"
         cpu_info.collect do |cpu|
             detail = Cpu.new(
-                "cpu_number"      => cpu['CPUNUM'],
-                "core_number"     => cpu['CORENUM]'],
-                "number_of_cores" => cpu['NUMCORES'],
+                "cpu_number"      => cpu['CPUNUM'].to_i,
+                "core_number"     => cpu['CORENUM]'].to_i,
+                "number_of_cores" => cpu['NUMCORES'].to_i,
                 "vendor"          => cpu['VENDOR'],
                 "model"           => cpu['MODEL'],
                 "family"          => cpu['FAMILY'],
-                "cpuid_level"     => cpu['CPUIDLVL'],
+                "cpuid_level"     => cpu['CPUIDLVL'].to_i,
                 "speed"           => cpu['SPEED'],
                 "cache"           => cpu['CACHE'],
                 "flags"           => cpu['FLAGS'])
 
             host.cpus << detail
          end
-
-        # Create a new network for the host
-        boot_type = BootType.find_by_proto('dhcp')
-        network_name = (host.uuid ? host.uuid : "") + ' Physical Network'
-        network = PhysicalNetwork.create(
-                               :name => network_name,
-                               :boot_type_id => boot_type.id)
 
         # Update the NIC details for this host:
         # -if the NIC exists, then update the IP address
@@ -290,7 +283,8 @@ class HostBrowser
 
                     updated_nic = Nic.find_by_id(nic.id)
 
-                    updated_nic.bandwidth = detail['BANDWIDTH']
+                    updated_nic.bandwidth = detail['BANDWIDTH'].to_i
+                    updated_nic.interface_name = detail['IFACE_NAME']
 
                     updated_nic.save!
                     found=true
@@ -310,9 +304,9 @@ class HostBrowser
             puts "Creating a new nic..."
             detail = Nic.new(
                 'mac'          => nic['MAC'].upcase,
-                'bandwidth'    => nic['BANDWIDTH'],
+                'bandwidth'    => nic['BANDWIDTH'].to_i,
+                'interface_name'    => nic['IFACE_NAME'],
                 'usage_type'   => 1)
-            detail.physical_network = network
 
             host.nics << detail
         end
@@ -328,6 +322,7 @@ class HostBrowser
         krb5 = krb5_arg || Krb5.new
 
         default_realm = krb5.get_default_realm
+        qpidd_princ = 'qpidd/' + hostname + '@' + default_realm
         libvirt_princ = 'libvirt/' + hostname + '@' + default_realm
         outfile = ipaddress + '-libvirt.tab'
         @keytab_filename = @keytab_dir + outfile
@@ -338,6 +333,8 @@ class HostBrowser
             puts "Writing keytab file: #{@keytab_filename}" unless defined?(TESTING)
             kadmin_local('addprinc -randkey ' + libvirt_princ)
             kadmin_local('ktadd -k ' + @keytab_filename + ' ' + libvirt_princ)
+            kadmin_local('addprinc -randkey ' + qpidd_princ)
+            kadmin_local('ktadd -k ' + @keytab_filename + ' ' + qpidd_princ)
 
             File.chmod(0644,@keytab_filename)
         end

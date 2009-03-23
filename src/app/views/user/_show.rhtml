@@ -1,8 +1,10 @@
 <div id="toolbar_nav">
 <ul>
-    <li><a href="<%= url_for :controller => 'permission', :action => 'new', :pool_id => pool.id %>" rel="facebox[.bolder]"><%= image_tag "icon_addhost.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Add User</a></li>
-    <li><%= render :partial => 'user/change_role_menu' %></li>
-    <li><a href="#" onClick="delete_users()"><%= image_tag "icon_remove.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Remove</a></li>
+    <%if @can_modify -%>
+      <li><a href="<%= url_for :controller => 'permission', :action => 'new', :pool_id => pool.id %>" rel="facebox[.bolder]"><%= image_tag "icon_addhost.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Add User</a></li>
+      <li><%= render :partial => 'user/change_role_menu' %></li>
+      <li><a href="#" onClick="delete_users()"><%= image_tag "icon_remove.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Remove</a></li>
+    <% end -%>
 </ul>
 </div>
 <script type="text/javascript">
@@ -45,6 +47,7 @@
 <div class="data_section">
     <%= render :partial => "/user/grid", :locals => { :table_id => "users_grid",
                                                       :parent_controller => parent_controller,
+                                                      :checkboxes => @can_modify,
                                                       :pool => pool } %>
   <table id="users_grid" style="display:none"></table>
 </div>

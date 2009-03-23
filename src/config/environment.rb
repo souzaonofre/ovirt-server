@@ -82,7 +82,7 @@ Rails::Initializer.run do |config|
 
   # Activate observers that should always be running
   # config.active_record.observers = :cacher, :garbage_collector
-
+  config.active_record.observers = :host_observer
 end
 
 # Add new inflection rules using the following format
@@ -97,5 +97,3 @@ end
 # Add new mime types for use in respond_to blocks:
 # Mime::Type.register "text/richtext", :rtf
 # Mime::Type.register "application/x-mobile", :mobile
-
-MANAGED_NODE_CONFIGURATION_DIR = '/var/www/html/ovirt-cfgdb'

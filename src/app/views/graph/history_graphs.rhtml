@@ -10,7 +10,7 @@ $('#flex_history_chart').flash(
           height: 300,
           wmode: 'transparent',
           menu: false,
-          flashvars: { flexchart_data: "<%= url_for :controller =>'/graph', :action => 'flexchart_data' %>/<%= @id %>/memory/<%= Time.now.to_i - 60 * 60 * 24 %>/<%= Time.now.to_i %>" }
+          flashvars: { flexchart_data: "<%= url_for :controller =>'/graph', :action => 'flexchart_data' %>/<%= @id %>/memory/<%= Time.now.to_i - 60 * 60 * 24 %>/<%= Time.now.to_i %>/peak" }
         },
         { version: 9 }
     );

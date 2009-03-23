@@ -60,14 +60,14 @@ function add_storage(url)
     if (validate_selected(storage, "storage pool")) {
       $.post(url,
              { resource_ids: storage.toString() },
-              function(data,status){;
-                $(document).trigger('close.facebox');
-                // FIXME: this always reloads the tab for now
-	        grid = $("#storage_grid");
-                if (grid.size()>0 && grid != null) {
-                  grid.flexReload();
-                } else {
-                   $tabs.tabs("load",$tabs.data('selected.tabs'));
+              function(data,status){
+                if (data.success) {
+                  $(document).trigger('close.facebox');
+                  if ($("#storage_tree").size() > 0) {
+                    $('ul.ovirt-tree').trigger('STORAGE_VOLUME', [response.storage]);
+                  } else {
+                    $tabs.tabs("load",$tabs.data('selected.tabs'));
+                  }
                 }
 		if (data.alert) {
 		  $.jGrowl(data.alert);
@@ -138,23 +138,21 @@ function add_vms_to_smart_pool(url)
 // deal with ajax form response, filling in validation messages where required.
 function ajax_validation(response, status)
 {
-  if (response.object) {
-    $(".fieldWithErrors").removeClass("fieldWithErrors");
-    $("div.errorExplanation").remove();
-    if (!response.success && response.errors ) {
-      for(i=0; i<response.errors.length; i++) {
-        var element = $("div.form_field:has(#"+response.object + "_" + response.errors[i][0]+")");
-        if (element) {
-          element.addClass("fieldWithErrors");
-          for(j=0; j<response.errors[i][1].length; j++) {
-            element.append('<div class="errorExplanation">'+response.errors[i][1][j]+'</div>');
-          }
+  $(".fieldWithErrors").removeClass("fieldWithErrors");
+  $("div.errorExplanation").remove();
+  if (!response.success && response.errors ) {
+    for(i=0; i<response.errors.length; i++) {
+      var element = $("div.form_field:has(#"+response.object + "_" + response.errors[i][0]+")");
+      if (element) {
+        element.addClass("fieldWithErrors");
+        for(j=0; j<response.errors[i][1].length; j++) {
+          element.append('<div class="errorExplanation">'+response.errors[i][1][j]+'</div>');
         }
       }
     }
-    if (response.alert) {
-      $.jGrowl(response.alert);
-    }
+  }
+  if (response.alert) {
+    $.jGrowl(response.alert);
   }
 }
 
@@ -173,7 +171,7 @@ function afterHwPool(response, status){
           $tabs.tabs("load",$tabs.data('selected.tabs'));
         }
       }
-      
+
       //FIXME: point all these refs at a widget so we dont need the functions in here
       processTree();
 
@@ -208,9 +206,8 @@ function afterStoragePool(response, status){
     ajax_validation(response, status);
     if (response.success) {
       $(document).trigger('close.facebox');
-      grid = $("#storage_grid");
-      if (grid.size()>0 && grid != null) {
-        grid.flexReload();
+      if ($("#storage_tree").size() > 0) {
+        $('ul.ovirt-tree').trigger('STORAGE_VOLUME', [response.new_pool]);
       } else {
         $tabs.tabs("load",$tabs.data('selected.tabs'));
       }
@@ -317,4 +314,70 @@ function afterNetwork(response, status){
         $tabs.tabs("load",$tabs.data('selected.tabs'));
       }
     }
+}
+
+function handleTabsAndContent(data) {
+  $('#side-toolbar').html($(data).find('div.toolbar'));
+  $('#tabs-and-content-container').html($(data).not('div#side-toolbar'));
+}
+
+var VmCreator = {
+  checkedBoxesFromTree : [],
+  buildCheckboxList: function(id) {
+      var rawList = $('#'+ id + ' :checkbox:checked').parent('div');
+      if (rawList.length >0) {
+          rawList.each(function(i) {
+            VmCreator.checkedBoxesFromTree.push(rawList.get(i).id);
+          });
+      } else {
+          VmCreator.checkedBoxesFromTree.splice(0);
+      }
+  },
+  clickCheckboxes: function() {
+      $.each(VmCreator.checkedBoxesFromTree, function(n, curBox){
+          $('#' + curBox).children(':checkbox').click();
+      });
+      VmCreator.checkedBoxesFromTree = [];
+  },
+  recreateTree: function(o){
+      $('#storage_volumes_tree').tree({
+        content: o.content,
+        template: "storage_volumes_template",
+        selectedNodes: o.selectedNodes,
+        clickHandler: VmCreator.goToCreateStorageHandler,
+        channel: 'STORAGE_VOLUME',
+        refresh: VmCreator.returnToVmForm
+      });
+  },
+  goToCreateStorageHandler: function goToCreateStorageHandler(e,elem){
+    if ($(e.target).is('img') && $(e.target).parent().is('div')){
+        //remove the temp form in case there is one hanging around for some reason
+        $('temp_create_vm_form').remove();
+        VmCreator.buildCheckboxList(elem.element.get(0).id);
+        var storedOptions = $('#storage_volumes_tree').data('tree').options;
+        // copy/rename form
+        $('#window').clone(true).attr({style: 'display:none', id: 'temp_window'}).appendTo('body');
+        $('#temp_window #vm_form').attr({id: 'temp_create_vm_form'});
+        // continue standard calls to go to next step (create storage)
+        $('#window').fadeOut('fast');
+        $("#window").empty().load($(e.target).siblings('a').attr('href'));
+        $('#window').fadeIn('fast');
+        // empty tree
+        $('#temp_create_vm_form #storage_volumes_tree').empty();
+        // reinitialize tree so it has data and is subscribed
+        VmCreator.recreateTree(storedOptions);
+    }
+  },
+  returnToVmForm: function returnToVmForm(e,elem) {
+      //The item has now been added to the tree, now copy it into a facebox
+      var storedOptions = $('#storage_volumes_tree').data('tree').options;
+      $('#window').fadeOut('fast');
+      $('#window').remove();
+      $('#temp_window').clone(true).attr({style: 'display:block', id: 'window'})
+        .appendTo('td.body > div.content').end().remove();
+      $('#window #temp_create_vm_form').attr({id: 'vm_form'});
+      $('#window').fadeIn('fast');
+      VmCreator.recreateTree(storedOptions);
+      VmCreator.clickCheckboxes();
+  }
 }

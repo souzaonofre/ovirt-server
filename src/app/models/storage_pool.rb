@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -39,6 +39,14 @@ class StoragePool < ActiveRecord::Base
 
   validates_presence_of :hardware_pool_id
 
+  validates_inclusion_of :type,
+    :in => %w( IscsiStoragePool LvmStoragePool NfsStoragePool )
+
+
+  validates_numericality_of :capacity,
+     :greater_than_or_equal_to => 0,
+     :unless => Proc.new { |storage_pool| storage_pool.capacity.nil? }
+
   acts_as_xapian :texts => [ :ip_addr, :target, :export_path, :type ],
                  :terms => [ [ :search_users, 'U', "search_users" ] ],
                  :eager_load => :smart_pools
@@ -53,6 +61,9 @@ class StoragePool < ActiveRecord::Base
   STATE_PENDING_SETUP    = "pending_setup"
   STATE_PENDING_DELETION = "pending_deletion"
   STATE_AVAILABLE        = "available"
+
+  validates_inclusion_of :state,
+    :in => [ STATE_PENDING_SETUP, STATE_PENDING_DELETION, STATE_AVAILABLE]
 
   def self.factory(type, params = {})
     params[:state] = STATE_PENDING_SETUP unless params[:state]
@@ -87,16 +98,37 @@ class StoragePool < ActiveRecord::Base
     false
   end
 
+  #--
+  #TODO: the following two methods should be moved out somewhere, perhaps an 'acts_as' plugin?
+  #Though ui_parent will have class specific impl
+  #++
+  #This is a convenience method for use in the ui to simplify creating a unigue id for placement/retrieval
+  #in/from the DOM.  This was added because there is a chance of duplicate ids between different object types,
+  #and multiple object type will appear concurrently in the ui.  The combination of type and id should be unique.
+  def ui_object
+    self.class.to_s + '_' + id.to_s
+  end
+
+  #This is a convenience method for use in the processing and manipulation of json in the ui.
+  #This serves as a key both for determining where to attached elements in the DOM and quickly
+  #accessing and updating a cached object on the client.
+  def ui_parent
+    nil
+  end
+
   def storage_tree_element(params = {})
     vm_to_include=params.fetch(:vm_to_include, nil)
     filter_unavailable = params.fetch(:filter_unavailable, true)
     include_used = params.fetch(:include_used, false)
+    state = params.fetch(:state,nil)
     return_hash = { :id => id,
       :type => self[:type],
-      :text => display_name,
       :name => display_name,
+      :ui_object => ui_object,
+      :state => state,
       :available => false,
       :create_volume => user_subdividable,
+      :ui_parent => ui_parent,
       :selected => false,
       :is_pool => true}
     conditions = nil
@@ -107,7 +139,8 @@ class StoragePool < ActiveRecord::Base
       end
     end
     if filter_unavailable
-      availability_conditions = "storage_volumes.state = '#{StoragePool::STATE_AVAILABLE}'"
+      availability_conditions = "(storage_volumes.state = '#{StoragePool::STATE_AVAILABLE}'
+        or storage_volumes.state = '#{StoragePool::STATE_PENDING_SETUP}')"
       if conditions.nil?
         conditions = availability_conditions
       else
@@ -120,5 +153,12 @@ class StoragePool < ActiveRecord::Base
       volume.storage_tree_element(params)
     end
     return_hash
+  end
+
+  def movable?
+    storage_volumes.each{ |x|
+       return false unless x.movable?
+    }
+    return true
   end
 end

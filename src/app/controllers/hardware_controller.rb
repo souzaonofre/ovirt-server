@@ -29,7 +29,8 @@ class HardwareController < PoolController
 
   before_filter :pre_modify, :only => [:add_hosts, :move_hosts,
                                        :add_storage, :move_storage,
-                                       :create_storage, :delete_storage]
+                                       :create_storage, :delete_storage,
+                                       :move, :removestorage]
 
   def index
     if params[:path]
@@ -50,7 +51,12 @@ class HardwareController < PoolController
     end
 
     respond_to do |format|
-      format.xml { render :xml => @pools.to_xml(XML_OPTS) }
+      format.xml {
+        opts = XML_OPTS.dup
+        opts[:include] = opts[:include].inject({}) { |m, k| m[k] = {}; m }
+        opts[:include][:hosts] = { :include => :cpus }
+        render :xml => @pools.to_xml(opts)
+      }
     end
   end
 
@@ -116,17 +122,7 @@ class HardwareController < PoolController
   end
 
   def show_tasks
-    @task_types = [["VM Task", "VmTask"],
-                   ["Host Task", "HostTask"],
-                   ["Storage Task", "StorageTask"],
-                   ["Storage Volume Task", "StorageVolumeTask", "break"],
-                   ["Show All", ""]]
-    super
-  end
-
-  def tasks_internal
-    @task_type = params[:task_type]
-    @task_type ||=""
+    @task_types = Task::TASK_TYPES_OPTIONS
     super
   end
 
@@ -184,7 +180,6 @@ class HardwareController < PoolController
   end
 
   def move
-    pre_modify
     @resource_type = params[:resource_type]
     @id = params[:id]
     @pools = HardwarePool.get_default_pool.full_set_nested(:method => :json_hash_element,
@@ -303,20 +298,44 @@ class HardwareController < PoolController
     resource_ids_str = params[:resource_ids]
     resource_ids = resource_ids_str.split(",").collect {|x| x.to_i}
 
+    # if user doesn't have modify permission on both source and destination
+    unless @pool.can_modify(@user) and Pool.find(target_pool_id).can_modify(@user)
+        render :json => { :success => false,
+               :alert => "Cannot #{item_action.to_s} #{item_class.table_name.humanize} without admin permissions on both pools" }
+        return
+    end
+
+    # relay error message if movable check fails for any resource
+    success = true
+    failed_resources = ""
+    resource_ids.each {|x|
+       unless item_class.find(x).movable?
+         success = false
+         failed_resources += x.to_s + " "
+       end
+    }
+    resource_ids.delete_if { |x| ! item_class.find(x).movable? }
+
     begin
       @pool.transaction do
         @pool.send(item_method, resource_ids, target_pool_id)
       end
-      render :json => { :success => true,
-        :alert => "#{item_action.to_s} #{item_class.table_name.humanize} successful." }
     rescue
+      success = false
+    end
+
+    if success
+      render :json => { :success => true,
+        :alert => "#{item_action.to_s} #{item_class.table_name.humanize} successful.",
+        :storage => @pool.storage_tree({:filter_unavailable => false, :include_used => true, :state => item_action.to_s})}
+    else
       render :json => { :success => false,
-        :alert => "#{item_action.to_s} #{item_class.table_name.humanize} failed." }
+         :alert => "#{item_action.to_s} #{item_class.table_name.humanize} failed" +
+                   (failed_resources == "" ? "." : " for " + failed_resources) }
     end
   end
 
   def removestorage
-    pre_modify
     render :layout => 'popup'
   end
 

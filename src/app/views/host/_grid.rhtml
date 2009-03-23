@@ -36,12 +36,12 @@
         {display: 'UUID', name : 'uuid', width : 180, align: 'left'}<% if !is_popup %>,<% end %>
         <% if !is_popup %>
             {display: 'Hypervisor', name : 'hypervisor_type', width : 60, align: 'left'},
-            {display: 'CPUs', name : 'num_cpus', width : 30, align: 'left'},
-            {display: 'Speed (MHz)', name : 'cpu_speed', width : 70, align: 'right'},
+            {display: 'CPUs', width : 30, align: 'left'},
+            {display: 'Speed (MHz)', width : 70, align: 'right'},
             {display: 'Arch', name : 'arch', width : 50, align: 'right'},
             {display: 'RAM (MB)', name : 'memory', width : 60, align: 'right'},
             {display: 'Status', name : 'is_disabled', width : 110, align: 'right'},
-            {display: 'Load', name : 'load', width: 180, sortable : false, align: 'left', process: <%= table_id %>_load_widget }
+            {display: 'Load', name : 'load_average', width: 180, sortable : false, align: 'left', process: <%= table_id %>_load_widget }
         <% end %>
 	],
     sortname: "hostname",

@@ -75,21 +75,25 @@ class SmartPool < Pool
   def self.smart_pools_for_user(user)
     nested_pools = DirectoryPool.get_smart_root.full_set_nested(
                        :privilege => Permission::PRIV_MODIFY, :user => user,
-                       :smart_pool_set => true)
+                       :smart_pool_set => true)[0][:children]
     user_pools = []
     other_pools = []
-    nested_pools.each do |pool_element|
-      pool = pool_element[:obj]
-      if pool.hasChildren
-        if pool.name == user
+    if nested_pools
+      nested_pools.each do |pool_element|
+        pool = pool_element[:obj]
+        if pool.hasChildren
+          if pool.name == user
             pool_element[:children].each do |child_element|
               child_pool = child_element[:obj]
               user_pools <<[child_pool.name, child_pool.id]
             end
-        else
-          pool_element[:children].each do |child_element|
-            child_pool = child_element[:obj]
-            other_pools << [pool.name + " > " + child_pool.name, child_pool.id]
+          else
+            if pool_element.has_key?(:children)
+              pool_element[:children].each do |child_element|
+                child_pool = child_element[:obj]
+                other_pools << [pool.name + " > " + child_pool.name, child_pool.id]
+              end
+            end
           end
         end
       end

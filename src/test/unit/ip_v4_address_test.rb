@@ -24,7 +24,8 @@ class IpV4AddressTest < ActiveSupport::TestCase
     @address = IpV4Address.new(:address   => '192.168.50.2',
                               :netmask   => '255.255.255.0',
                               :gateway   => '192.168.50.1',
-                              :broadcast => '192.168.50.255')
+                              :broadcast => '192.168.50.255',
+                              :nic_id => 1)
   end
 
   # Ensures that an address must be supplied.

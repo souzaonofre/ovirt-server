@@ -21,31 +21,33 @@
      </div>
    </div>
 
-   <div id="static_ip_v4_options">
-     <div class="selected_nic_bonding_left">Netmask</div>
-     <div class="selected_nic_bonding_right">
-        <%= text_field_with_label "", "ip_address", "netmask" %>
+   <% if @parent_type == 'network' %>
+      <div id="static_ip_v4_options">
+        <div class="selected_nic_bonding_left">Netmask</div>
+        <div class="selected_nic_bonding_right">
+           <%= text_field_with_label "", "ip_address", "netmask" %>
+        </div>
+
+        <div class="selected_nic_bonding_left">Broadcast</div>
+        <div class="selected_nic_bonding_right">
+            <%= text_field_with_label "", "ip_address", "broadcast" %>
+        </div>
      </div>
 
-     <div class="selected_nic_bonding_left">Broadcast</div>
-     <div class="selected_nic_bonding_right">
-         <%= text_field_with_label "", "ip_address", "broadcast" %>
+     <div id="static_ip_v6_options" style="display: none;">
+        <div class="selected_nic_bonding_left">Prefix</div>
+        <div class="selected_nic_bonding_right">
+            <%= text_field_with_label "", "ip_address", "prefix" %>
+        </div>
      </div>
-  </div>
 
-  <div id="static_ip_v6_options" style="display: none;">
-     <div class="selected_nic_bonding_left">Prefix</div>
-     <div class="selected_nic_bonding_right">
-         <%= text_field_with_label "", "ip_address", "prefix" %>
+     <div class="static_ip_common_options">
+        <div class="selected_nic_bonding_left">Gateway</div>
+        <div class="selected_nic_bonding_right">
+            <%= text_field_with_label "", "ip_address", "gateway" %>
+        </div>
      </div>
-  </div>
-
-  <div class="static_ip_common_options">
-     <div class="selected_nic_bonding_left">Gateway</div>
-     <div class="selected_nic_bonding_right">
-         <%= text_field_with_label "", "ip_address", "gateway" %>
-     </div>
-  </div>
+  <% end %>
 
 </div>
 

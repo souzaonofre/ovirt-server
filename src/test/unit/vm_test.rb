@@ -21,6 +21,7 @@ require File.dirname(__FILE__) + '/../test_helper'
 
 class VmTest < Test::Unit::TestCase
   fixtures :vms
+  fixtures :pools
 
   def setup
     @vm_name = "Test"
@@ -29,6 +30,85 @@ class VmTest < Test::Unit::TestCase
       "#{Vm::IMAGE_PREFIX}@#{Vm::COBBLER_PREFIX}#{Vm::PROVISIONING_DELIMITER}#{@vm_name}"
     @cobbler_profile_provisioning =
       "#{Vm::PROFILE_PREFIX}@#{Vm::COBBLER_PREFIX}#{Vm::PROVISIONING_DELIMITER}#{@vm_name}"
+
+    @vm = Vm.new(
+       :uuid => '00000000-1111-2222-3333-444444444444',
+       :description => 'foobar',
+       :num_vcpus_allocated => 1,
+       :boot_device => 'hd',
+       :memory_allocated_in_mb => 1,
+       :memory_allocated => 1024,
+       :vnic_mac_addr => '11:22:33:44:55:66')
+
+    @vm.vm_resource_pool = pools(:corp_com_production_vmpool)
+  end
+
+  def test_valid_fails_with_bad_uuid
+       @vm.uuid = 'foobar'
+       flunk "Vm must specify valid uuid" if @vm.valid?
+  end
+
+  def test_valid_fails_without_description
+       @vm.description = ''
+       flunk 'Vm must specify description' if @vm.valid?
+  end
+
+  def test_valid_fails_without_num_vcpus_allocated
+       @vm.num_vcpus_allocated = nil
+       flunk 'Vm must specify num_vcpus_allocated' if @vm.valid?
+  end
+
+  def test_valid_fails_without_boot_device
+       @vm.boot_device = ''
+       flunk 'Vm must specify boot_device' if @vm.valid?
+  end
+
+
+  def test_valid_fails_without_memory_allocated
+       @vm.memory_allocated = ''
+       flunk 'Vm must specify memory_allocated' if @vm.valid?
+  end
+
+
+  def test_valid_fails_without_memory_allocated_in_mb
+       @vm.memory_allocated_in_mb = ''
+       flunk 'Vm must specify memory_allocated_in_mb' if @vm.valid?
+  end
+
+  def test_valid_fails_without_vnic_mac_addr
+       @vm.vnic_mac_addr = ''
+       flunk 'Vm must specify vnic_mac_addr' if @vm.valid?
+  end
+
+  def test_valid_fails_without_vm_resources_pool_id
+       @vm.vm_resource_pool_id = ''
+       flunk 'Vm must specify vm_resources_pool_id' if @vm.valid?
+  end
+
+  def test_valid_fails_with_bad_needs_restart
+       @vm.needs_restart = 5
+       flunk 'Vm must specify valid needs_restart' if @vm.valid?
+  end
+
+  def test_valid_fails_with_bad_state
+       @vm.state = 'foobar'
+       flunk 'Vm must specify valid state' if @vm.valid?
+  end
+
+  # ensure duplicate forward_vnc_ports cannot exist
+  def test_invalid_without_unique_forward_vnc_port
+     vm = vms(:production_mysqld_vm)
+     vm.forward_vnc = true
+     vm.forward_vnc_port = 1234 # duplicate
+     assert !vm.valid?, "forward vnc port must be unique"
+  end
+
+  # ensure bad forward_vnc_ports cannot exist
+  def test_invalid_without_bad_forward_vnc_port
+     vm = vms(:production_mysqld_vm)
+     vm.forward_vnc = true
+     vm.forward_vnc_port = 1 # too small
+     assert !vm.valid?, "forward vnc port must be >= 5900"
   end
 
   # Ensures that, if the VM does not contain the Cobbler prefix, that it

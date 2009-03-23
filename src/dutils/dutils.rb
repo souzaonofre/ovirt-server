@@ -18,14 +18,16 @@
 
 require 'active_record_env'
 require 'krb5_auth'
+require 'resolv'
+
 include Krb5Auth
 
 ENV['KRB5CCNAME'] = '/usr/share/ovirt-server/ovirt-cc'
 
-def get_credentials
+def get_credentials(service = 'libvirt')
   krb5 = Krb5.new
   default_realm = krb5.get_default_realm
-  princ = 'libvirt/' + Socket::gethostname + '@' + default_realm
+  princ = service + '/' + Socket::gethostname + '@' + default_realm
 
   now = Time.now
   renew = true
@@ -45,7 +47,7 @@ def get_credentials
 
   if renew
     begin
-      krb5.get_init_creds_keytab('libvirt/' + Socket::gethostname + '@' + default_realm, '/usr/share/ovirt-server/ovirt.keytab')
+      krb5.get_init_creds_keytab(service + '/' + Socket::gethostname + '@' + default_realm, '/usr/share/ovirt-server/ovirt.keytab')
       krb5.cache(ENV['KRB5CCNAME'])
     rescue
       # well, if we run into an error here, there's not much we can do.  Just
@@ -56,3 +58,41 @@ def get_credentials
     end
   end
 end
+
+# Returns the server and port of the specified service using DNS SRV records
+# to perform the look up.
+#
+# For example:
+#
+# server, port = get_srv('qpidd', 'tcp')
+#
+def get_srv(service, proto)
+
+  hostname = Socket.gethostbyname(Socket.gethostname).first
+  lst = hostname.split('.')
+  lst.shift
+  domainname = lst.join('.')
+
+  srv = "_#{service}._#{proto}.#{domainname}"
+
+  (1..2).each do
+    Resolv::DNS.open do |dns|
+      begin
+        res = dns.getresource(srv, Resolv::DNS::Resource::IN::SRV)
+        server = res.target.to_s
+        port = res.port
+
+        return server, port
+      rescue => ex
+        puts "Error looking up SRV record: #{ex}"
+      end
+      dns.close
+    end
+
+    # Try again without the domain name
+    srv = "_#{service}._#{proto}"
+  end
+
+  return nil, nil
+end
+

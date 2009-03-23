@@ -29,4 +29,5 @@ class NfsStoragePool < StoragePool
   def user_subdividable
     true
   end
+
 end

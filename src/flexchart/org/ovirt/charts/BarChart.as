@@ -37,9 +37,12 @@ package org.ovirt.charts {
   import org.ovirt.elements.*;
   import org.ovirt.Constants;
   import org.ovirt.ApplicationBus;
+  import mx.core.ScrollPolicy;
 
   public class BarChart extends Chart {
 
+    private var yScale:Scale;
+    private var chartFrame:HBox;
     private var chartArea:Canvas;
     private var XAxisLabelArea:Canvas;
     private var startDateField:DateField;
@@ -48,18 +51,13 @@ package org.ovirt.charts {
     private var endTimeField:TextInput;
     private var button:Button;
     private var menu:PopUpMenuButton;
+    private var functionMenu:PopUpMenuButton;
     private var dateBar:Box;
     private var datePattern:RegExp;
 
-
-    public function BarChart(container:Box,
-                             datasourceUrl:String) {
-      super(container,datasourceUrl);
-      container.setStyle("verticalGap","2");
-      datePattern = /^(\d+):(\d+)$/;
-    }
-
-
+    /*
+       Private, class-specific functions
+    */
     private function timeRangeAdjusted(event:Event):void {
       var t1:Number = startDateField.selectedDate.getTime()
                       + (parseHour(startTimeField.text) * 3600 * 1000)
@@ -69,14 +67,34 @@ package org.ovirt.charts {
                       + (parseHour(endTimeField.text) * 3600 * 1000)
                       + (parseMinute(endTimeField.text) * 60 * 1000);
       setEndTime(Math.floor(t2 / 1000));
+
+      //close the host chart when updating top chart
+      ApplicationBus.instance().closeHostChart.call(null,event);
       load();
+    }
+
+
+    private function updateHostChart(event:MouseEvent):void {
+      var hostChart:HostChart = ApplicationBus.instance().hostChart;
+      hostChart.setId(id);
+      hostChart.setTarget(target);
+      hostChart.setStartTime((event.target as SingleBar).getStartTime() / 1000);
+      hostChart.setResolution((event.target as SingleBar).getResolution());
+      hostChart.setDataFunction(dataFunction);
+      hostChart.load();
     }
 
     private function typeSelected(event:MenuEvent):void {
       target = event.label;
+      ApplicationBus.instance().closeHostChart.call(null,event);
       load();
     }
 
+    private function functionSelected(event:MenuEvent):void {
+      dataFunction = event.label;
+      ApplicationBus.instance().closeHostChart.call(null,event);
+      load();
+    }
 
     private function pad(input:int):String {
       if (input < 10) {
@@ -108,6 +126,32 @@ package org.ovirt.charts {
       return answer;
     }
 
+
+    /*
+      Constructors
+    */
+    public function BarChart(container:Box,
+                             datasourceUrl:String) {
+      super(container,datasourceUrl);
+      container.setStyle("verticalGap","2");
+      datePattern = /^(\d+):(\d+)$/;
+    }
+
+    /*
+      Overriden functions
+    */
+    override protected function initializeDataSource():void {
+      dataSource = new BarChartDataSource(this);
+    }
+
+    override protected function setRequestAttributes(dto:FlexchartDataTransferObject):void {
+      dto.setId(id);
+      dto.setTarget(target);
+      dto.setStartTime(startTime);
+      dto.setEndTime(endTime);
+      dto.setDataFunction(dataFunction);
+    }
+
     override public function addData(dataSeries:DataSeries):void {
       container.removeAllChildren();
 
@@ -119,21 +163,45 @@ package org.ovirt.charts {
         var kids:Array = chartArea.getChildren();
         var i:int;
         for (i = 0; i < kids.length; i++) {
-          (kids[i] as SingleBar).destroy();
+          if (kids[i] as SingleBar != null) {
+            (kids[i] as SingleBar).destroy();
+          }
         }
       }
 
+
+      var yLabelPercentWidth:int = 8;
+
+      chartFrame = new HBox();
+      chartFrame.percentHeight = 80;
+      chartFrame.percentWidth = 100;
+      chartFrame.setVisible(true);
+      chartFrame.setStyle("horizontalGap","1");
+
+      yScale = new Scale();
+      yScale.percentHeight = 100;
+      yScale.percentWidth = yLabelPercentWidth;
+      yScale.setVisible(true);
+
       chartArea = new Canvas();
-      chartArea.percentHeight = 80;
-      chartArea.percentWidth = 100;
+      chartArea.percentHeight = 100;
+      chartArea.percentWidth = 100 - yLabelPercentWidth;
       chartArea.setStyle("backgroundColor","0xbbccdd");
-      this.container.addChild(chartArea);
+
+      chartArea.verticalScrollPolicy = ScrollPolicy.OFF
+
+      chartFrame.addChild(yScale);
+      chartFrame.addChild(chartArea);
+      this.container.addChild(chartFrame);
 
       XAxisLabelArea = new Canvas();
       XAxisLabelArea.height = Constants.labelHeight;
       XAxisLabelArea.minHeight = Constants.labelHeight;
       XAxisLabelArea.percentWidth = 100;
       this.container.addChild(XAxisLabelArea);
+
+      var t1:Date = new Date(startTime * 1000);
+      var t2:Date = new Date(endTime * 1000);
 
       try {
 
@@ -143,6 +211,7 @@ package org.ovirt.charts {
         var dataPoints:Array = dataSeries.getDataPoints();
         var maxValue:Number = dataSeries.getMaxValue();
         var scale:Number = maxValue;
+        yScale.setMax(maxValue);
         //avoid divide by zero
         if (scale == 0) {
           scale = 1;
@@ -152,8 +221,10 @@ package org.ovirt.charts {
           throw new Error("No data points in range");
         }
 
+	var calculatedWidth:Number = Constants.width * (chartArea.percentWidth / 100.0) ;
+
         //the distance between left edges of adjacent bars
-        var gridWidth:Number = Math.floor(Constants.width / size);
+        var gridWidth:Number = Math.floor(calculatedWidth / size);
 
         //the width of each SingleBar (does not including padding between bars)
         var barWidth:Number = gridWidth - Constants.barSpacing;
@@ -161,7 +232,7 @@ package org.ovirt.charts {
         //due to the discrete number of pixels, there may be space at the
         //right side of the graph that needs to be made up by padding
         //bars here and there
-	var shortfall:Number = Constants.width - (gridWidth * size);
+	var shortfall:Number = calculatedWidth - (gridWidth * size);
 	var makeup:Number = Math.round(size / shortfall);
 	var madeup:Number = 0;
 
@@ -196,7 +267,9 @@ package org.ovirt.charts {
           chartArea.addChild(bar);
           bar.width = barWidth;
           bar.addEventListener(MouseEvent.CLICK,
-                               ApplicationBus.instance().barClickAction);
+                               ApplicationBus.instance().mainChartBarClickAction);
+          bar.addEventListener(MouseEvent.CLICK,
+                               updateHostChart);
 	  bar.x = currentBarPosition;
           if (makeup > 0 && i % makeup == 0 && madeup < shortfall) {
             bar.width = bar.width + 1;
@@ -214,7 +287,7 @@ package org.ovirt.charts {
               || i == size - 1) {
             var label:XAxisLabel =
               new XAxisLabel(dateFormat.format(dataPoint.getTimestamp()));
-	    label.setCenter(currentBarPosition + bar.width / 2);
+	    label.setCenter(currentBarPosition + bar.width / 2 + Constants.width - calculatedWidth);
             label.setVisible(true);
             label.y = 6;
             XAxisLabelArea.addChild(label);
@@ -235,69 +308,100 @@ package org.ovirt.charts {
           currentBarPosition += (bar.width + Constants.barSpacing);
         }
 
-        //fill in the time range selection bar
-        var t:Date;
-        var f1:Text = new Text();
-        f1.text = "View data between";
-        dateBar.addChild(f1);
-        t = new Date(dataPoints[0].getTimestamp().getTime());
-        startDateField = new DateField();
-        startDateField.selectedDate = t;
-        startDateField.editable = true;
-        startTimeField = new TextInput();
-        startTimeField.minWidth = 50;
-        startTimeField.maxWidth = 50;
-        startTimeField.text = pad(t.hours) + ":" + pad(t.minutes);
-        dateBar.addChild(startTimeField);
-        dateBar.addChild(startDateField);
-        var f2:Text = new Text();
-        f2.text = "and";
-        dateBar.addChild(f2);
-
-        t = new Date(dataPoints[size - 1].getTimestamp().getTime());
-        endDateField = new DateField();
-        endDateField.selectedDate = t;
-        endDateField.editable = true;
-        endTimeField = new TextInput();
-        endTimeField.minWidth = 50;
-        endTimeField.maxWidth = 50;
-        endTimeField.text = pad(t.hours) + ":" + pad(t.minutes);
-        dateBar.addChild(endTimeField);
-        dateBar.addChild(endDateField);
-
-	button = new Button();
-	button.label = "go";
-	button.addEventListener(MouseEvent.CLICK,timeRangeAdjusted);
-	dateBar.addChild(button);
-
-        //FIXME: these should be fetched from the graph controller so
-        //that different types can be added (or restricted) dynamically
-        var menuItems:ArrayCollection =
-          new ArrayCollection( [{label: "memory"},
-                                {label: "cpu"},
-                                {label: "load"},
-                                {label: "netin"},
-                                {label: "netout"},
-                                {label: "disk"}
-                               ]);
-
-
-        if (menu != null) {
-          menu.removeEventListener(MenuEvent.ITEM_CLICK,typeSelected);
-        }
-
-        menu = new PopUpMenuButton();
-        menu.label = "Select Data Type";
-        menu.dataProvider = menuItems;
-        menu.addEventListener(MenuEvent.ITEM_CLICK,typeSelected);
-        dateBar.addChild(menu);
+        t1 = new Date(dataPoints[0].getTimestamp().getTime());
+        t2 = new Date(dataPoints[size - 1].getTimestamp().getTime());
 
       } catch (e:Error) {
-        var err:Text = new Text();
-        err.text = e.message;
-        err.setVisible(true);
-        chartArea.addChild(err);
+        trace(e.message);
+        if (size == 0) {
+          var nopoints:Text = new Text();
+          nopoints.text = "No Data Points In Range";
+          nopoints.setVisible(true);
+          try {
+            chartArea.addChild(nopoints);
+          } catch (e1:Error) {
+            trace(e1.message);
+          }
+        }
       }
+
+      //fill in the time range selection bar
+
+      var f1:Text = new Text();
+      f1.text = "View data between";
+      dateBar.addChild(f1);
+
+      startDateField = new DateField();
+      startDateField.selectedDate = t1;
+      startDateField.editable = true;
+      startTimeField = new TextInput();
+      startTimeField.minWidth = 50;
+      startTimeField.maxWidth = 50;
+      startTimeField.text = pad(t1.hours) + ":" + pad(t1.minutes);
+      dateBar.addChild(startTimeField);
+      dateBar.addChild(startDateField);
+      var f2:Text = new Text();
+      f2.text = "and";
+      dateBar.addChild(f2);
+
+
+      endDateField = new DateField();
+      endDateField.selectedDate = t2;
+      endDateField.editable = true;
+      endTimeField = new TextInput();
+      endTimeField.minWidth = 50;
+      endTimeField.maxWidth = 50;
+      endTimeField.text = pad(t2.hours) + ":" + pad(t2.minutes);
+      dateBar.addChild(endTimeField);
+      dateBar.addChild(endDateField);
+
+      button = new Button();
+      button.label = "go";
+      button.addEventListener(MouseEvent.CLICK,timeRangeAdjusted);
+
+      dateBar.addChild(button);
+
+      //FIXME: these should be fetched from the graph controller so
+      //that different types can be added (or restricted) dynamically
+      var menuItems:ArrayCollection =
+        new ArrayCollection( [{label: "memory"},
+                              {label: "cpu"},
+                              {label: "load"},
+                              {label: "netin"},
+                              {label: "netout"},
+                              {label: "disk"}
+                             ]);
+
+      if (menu != null) {
+        menu.removeEventListener(MenuEvent.ITEM_CLICK,typeSelected);
+      }
+
+      menu = new PopUpMenuButton();
+      menu.label = target;
+      menu.dataProvider = menuItems;
+      menu.addEventListener(MenuEvent.ITEM_CLICK,typeSelected);
+      dateBar.addChild(menu);
+
+
+      var functionMenuItems:ArrayCollection =
+        new ArrayCollection( [{label: "peak"},
+                              {label: "average"},
+                              {label: "min"},
+                              {label: "rolling avg"},
+                              {label: "rolling peak"},
+                              {label: "rolling min"}
+                             ]);
+
+      if (functionMenu != null) {
+        functionMenu.removeEventListener(MenuEvent.ITEM_CLICK,functionSelected);
+      }
+
+      functionMenu = new PopUpMenuButton();
+      functionMenu.label = dataFunction;
+      functionMenu.dataProvider = functionMenuItems;
+      functionMenu.addEventListener(MenuEvent.ITEM_CLICK,functionSelected);
+      dateBar.addChild(functionMenu);
+
     }
   }
 }

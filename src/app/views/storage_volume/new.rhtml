@@ -11,32 +11,38 @@
 <%- end -%>
 <div class="panel_header"></div>
 <div class="dialog_form">
-<form method="POST" action="<%= url_for :action => 'create_volume' %>" id="storage_volume_form" >
+<form method="POST" action="<%= url_for :action => 'create' %>" id="storage_volume_form" >
   <div class="dialog_form">
     <div id="new_storage_pool">
       <%= render :partial => 'new_volume_form' %>
     </div>
   </div>
   <!-- FIXME: need to pop up the details dialog again -->
-  <%= popup_footer("$('#storage_volume_form').submit()", "New Storage Volume") %>
+  <% if @return_to_workflow %>
+    <%# TODO: update this method in application_helper to take an array, so we can include
+        a callback or trigger to to go previous step in flow. %>
+    <%= popup_footer("$('#storage_volume_form').submit()", "New Storage Volume") %>
+  <% else %>
+    <%= popup_footer("$('#storage_volume_form').submit()", "New Storage Volume") %>
+  <%  end %>
 </form>
 </div>
 <script type="text/javascript">
 function afterStorageVolume(response, status){
     ajax_validation(response, status);
     if (response.success) {
-    <% if @return_facebox %>
-      $('#window').fadeOut('fast');
-      $("#window").empty().load("<%= @return_facebox %>")
-      $('#window').fadeIn('fast');
-    <% else %>
-      $(document).trigger('close.facebox');
-    <% end %>
+        //this is where I want to publish to...
+        //$(document).trigger('STORAGE_VOLUME', [response.new_volume]);
+        //but it only picks up correctly right now if I push it here, so this needs to change later
+      $('ul.ovirt-tree').trigger('STORAGE_VOLUME', [response.new_volume]);
+      <% unless @return_to_workflow -%>
+        $(document).trigger('close.facebox');
+      <% end -%>
     }
 }
 $(function() {
     var storagevolumeoptions = {
-        target:        '<%= url_for :action => 'create_volume' %>',   // target element to update
+        target:        '<%= url_for :action => 'create' %>',   // target element to update
 	dataType:      'json',
         success:       afterStorageVolume  // post-submit callback
     };

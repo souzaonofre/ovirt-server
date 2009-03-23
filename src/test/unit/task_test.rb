@@ -22,6 +22,20 @@ require File.dirname(__FILE__) + '/../test_helper'
 class TaskTest < Test::Unit::TestCase
   fixtures :pools, :hosts, :vms, :permissions, :tasks
 
+  def setup
+    @task = Task.new( :type => 'HostTask', :state => 'finished' )
+  end
+
+  def test_valid_fails_with_bad_type
+    @task.type = 'foobar'
+    flunk 'Task must specify valid type' if @task.valid?
+  end
+
+  def test_valid_fails_with_bad_state
+    @task.state = 'foobar'
+    flunk 'Task must specify valid state' if @task.valid?
+  end
+
   def test_exercise_task_relationships
     assert_equal tasks(:shutdown_production_httpd_appliance_task).task_target.vm_resource_pool.name, 'corp.com production vmpool'
     assert_equal tasks(:shutdown_production_httpd_appliance_task).task_target.host.hostname, 'prod.corp.com'

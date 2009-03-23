@@ -54,13 +54,13 @@ class HardwarePool < Pool
     hosts = Host.find(:all, :conditions => "id in (#{host_ids.join(', ')})")
     transaction do
       hosts.each do |host|
-        host.hardware_pool_id = target_pool_id
+        host.hardware_pool = HardwarePool.find(target_pool_id)
         host.save!
       end
     end
   end
 
-  def move_storage(storage_pool_ids, target_pool_id) 
+  def move_storage(storage_pool_ids, target_pool_id)
     storage_pools = StoragePool.find(:all, :conditions => "id in (#{storage_pool_ids.join(', ')})")
     transaction do
       storage_pools.each do |storage_pool|

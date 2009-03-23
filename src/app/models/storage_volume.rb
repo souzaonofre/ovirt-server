@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Scott Seago <sseago@redhat.com>
 #
@@ -32,9 +32,22 @@ class StorageVolume < ActiveRecord::Base
     end
   end
 
+  validates_presence_of :storage_pool_id
+
+
+  validates_numericality_of :size,
+     :greater_than_or_equal_to => 0,
+     :unless => Proc.new { |storage_volume| storage_volume.nil? }
+
+  validates_inclusion_of :type,
+    :in => %w( IscsiStorageVolume LvmStorageVolume NfsStorageVolume )
+
   STATE_PENDING_SETUP    = "pending_setup"
   STATE_PENDING_DELETION = "pending_deletion"
   STATE_AVAILABLE        = "available"
+
+  validates_inclusion_of :state,
+    :in => [ STATE_PENDING_SETUP, STATE_PENDING_DELETION, STATE_AVAILABLE]
 
   def self.factory(type, params = {})
     params[:state] = STATE_PENDING_SETUP unless params[:state]
@@ -84,20 +97,41 @@ class StorageVolume < ActiveRecord::Base
     storage_pool.user_subdividable and vms.empty? and (lvm_storage_pool.nil? or lvm_storage_pool.storage_volumes.empty?)
   end
 
+  #--
+  #TODO: the following two methods should be moved out somewhere, perhaps an 'acts_as' plugin?
+  #Though ui_parent will have class specific impl
+  #++
+  ##This is a convenience method for use in the ui to simplify creating a unigue id for placement/retrieval
+  #in/from the DOM.  This was added because there is a chance of duplicate ids between different object types,
+  #and multiple object type will appear concurrently in the ui.  The combination of type and id should be unique.
+  def ui_object
+    self.class.to_s + '_' + id.to_s
+  end
+
+  #This is a convenience method for use in the processing and manipulation of json in the ui.
+  #This serves as a key both for determining where to attached elements in the DOM and quickly
+  #accessing and updating a cached object on the client.
+  def ui_parent
+    storage_pool[:type].to_s + '_' + storage_pool_id.to_s
+  end
+
   def storage_tree_element(params = {})
     vm_to_include=params.fetch(:vm_to_include, nil)
     filter_unavailable = params.fetch(:filter_unavailable, true)
     include_used = params.fetch(:include_used, false)
     vm_ids = vms.collect {|vm| vm.id}
+    state = params.fetch(:state,'new')
     return_hash = { :id => id,
       :type => self[:type],
-      :text => display_name,
+      :ui_object => ui_object,
+      :state => state,
       :name => display_name,
       :size => size_in_gb,
       :available => ((vm_ids.empty?) or
                     (vm_to_include and vm_to_include.id and
                      vm_ids.include?(vm_to_include.id))),
       :create_volume => supports_lvm_subdivision,
+      :ui_parent => ui_parent,
       :selected => (!vm_ids.empty? and vm_to_include and vm_to_include.id and
                    (vm_ids.include?(vm_to_include.id))),
       :is_pool => false}
@@ -113,7 +147,8 @@ class StorageVolume < ActiveRecord::Base
         end
       end
       if filter_unavailable
-        availability_conditions = "storage_volumes.state = '#{StoragePool::STATE_AVAILABLE}'"
+        availability_conditions = "(storage_volumes.state = '#{StoragePool::STATE_AVAILABLE}'
+        or storage_volumes.state = '#{StoragePool::STATE_PENDING_SETUP}')"
         if conditions.nil?
           conditions = availability_conditions
         else
@@ -129,6 +164,14 @@ class StorageVolume < ActiveRecord::Base
       return_hash[:children] = []
     end
     return_hash
+  end
+
+  def movable?
+     if vms.size > 0 or
+         (not lvm_storage_pool.nil? and not lvm_storage_pool.movable?)
+           return false
+     end
+     return true
   end
 
 end

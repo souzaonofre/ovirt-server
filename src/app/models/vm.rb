@@ -29,12 +29,64 @@ class Vm < ActiveRecord::Base
   end
   has_and_belongs_to_many :storage_volumes
 
+  belongs_to :network
+
   has_many :smart_pool_tags, :as => :tagged, :dependent => :destroy
   has_many :smart_pools, :through => :smart_pool_tags
 
+  # reverse cronological collection of vm history
+  # each collection item contains host vm was running on,
+  # time started, and time ended (see VmHostHistory)
+  has_many :vm_host_histories,
+           :order => 'time_started DESC',
+           :dependent => :destroy
+
+  alias history vm_host_histories
+
   validates_presence_of :uuid, :description, :num_vcpus_allocated,
                         :boot_device, :memory_allocated_in_mb,
-                        :memory_allocated, :vnic_mac_addr
+                        :memory_allocated, :vnic_mac_addr,
+                        :vm_resource_pool_id
+
+  validates_format_of :uuid,
+     :with => %r([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})
+
+  FORWARD_VNC_PORT_START = 5900
+
+  validates_numericality_of :forward_vnc_port,
+    :message => 'must be >= ' + FORWARD_VNC_PORT_START.to_s,
+    :greater_than_or_equal_to => FORWARD_VNC_PORT_START,
+    :if => Proc.new { |vm| vm.forward_vnc &&
+                           !vm.forward_vnc_port.nil? &&
+                           vm.forward_vnc_port != 0 }
+
+  validates_uniqueness_of :forward_vnc_port,
+    :message => "is already in use",
+    :if => Proc.new { |vm| vm.forward_vnc &&
+                           !vm.forward_vnc_port.nil? &&
+                           vm.forward_vnc_port != 0 }
+
+
+  validates_numericality_of :needs_restart,
+     :greater_than_or_equal_to => 0,
+     :less_than_or_equal_to => 1,
+     :unless => Proc.new{ |vm| vm.needs_restart.nil? }
+
+  validates_numericality_of :memory_used,
+     :greater_than_or_equal_to => 0,
+     :unless => Proc.new{ |vm| vm.memory_used.nil? }
+
+  validates_numericality_of :vnc_port,
+     :greater_than_or_equal_to => 0,
+     :unless => Proc.new{ |vm| vm.vnc_port.nil? }
+
+  validates_numericality_of :num_vcpus_allocated,
+     :greater_than_or_equal_to => 0,
+     :unless => Proc.new{ |vm| vm.num_vcpus_allocated.nil? }
+
+  validates_numericality_of :memory_allocated,
+     :greater_than_or_equal_to => 0,
+     :unless => Proc.new{ |vm| vm.memory_allocated.nil? }
 
   acts_as_xapian :texts => [ :uuid, :description, :vnic_mac_addr, :state ],
                  :terms => [ [ :search_users, 'U', "search_users" ] ],
@@ -117,8 +169,13 @@ class Vm < ActiveRecord::Base
                        STATE_SAVED         => STATE_SAVED,
                        STATE_RESTORING     => STATE_RUNNING,
                        STATE_MIGRATING     => STATE_RUNNING,
-                       STATE_CREATE_FAILED => STATE_CREATE_FAILED}
+                       STATE_CREATE_FAILED => STATE_CREATE_FAILED,
+                       STATE_INVALID       => STATE_INVALID}
   TASK_STATE_TRANSITIONS = []
+
+  validates_inclusion_of :state,
+     :in => EFFECTIVE_STATE.keys
+
 
   def get_hardware_pool
     pool = vm_resource_pool
@@ -305,13 +362,25 @@ class Vm < ActiveRecord::Base
     super
   end
 
+  # find the first available vnc port
+  def self.available_forward_vnc_port
+    i = FORWARD_VNC_PORT_START
+    Vm.find(:all,
+            :conditions => "forward_vnc_port is not NULL",
+            :order => 'forward_vnc_port ASC' ).each{ |vm|
+               break if vm.forward_vnc_port > i
+               i = i + 1
+            }
+    return i
+  end
+
   protected
   def validate
     resources = vm_resource_pool.max_resources_for_vm(self)
     # FIXME: what should memory min/max be?
     errors.add("memory_allocated_in_mb", "must be at least 256 MB") unless not(memory_allocated_in_mb) or memory_allocated_in_mb >=256
     # FIXME: what should cpu min/max
-    errors.add("num_vcpus_allocated", "must be between 1 and 16") unless (num_vcpus_allocated >=1 and num_vcpus_allocated <= 16)
+    errors.add("num_vcpus_allocated", "must be between 1 and 16") unless (num_vcpus_allocated.nil? or (num_vcpus_allocated >=1 and num_vcpus_allocated <= 16))
     errors.add("memory_allocated_in_mb", "violates quota") unless not(memory_allocated) or resources[:memory].nil? or memory_allocated <= resources[:memory]
     errors.add("num_vcpus_allocated", "violates quota") unless not(num_vcpus_allocated) or resources[:cpus].nil? or num_vcpus_allocated <= resources[:cpus]
     errors.add_to_base("No available nics in quota") unless resources[:nics].nil? or resources[:nics] >= 1

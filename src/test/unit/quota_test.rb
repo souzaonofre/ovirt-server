@@ -21,9 +21,40 @@ require File.dirname(__FILE__) + '/../test_helper'
 
 class QuotaTest < Test::Unit::TestCase
   fixtures :quotas
+  fixtures :pools
 
-  # Replace this with your real tests.
-  def test_truth
-    assert true
+  def setup
+    @quota = Quota.new
+    @quota.pool = pools(:root_dir_pool)
+  end
+
+  def test_valid_fails_without_pool
+    @quota.pool = nil
+    flunk "Quota's must specify pool" if @quota.valid?
+  end
+
+  def test_valid_fails_with_bad_total_vcpus
+    @quota.total_vcpus = -1
+    flunk "Quota must specify valid total vcpus" if @quota.valid?
+  end
+
+  def test_valid_fails_with_bad_total_vmemory
+    @quota.total_vmemory = -1
+    flunk "Quota must specify valid total vmemory" if @quota.valid?
+  end
+
+  def test_valid_fails_with_bad_total_vnics
+    @quota.total_vnics = -1
+    flunk "Quota must specify valid total vnics" if @quota.valid?
+  end
+
+  def test_valid_fails_with_bad_total_storage
+    @quota.total_storage = -1
+    flunk "Quota must specify valid total storage" if @quota.valid?
+  end
+
+  def test_valid_fails_with_bad_total_vms
+    @quota.total_vms = -1
+    flunk "Quota must specify valid total vms" if @quota.valid?
   end
 end

@@ -9,7 +9,7 @@
     (
     {
     url: '<%=  url_for :action => "tasks",
-                       :id => pool.id %>',
+                       :id => pool %>',
     params: [{name: "task_type", value: '<%=task_type%>'},
              {name: "task_state", value: '<%=task_state%>'}
              <%=", {name: 'checkboxes', value: #{checkboxes}}" if checkboxes%>],
@@ -18,12 +18,11 @@
         <%= "{display: '', width : 20, align: 'left', process: #{table_id}checkbox}," if checkboxes %>
         {display: 'Type', width : 80, align: 'left'},
         {display: 'Item', width : 120, align: 'right', process: <%= table_id%>item},
-        {display: 'Action', name : 'action', width : 80, align: 'left'},
-        {display: 'State', name : 'state', width : 60, align: 'left'},
+        {display: 'Action', name : 'action', width : 120, align: 'left'},
+        {display: 'Message', name : 'message', width : 180, align: 'left'},
+        {display: 'State', name : 'state', width : 30, align: 'left', process: task_state},
         {display: 'User', name : 'user', width : 60, align: 'right'},
-        {display: 'Created', name : 'tasks.created_at', width : 140, align: 'right'},
-        {display: 'Args', name : 'args', width : 180, align: 'left'},
-        {display: 'Message', name : 'message', width : 180, align: 'left'}
+        {display: 'Created', name : 'tasks.created_at', width : 140, align: 'right'}
 	],
     sortname: "tasks.created_at",
     sortorder: "desc",
@@ -41,6 +40,11 @@
     function <%= table_id %>item(celDiv)
     {
         $(celDiv).html($(celDiv).html().split(";;;")[2]);
+    }
+    function task_state(celDiv)
+    {
+        var state_name = $(celDiv).html()
+        $(celDiv).html('<div class="state-'+state_name+'" title="'+state_name+'"/>');
     }
     function <%= table_id %>_select(celDiv)
     {

@@ -1,10 +1,10 @@
 /****************
-     header style 
+     header style
 **/
 
 .header_logo {
-    position:absolute; 
-    top:10px; 
+    position:absolute;
+    top:10px;
     left:10px;
 }
 
@@ -196,7 +196,7 @@
     background: #CCFFFF;
 }
 .history_graph{
-  height: 210px; 
+  height: 210px;
   position: relative;
   float: left;
 }
@@ -208,54 +208,26 @@
 }
 
 /* snapshot graphs on hardware / resource summary tab */
-#snapshot_graphs { height: 180px; padding-left: 0; }
-#snapshot_graphs table { width: 98%; border-spacing: 1px; background: #CCCCCC; border-width: 0; border-style:solid;}
-#snapshot_graphs th    { background: #EEEEEE; text-align: left; padding-left: 10px;}
-#snapshot_graphs td    { padding-left: 10px; background: #FFFFFF;}
-#load_snapshot, #cpu_snapshot, #net_in_snapshot, #net_out_snapshot, #io_snapshot, #memory_snapshot {
-/*
-#snapshot_graphs { height: 180px; padding-left: 60px; }
-#snapshot_graphs table { width: 90%; border-spacing: 0;}
-#snapshot_graphs th    { background: #CCCCCC; text-align: left; padding-left: 10px; border: 1px solid #DDDDDD;}
-#snapshot_graphs td    { padding-left: 10px; border: 1px solid #DDDDDD;}
-#load_snapshot, #cpu_snapshot, #net_in_snapshot, #net_out_snapshot, #io_snapshot, #memory_snapshot {
-*/
-  width: 350px; height: 10px; float: left;
+#snapshot_graphs table {
+  width: 98%;
 }
-.snapshot_graph_text {
-   float: left;
-   padding-top: 13px;
-   width: 50px;
-}
+#snapshot_graphs th    { background: #EEEEEE; text-align: left; padding-left: 10px;border:1px solid #CCCCCC;}
+#snapshot_graphs td    { padding-left: 10px; background: #FFFFFF;border:1px solid #CCCCCC;}
 .snapshot_graph_container{
-    float: left;
-}
-.snapshot_graph_arrow{
-  width: 350px; height: 6px; float: left;
+  width: 180px;
+  height: 10px;
+  border:#666666 solid 1px;
 }
 .snapshot_graph{
-  float: left;
+  height: 10px;
 }
-
-/* snapshot graphs on detail panes */
-.selection_detail #snapshot_graphs { height: 140px; padding-left: 0; }
-.selection_detail #snapshot_graphs table { width: 98%; }
-.selection_detail #load_snapshot, 
-.selection_detail #memory_snapshot, 
-.selection_detail #cpu_snapshot, 
-.selection_detail #net_in_snapshot, 
-.selection_detail #net_out_snapshot, 
-.selection_detail #io_snapshot { height: 5px; width: 215px; }
-.selection_detail .snapshot_graph_arrow{ height: 6px; }
-.selection_detail .snapshot_graph_text { padding-top: 0; }
-.selection_detail .snapshot_graph_container{ width: 85%; }
-.selection_detail .snapshot_graph{ padding-left: 23px; }
 
 /* load graphs in flexigrid */
 .load_graph {
   padding: 0px !important;
   height: 10px;
-  border:#F5AFA8 solid 1px;
+  border:#666666 solid 1px;
+  width: 100px;
 }
 
 .load_graph_low {background: url(../images/chart_horiz_blue.png) repeat-x;}
@@ -316,3 +288,30 @@
   width: 40%;
   padding-bottom: 15px;
 }
+
+/* classes for task state icons */
+.state-canceled {
+  background:url(../images/icon-canceled-11px.png) top center no-repeat;
+  height: 11px;
+}
+.state-failed {
+  background:url(../images/icon-failed-11px.png) top center no-repeat;
+  height: 11px;
+}
+.state-finished {
+  background:url(../images/icon-finished-11px.png) top center no-repeat;
+  height: 11px;
+}
+.state-paused {
+  background:url(../images/icon-paused-11px.png) top center no-repeat;
+  height: 11px;
+}
+.state-queued {
+  background:url(../images/icon-queued-11px.png) top center no-repeat;
+  height: 11px;
+}
+.state-running {
+  background:url(../images/icon-running-11px.png) top center no-repeat;
+  height: 11px;
+}
+

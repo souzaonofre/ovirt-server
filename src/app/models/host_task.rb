@@ -26,7 +26,11 @@ class HostTask < Task
   end
 
   def task_obj
-    "Host;;;#{self.host.id};;;#{self.host.hostname}"
+    if self.host
+      "Host;;;#{self.host.id};;;#{self.host.hostname}"
+    else
+      ""
+    end
   end
 
   def vm

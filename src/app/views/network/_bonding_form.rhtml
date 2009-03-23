@@ -24,7 +24,7 @@
     <div class="selected_popup_content_left">NICs</div>
     <div class="selected_popup_content_right">
        <select id="bonding_nic_ids" name="bonding[nic_ids][]" multiple="true">
-        <%= options_from_collection_for_select @host.nics, "id", "mac",
+        <%= options_from_collection_for_select @nics, "id", "mac",
                     @bonding ? @bonding.nics.collect{ |x| x.nic_id.to_i } : [] %>
        </select>
     </div>

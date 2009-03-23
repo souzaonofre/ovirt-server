@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" applicationComplete="myInit(); populate(mainChart);" styleName="plain" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" applicationComplete="myInit();" styleName="plain" horizontalScrollPolicy="off" verticalScrollPolicy="off">
   <mx:Script>
     <![CDATA[
 
@@ -9,10 +9,9 @@
     import org.ovirt.ApplicationBus;
     import org.ovirt.charts.Chart;
     import org.ovirt.charts.BarChart;
+    import org.ovirt.charts.HostChart;
 
-    private function populate(container:VBox):void {
-        var chart:Chart = new BarChart(container, parameters['flexchart_data']);
-        chart.load();
+    private function populate(container:Box):void {
     }
 
     private var expandHistory:Resize = new Resize();
@@ -23,9 +22,10 @@
 
     private function myInit():void {
 
+      var bus:ApplicationBus = ApplicationBus.instance();
       mainChart.height = Constants.height;
       mainChart.width = Constants.width;
-      hostsChart.width = Constants.width;
+      hostChart.width = Constants.width;
 
       expandHistory.widthTo = Constants.width;
       expandHistory.heightTo = Constants.height;
@@ -37,26 +37,33 @@
 
       expandResources.widthTo = Constants.width;
       expandResources.heightTo = Constants.height * .6666;
-      expandResources.target = hostsChart;
+      expandResources.target = hostChart;
       expandResources.duration = 500;
 
       contractResources.widthTo = Constants.width;
       contractResources.heightTo = 0;
-      contractResources.target = hostsChart;
+      contractResources.target = hostChart;
       contractResources.duration = 500;
 
-      ApplicationBus.instance().barClickAction = zoomIntoSeries;
+      bus.mainChartBarClickAction = zoomIntoSeries;
+      bus.closeHostChart = zoomOutSeries;
 
+      var mChart:Chart = new BarChart(mainChart, parameters['flexchart_data']);
+      bus.mainChart = mChart as BarChart;
+      mChart.load();
+
+      var hChart:Chart = new HostChart(hostChart);
+      bus.hostChart = hChart as HostChart;
     }
 
     private function zoomOutSeries(e:Event):void {
       expandHistory.end(); expandHistory.play();
       contractResources.end(); contractResources.play();
-      hostsChart.visible = false;
+      hostChart.visible = false;
     }
 
     private function zoomIntoSeries(e:Event):void {
-      hostsChart.visible=true;
+      hostChart.visible=true;
       expandResources.end(); expandResources.play();
       contractHistory.end(); contractHistory.play();
     }
@@ -66,8 +73,8 @@
 
   </mx:Script>
 
-  <mx:VBox id="mainChart" />
-  <mx:VBox id="hostsChart" visible="false" opaqueBackground="0x00ff00" click="zoomOutSeries(event)">
-    <mx:Text text="This Space Reserved for Drill-down Hosts Chart" />
+  <mx:Box id="mainChart" />
+  <mx:VBox id="hostChart" visible="false" opaqueBackground="0xffffff" click="zoomOutSeries(event)">
+
   </mx:VBox>
 </mx:Application>

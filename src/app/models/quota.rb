@@ -22,6 +22,28 @@ require 'util/ovirt'
 class Quota < ActiveRecord::Base
   belongs_to :pool
 
+  validates_presence_of :pool_id
+
+
+  validates_numericality_of :total_vcpus,
+     :greater_than_or_equal_to => 0,
+     :unless => Proc.new{ |quota| quota.total_vcpus.nil? }
+
+  validates_numericality_of :total_vmemory,
+     :greater_than_or_equal_to => 0,
+     :unless => Proc.new{ |quota| quota.total_vmemory.nil? }
+
+  validates_numericality_of :total_vnics,
+     :greater_than_or_equal_to => 0,
+     :unless => Proc.new{ |quota| quota.total_vnics.nil? }
+
+  validates_numericality_of :total_storage,
+     :greater_than_or_equal_to => 0,
+     :unless => Proc.new{ |quota| quota.total_storage.nil? }
+
+  validates_numericality_of :total_vms,
+     :greater_than_or_equal_to => 0,
+     :unless => Proc.new{ |quota| quota.total_vms.nil? }
 
   def total_vmemory_in_mb
     kb_to_mb(total_vmemory)

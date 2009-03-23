@@ -9,7 +9,7 @@
  <div id="selected_popup_content_expanded" class="dialog_form">
   <%= hidden_field_tag 'id', @nic.id %>
   <%= hidden_field_tag 'nic_host_id', @nic.host.id %>
-  <%= hidden_field_tag 'nic_network_id', @nic.physical_network.id %>
+  <%= hidden_field_tag 'nic_network_id', @nic.physical_network.id if @nic.physical_network %>
 
   <div class="selected_popup_content_left">MAC:</div>
   <div class="selected_popup_content_right"><%= @nic.mac %></div>
@@ -30,7 +30,7 @@
   <%= render :partial => 'select' %>
 
   <div id="static_ip_options"
-    style="<% if @network.boot_type_id != @static_boot_type.id %>
+    style="<% if @network.nil? || @network.boot_type_id != @static_boot_type.id %>
             display: none;<%end %>">
     <%= render :partial => 'ip_addresses_form',
                :locals => { :parent_type => 'nic',

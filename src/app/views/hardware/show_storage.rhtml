@@ -1,10 +1,12 @@
 <div id="toolbar_nav">
  <ul>
-    <li><a href="<%= url_for :controller => 'storage', :action => 'addstorage', :hardware_pool_id => @pool %>" rel="facebox[.bolder]"><%= image_tag "icon_addstorage.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Add Storage Server</a></li>
-    <li>
-      <a href="#" onClick="return validate_storage_for_move();" ><%= image_tag "icon_move.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;Move</a>
-      <a id="move_link_hidden" href="<%= url_for :controller => 'hardware', :action => 'move', :id => @pool, :resource_type=>'storage' %>" rel="facebox[.bolder]"  style="display:none" ></a>
-    </li>
+    <%if @can_modify -%>
+      <li><a href="<%= url_for :controller => 'storage', :action => 'addstorage', :hardware_pool_id => @pool %>" rel="facebox[.bolder]"><%= image_tag "icon_addstorage.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Add Storage Server</a></li>
+      <li>
+        <a href="#" onClick="return validate_storage_for_move();" ><%= image_tag "icon_move.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;Move</a>
+        <a id="move_link_hidden" href="<%= url_for :controller => 'hardware', :action => 'move', :id => @pool, :resource_type=>'storage' %>" rel="facebox[.bolder]"  style="display:none" ></a>
+      </li>
+    <% end -%>
     <li>
        <%= image_tag "icon_smartpool.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Add to Smart Pool &nbsp;&nbsp;&nbsp;<%= image_tag "icon_toolbar_arrow.gif", :style => "vertical-align:middle;" %>
        <ul>
@@ -20,30 +22,32 @@
         <% } %>
        </ul>
     </li>
-    <li>
-      <a href="#" onClick="return validate_storage_for_remove();" ><%= image_tag "icon_remove.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;Remove</a>
-      <a id="remove_link_hidden" href="<%= url_for :controller => 'hardware', :action => 'removestorage', :id => @pool %>" rel="facebox[.bolder]"  style="display:none" ></a>
-    </li>
+    <%if @can_modify -%>
+      <li>
+        <a href="#" onClick="return validate_storage_for_remove();" ><%= image_tag "icon_remove.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;Remove</a>
+        <a id="remove_link_hidden" href="<%= url_for :controller => 'hardware', :action => 'removestorage', :id => @pool %>" rel="facebox[.bolder]"  style="display:none" ></a>
+      </li>
+    <% end -%>
   </ul>
 </div>
 
 <textarea id="tree_template" style="display:none;">
-{macro htmlList(list, isFullList)}
+{macro htmlList(list, id, isFullList)}
   {if isFullList}
   <ul style="display:none;">
   {/if}
     {for item in list}
       <li>
         <span class="hitarea {if item.children.length > 0} expandable{/if}">&nbsp;</span>
-        <div id="tree_${item.type}_${item.id}">
+        <div id="${id}-${item.ui_object}">
           <input class="grid_checkbox" type="checkbox"
-            name="grid_checkbox${item.type}_${item.id}"
+            name="grid_checkbox${item.ui_object}"
             value="${item.id}"
             {if !item.is_pool}disabled="disabled" style="display:none"{/if}
             {if item.selected}checked="checked"{/if}/> ${item.name} {if item.size}(${item.size} GB){/if}
         </div>
         {if item.children.length > 0}
-          ${htmlList(item.children, true)}
+          ${htmlList(item.children, id, true)}
         {/if}
       </li>
     {/for}
@@ -52,13 +56,14 @@
   {/if}
 {/macro}
 
-${htmlList(pools)}
+${htmlList(pools, id)}
 </textarea>
 <script type="text/javascript">
   $(document).ready(function(){
     $('#storage_tree').tree({
       content: {"pools" : <%=  @storage_tree%>},
-      clickHandler: storage_select
+      clickHandler: storage_select,
+      channel: 'STORAGE_VOLUME'
     });
   });
   function add_storage_to_smart_pool(smart_pool)
@@ -111,11 +116,13 @@ ${htmlList(pools)}
   }
   function storage_select(e, elem)
   {
-    $('#storage_tree_form ul.ovirt-tree li div').removeClass('current');
-    $(elem)
-      .addClass('current');
-    $('#storage_selection').load('<%= url_for :controller => "search", :action => "single_result" %>',
-                { class_and_id: elem.id.substring(elem.id.indexOf("_")+1)});
+    if ($(e.target).is('div') && $(e.target).parent().is('li')){
+      $('#storage_tree_form .current').removeClass('current');
+      $(e.target)
+        .addClass('current');
+      $('#storage_selection').load('<%= url_for :controller => "search", :action => "single_result" %>',
+                  { class_and_id: e.target.id.substring(e.target.id.indexOf("-")+1)});
+    }
   }
 
 </script>
@@ -141,8 +148,10 @@ ${htmlList(pools)}
 
           <div class="no-grid-items-text">
             No storage Volumes found in this pool. <br/><br/>
-            <%= image_tag "icon_addhost.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;
-            <a href="<%= url_for :controller => 'storage', :action => 'addstorage', :hardware_pool_id => @pool %>" rel="facebox[.bolder]">Add first storage volume to this hardware pool</a>
+            <%if @can_modify -%>
+              <%= image_tag "icon_addhost.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;
+              <a href="<%= url_for :controller => 'storage', :action => 'addstorage', :hardware_pool_id => @pool %>" rel="facebox[.bolder]">Add first storage volume to this hardware pool</a>
+            <% end -%>
           </div>
        </div>
    </div>

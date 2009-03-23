@@ -1,5 +1,6 @@
 %define pbuild %{_builddir}/%{name}-%{version}
 %define app_root %{_datadir}/%{name}
+%define acehome  %{_datadir}/ace
 
 Summary: oVirt Server Suite
 Name: ovirt-server
@@ -33,6 +34,11 @@ Requires: rrdtool-ruby
 Requires: iscsi-initiator-utils
 Requires: cyrus-sasl-gssapi
 Requires: ovirt-docs
+Requires: qpidd
+Requires: ruby-qpid
+Requires: qpidc
+Requires: qmf
+Requires: ruby-qpid
 Requires(post):  /sbin/chkconfig
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
@@ -45,9 +51,20 @@ BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 URL: http://ovirt.org/
 
-%description
+%package installer
+Summary: Installer modules for the oVirt Server Suite
+Group: Applications/System
+Requires: ruby(abi) = 1.8
+Requires: ace
+Requires: ace-postgres
+Requires: rubygem(highline)
+Requires: hal
 
+%description
 The Server Suite for oVirt.
+
+%description installer
+The Installer for the ovirt server suite
 
 %prep
 %setup -q
@@ -59,22 +76,26 @@ test "x$RPM_BUILD_ROOT" != "x" && rm -rf $RPM_BUILD_ROOT
 mkdir %{buildroot}
 
 %{__install} -d -m0755 %{buildroot}%{_bindir}
+%{__install} -d -m0755 %{buildroot}%{_datadir}
 %{__install} -d -m0755 %{buildroot}%{_sbindir}
 %{__install} -d -m0755 %{buildroot}%{_initrddir}
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/sysconfig
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/httpd/conf.d
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/%{name}
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/%{name}/db
+%{__install} -d -m0755 %{buildroot}%{_sysconfdir}/cron.d
 %{__install} -d -m0755 %{buildroot}%{_localstatedir}/lib/%{name}
 %{__install} -d -m0755 %{buildroot}%{_localstatedir}/log/%{name}
 %{__install} -d -m0755 %{buildroot}%{_localstatedir}/run/%{name}
 %{__install} -d -m0755 %{buildroot}%{app_root}
+%{__install} -d -m0755 %{buildroot}/%{acehome}
 
 touch %{buildroot}%{_localstatedir}/log/%{name}/mongrel.log
 touch %{buildroot}%{_localstatedir}/log/%{name}/rails.log
 touch %{buildroot}%{_localstatedir}/log/%{name}/taskomatic.log
 touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 %{__install} -p -m0644 %{pbuild}/conf/%{name}.conf %{buildroot}%{_sysconfdir}/httpd/conf.d
+%{__install} -p -m0644 %{pbuild}/conf/%{name}.crontab %{buildroot}%{_sysconfdir}/cron.d/%{name}
 
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-host-browser %{buildroot}%{_initrddir}
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-db-omatic %{buildroot}%{_initrddir}
@@ -107,12 +128,17 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 %{__rm} -f %{buildroot}%{app_root}/task-omatic/.gitignore
 
 %{__cp} -a %{pbuild}/scripts/ovirt-add-host %{buildroot}%{_bindir}
-%{__cp} -a %{pbuild}/scripts/ovirt-server-install %{buildroot}%{_sbindir}
 %{__cp} -a %{pbuild}/scripts/ovirt-reindex-search %{buildroot}%{_sbindir}
 %{__cp} -a %{pbuild}/scripts/ovirt-update-search %{buildroot}%{_sbindir}
 %{__rm} -rf %{buildroot}%{app_root}/tmp
 %{__mkdir} %{buildroot}%{_localstatedir}/lib/%{name}/tmp
 %{__ln_s} %{_localstatedir}/lib/%{name}/tmp %{buildroot}%{app_root}/tmp
+
+# Set up the installer
+%{__cp} -pr %{pbuild}/installer/modules %{buildroot}/%{acehome}
+%{__cp} -pr %{pbuild}/installer/appliances %{buildroot}/%{acehome}
+%{__cp} -pr %{pbuild}/installer/bin/ovirt-installer %{buildroot}%{_sbindir}
+
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -168,7 +194,6 @@ fi
 
 %files
 %defattr(-,root,root,0755)
-%{_sbindir}/ovirt-server-install
 %{_sbindir}/ovirt-reindex-search
 %{_sbindir}/ovirt-update-search
 %{_bindir}/ovirt-add-host
@@ -177,6 +202,7 @@ fi
 %{_initrddir}/ovirt-host-collect
 %{_initrddir}/ovirt-mongrel-rails
 %{_initrddir}/ovirt-taskomatic
+%{_sysconfdir}/cron.d/%{name}
 %config(noreplace) %{_sysconfdir}/sysconfig/ovirt-mongrel-rails
 %config(noreplace) %{_sysconfdir}/sysconfig/ovirt-rails
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
@@ -192,6 +218,10 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/development.rb
 %config(noreplace) %{_sysconfdir}/%{name}/production.rb
 %config(noreplace) %{_sysconfdir}/%{name}/test.rb
+
+%files installer
+%{_sbindir}/ovirt-installer
+%{acehome}
 
 %changelog
 * Thu May 29 2008 Alan Pevec <apevec@redhat.com> - 0.0.5-0

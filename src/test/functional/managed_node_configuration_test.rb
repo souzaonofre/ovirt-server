@@ -48,8 +48,8 @@ class ManagedNodeConfigurationTest < Test::Unit::TestCase
 
     expected = <<-HERE
 # THIS FILE IS GENERATED!
-ifcfg=#{nic.mac}|eth0|BOOTPROTO=dhcp|BRIDGE=ovirtbr0|ONBOOT=yes
-ifcfg=#{nic.mac}|ovirtbr0|BOOTPROTO=dhcp|TYPE=bridge|ONBOOT=yes
+ifcfg=#{nic.mac}|eth0|BOOTPROTO=dhcp|BRIDGE=breth0|ONBOOT=yes
+ifcfg=#{nic.mac}|breth0|BOOTPROTO=dhcp|TYPE=bridge|ONBOOT=yes
     HERE
 
     result = ManagedNodeConfiguration.generate(
@@ -68,7 +68,7 @@ ifcfg=#{nic.mac}|ovirtbr0|BOOTPROTO=dhcp|TYPE=bridge|ONBOOT=yes
     expected = <<-HERE
 # THIS FILE IS GENERATED!
 ifcfg=#{nic.mac}|eth0|BOOTPROTO=#{nic.physical_network.boot_type.proto}|IPADDR=#{nic.ip_addresses.first.address}|NETMASK=#{nic.ip_addresses.first.netmask}|BROADCAST=#{nic.ip_addresses.first.broadcast}|BRIDGE=#{nic.bridge}|ONBOOT=yes
-ifcfg=#{nic.mac}|ovirtbr0|BOOTPROTO=#{nic.physical_network.boot_type.proto}|IPADDR=#{nic.ip_addresses.first.address}|NETMASK=|BROADCAST=#{nic.ip_addresses.first.netmask}|TYPE=bridge|ONBOOT=yes
+ifcfg=#{nic.mac}|breth0|BOOTPROTO=#{nic.physical_network.boot_type.proto}|IPADDR=#{nic.ip_addresses.first.address}|NETMASK=|BROADCAST=#{nic.ip_addresses.first.netmask}|TYPE=bridge|ONBOOT=yes
     HERE
 
     result = ManagedNodeConfiguration.generate(
@@ -87,9 +87,9 @@ ifcfg=#{nic.mac}|ovirtbr0|BOOTPROTO=#{nic.physical_network.boot_type.proto}|IPAD
 
     expected = <<-HERE
 # THIS FILE IS GENERATED!
-ifcfg=#{nic1.mac}|eth0|BOOTPROTO=#{nic1.physical_network.boot_type.proto}|IPADDR=#{nic1.ip_addresses.first.address}|NETMASK=#{nic1.ip_addresses.first.netmask}|BROADCAST=#{nic1.ip_addresses.first.broadcast}|BRIDGE=ovirtbr0|ONBOOT=yes
-ifcfg=#{nic1.mac}|ovirtbr0|BOOTPROTO=#{nic1.physical_network.boot_type.proto}|IPADDR=#{nic1.ip_addresses.first.address}|NETMASK=#{nic1.ip_addresses.first.netmask}|BROADCAST=#{nic1.ip_addresses.first.broadcast}|TYPE=bridge|ONBOOT=yes
-ifcfg=#{nic2.mac}|eth1|BOOTPROTO=#{nic2.physical_network.boot_type.proto}|BRIDGE=ovirtbr0|ONBOOT=yes
+ifcfg=#{nic1.mac}|eth0|BOOTPROTO=#{nic1.physical_network.boot_type.proto}|IPADDR=#{nic1.ip_addresses.first.address}|NETMASK=#{nic1.ip_addresses.first.netmask}|BROADCAST=#{nic1.ip_addresses.first.broadcast}|BRIDGE=breth0|ONBOOT=yes
+ifcfg=#{nic1.mac}|breth0|BOOTPROTO=#{nic1.physical_network.boot_type.proto}|IPADDR=#{nic1.ip_addresses.first.address}|NETMASK=#{nic1.ip_addresses.first.netmask}|BROADCAST=#{nic1.ip_addresses.first.broadcast}|TYPE=bridge|ONBOOT=yes
+ifcfg=#{nic2.mac}|eth1|BOOTPROTO=#{nic2.physical_network.boot_type.proto}|BRIDGE=breth0|ONBOOT=yes
     HERE
 
     result = ManagedNodeConfiguration.generate(

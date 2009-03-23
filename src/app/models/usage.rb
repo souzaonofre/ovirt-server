@@ -18,4 +18,10 @@
 
 class Usage < ActiveRecord::Base
   has_and_belongs_to_many :networks, :join_table => 'networks_usages'
+
+  validates_presence_of :label
+  validates_presence_of :usage
+
+  validates_uniqueness_of :usage
+
 end

@@ -27,6 +27,6 @@ class NfsStorageVolume < StorageVolume
   end
 
   def volume_create_params
-    return filename, size, "0744", "0744", "0744"
+    return filename, size, nil, nil, nil
   end
 end

@@ -1,6 +1,8 @@
 <div id="toolbar_nav">
  <ul>
-    <li><a href="<%= url_for :controller => 'resources', :action => 'new', :parent_id => @pool %>" rel="facebox[.bolder]"><%= image_tag "icon_add_vmpool.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;New Virtual Machine Pool</a></li>
+    <%if @can_modify -%>
+      <li><a href="<%= url_for :controller => 'resources', :action => 'new', :parent_id => @pool %>" rel="facebox[.bolder]"><%= image_tag "icon_add_vmpool.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;New Virtual Machine Pool</a></li>
+    <% end -%>
     <li>
        <%= image_tag "icon_smartpool.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Add to Smart Pool &nbsp;&nbsp;&nbsp;<%= image_tag "icon_toolbar_arrow.gif", :style => "vertical-align:middle;" %>
        <ul>
@@ -16,7 +18,9 @@
         <% } %>
        </ul>
     </li>
-    <li><a href="#" onClick="delete_vm_pools()"><%= image_tag "icon_delete_white.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Delete</a></li>
+    <%if @can_modify -%>
+      <li><a href="#" onClick="delete_vm_pools()"><%= image_tag "icon_delete_white.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;Delete</a></li>
+    <% end -%>
  </ul>
 </div>
 <script type="text/javascript">
@@ -92,8 +96,10 @@
           
           <div class="no-grid-items-text">
             No VM Resource Pools found in this hardware pool. <br/><br/>
-            <%= image_tag "icon_add_vmpool.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;
-            <a href="<%= url_for :controller => 'resources', :action => 'new', :parent_id => @pool %>" rel="facebox[.bolder]">Add first vm resource pool to this hardware pool</a></li>
+            <%if @can_modify -%>
+              <%= image_tag "icon_add_vmpool.png", :style => "vertical-align:middle;" %>&nbsp;&nbsp;
+              <a href="<%= url_for :controller => 'resources', :action => 'new', :parent_id => @pool %>" rel="facebox[.bolder]">Add first vm resource pool to this hardware pool</a></li>
+            <% end -%>
           </div>
        </div>
    </div>

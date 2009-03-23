@@ -22,6 +22,10 @@
 //our ActionScript classes without needing to access Application directly
 
 package org.ovirt {
+
+  import org.ovirt.charts.BarChart;
+  import org.ovirt.charts.HostChart;
+
   public class ApplicationBus {
 
     private static var _instance:ApplicationBus;
@@ -33,7 +37,11 @@ package org.ovirt {
       return _instance;
     }
 
-    public var barClickAction:Function;
+    public var mainChartBarClickAction:Function;
+    public var closeHostChart:Function;
+
+    public var mainChart:BarChart;
+    public var hostChart:HostChart;
 
   }
 }

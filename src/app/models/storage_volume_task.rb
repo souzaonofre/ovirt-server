@@ -27,7 +27,11 @@ class StorageVolumeTask < Task
   end
 
   def task_obj
-    "StorageVolume;;;#{self.storage_volume.id};;;#{self.storage_volume.display_name}"
+    if self.storage_volume
+      "StorageVolume;;;#{self.storage_volume.id};;;#{self.storage_volume.display_name}"
+    else
+      ""
+    end
   end
   def host
     nil

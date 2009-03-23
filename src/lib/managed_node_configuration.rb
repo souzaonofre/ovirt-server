@@ -41,11 +41,11 @@ require 'stringio'
 #
 # For a network interface (including a bonded interface) an example would be:
 #
-# ifcfg=00:11:22:33:44|eth0|BOOTPROTO=dhcp|bridge=ovirtbr0|ONBOOT=yes
+# ifcfg=00:11:22:33:44|eth0|BOOTPROTO=dhcp|bridge=breth0|ONBOOT=yes
 #
 # In this line, the network interface +eth0+ has a hardware MAC address of
 # +00:11:22:33:44+. It will use DHCP for retrieving it's IP address details,
-# and will use the +ovirtbr0+ interface as a bridge.
+# and will use the +breth0+ interface as a bridge.
 #
 class ManagedNodeConfiguration
   NIC_ENTRY_PREFIX='/files/etc/sysconfig/network-scripts'
@@ -90,7 +90,7 @@ class ManagedNodeConfiguration
 
 	# TODO remove this when bridges are properly supported
 	unless has_bridge
-	  macs[nic.mac] = "ovirtbr0"
+	  macs[nic.mac] = "breth0"
 	  process_nic result, nic, macs, nil, true, false
 	  has_bridge = true
 	end
@@ -117,7 +117,7 @@ class ManagedNodeConfiguration
           entry += "|IPADDR=#{ip.address}|NETMASK=#{ip.netmask}|BROADCAST=#{ip.broadcast}"
         end
         entry += "|BRIDGE=#{nic.bridge}" if nic.bridge && !is_bridge
-        entry += "|BRIDGE=ovirtbr0" if !nic.bridge && !is_bridge
+        entry += "|BRIDGE=breth0" if !nic.bridge && !is_bridge
         entry += "|TYPE=bridge" if is_bridge
       end
       entry += "|ONBOOT=yes"
