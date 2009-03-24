@@ -96,6 +96,10 @@ def create_vm_xml(name, uuid, memAllocated, memUsed, vcpus, bootDevice,
   doc.root.elements["devices"].add_element("input", {"type" => "mouse", "bus" => "ps2"})
   doc.root.elements["devices"].add_element("graphics", {"type" => "vnc", "port" => "-1", "listen" => "0.0.0.0"})
 
+  doc.root.add_element("features")
+  doc.root.elements["features"].add_element("acpi")
+  doc.root.elements["features"].add_element("apic")
+
   serial = Element.new("serial")
   serial.add_attribute("type", "pty")
   serial.add_element("target", {"port" => "0"})
