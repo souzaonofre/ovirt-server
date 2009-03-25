@@ -181,8 +181,26 @@ class DbOmatic < Qpid::Qmf::Console
         end
 
         @logger.info "Updating VM #{domain['name']} to state #{state}"
+
+        if state == Vm::STATE_STOPPED
+            @logger.info "VM has moved to stopped, clearing VM attributes."
+            qmf_vm = @session.object(:class => "domain", 'uuid' => vm.uuid)
+            if qmf_vm
+                @logger.info "Deleting VM #{vm.description}."
+                result = qmf_vm.undefine
+                if result.status == 0
+                    @logger.info "Delete of VM #{vm.description} successful, syncing DB."
+                    vm.host_id = nil
+                    vm.memory_used = nil
+                    vm.num_vcpus_used = nil
+                    vm.state = Vm::STATE_STOPPED
+                    vm.needs_restart = nil
+                    vm.vnc_port = nil
+                end
+            end
+        end
         vm.state = state
-        vm.save
+        vm.save!
 
         domain[:synced] = true
     end
