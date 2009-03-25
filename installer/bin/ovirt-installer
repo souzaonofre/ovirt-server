@@ -96,6 +96,20 @@ welcome =  "This installer will configure the ovirt installation based on a seri
 of questions. When complete, you will be asked to install oVirt or\n\
 do the installation manually. Would you like to continue?"
 
+# verify hostname is not on the loopback line in /etc/hosts to prevent kerberos problems
+hostname = `hostname`
+hostsfile = File.new("/etc/hosts", "r")
+while (line = hostsfile.gets)
+     if line =~ /127.0.0.1/ && line.include?(hostname.chomp)
+         if hostname !~ /localhost.localdomain/
+         @cli.say("\nHostname must not be on the loopback 127.0.0.1 line in /etc/hosts")
+         @cli.say("#{line}")
+         exit(0)
+         end
+     end
+end
+hostsfile.close
+
 if (prompt_yes_no(welcome, :default => "y") == "n")
     exit(0)
 end
