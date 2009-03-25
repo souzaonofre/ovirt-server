@@ -50,6 +50,18 @@ def prompt_for_answer(prompt, options={})
     return answer
 end
 
+# prompt a user for a password, with confirmation
+def prompt_for_password(prompt, confirm)
+  loop do
+    pass = prompt_for_answer(prompt, :password => true)
+    conf = prompt_for_answer(confirm, :password => true)
+    if pass == conf
+      return pass
+    end
+    @cli.say("Passwords do not match!")
+  end
+end
+
 # Allow a user to enter a Yes/No
 # And repeat the prompt until they do
 def prompt_yes_no(prompt, options={})
@@ -195,17 +207,16 @@ elsif cobbler_setup == "n"
 end
 
 cobbler_user_name= prompt_for_answer("Enter your cobbler username:")
-cobbler_user_password = prompt_for_answer("Enter your cobbler user password:", :password => true)
+cobbler_user_password = prompt_for_password("Enter your cobbler user password:", "Confirm your cobbler user password:")
 
 # Postgres Configuration
 db_username = "ovirt"
-db_password = prompt_for_answer("Enter a password for the ovirt postgres account:", :password => true)
-
+db_password = prompt_for_password("Enter a password for the ovirt postgres account:", "Confirm your ovirt postgres password")
 # FreeIPA Configuration
 realm_name = prompt_for_answer("Enter your realm name (example: example.com):", :regex => FQDN)
 
-freeipa_password = prompt_for_answer("NOTE: The following pasword will also be your ovirtadmin password for the web management login\n\
-Enter an administrator password for FreeIPA:", :password => true)
+@cli.say("NOTE: The following password will also be your ovirtadmin password for the web management login")
+freeipa_password = prompt_for_password("Enter an administrator password for FreeIPA:", "Confirm your FreeIPA admin password:")
 ldap_dn = ""
 ldap_dn_temp = realm_name.split(".")
 ldap_dn_temp.each do |i|
