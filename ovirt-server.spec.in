@@ -215,6 +215,7 @@ fi
 %dir %{_sysconfdir}/%{name}/db
 %config(noreplace) %{_sysconfdir}/%{name}/database.yml
 %config(noreplace) %{_sysconfdir}/%{name}/ldap.yml
+%config(noreplace) %{_sysconfdir}/%{name}/cobbler.yml
 %config(noreplace) %{_sysconfdir}/%{name}/development.rb
 %config(noreplace) %{_sysconfdir}/%{name}/production.rb
 %config(noreplace) %{_sysconfdir}/%{name}/test.rb
