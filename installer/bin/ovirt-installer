@@ -62,6 +62,16 @@ def prompt_for_password(prompt, confirm)
   end
 end
 
+def prompt_for_interface(prompt, interfaces, options={})
+    loop do
+    nic = prompt_for_answer(prompt,options)
+    if interfaces.has_key?(nic)
+        return nic
+    end
+    @cli.say("Please pick an active device from the list")
+    end
+end
+
 # Allow a user to enter a Yes/No
 # And repeat the prompt until they do
 def prompt_yes_no(prompt, options={})
@@ -141,20 +151,23 @@ if dev_ct == 0
     exit
 else
     puts ""
-    @cli.say("Below are the detected networking devices\n\n")
+    @cli.say("Below are the active networking devices, if there are any missing devices\n\n")
+    @cli.say("ensure they are active and have an ip address before running the installer")
     @cli.say("mac address           interface        ip address")
+    interfaces = {}
     net_devs.each_line do |dev|
         dev = dev.chomp
         interface = `hal-get-property --udi #{dev} --key net.interface`
         mac = `hal-get-property --udi #{dev} --key net.address`
         ip = `ifconfig #{interface}`
         ipaddr = ip.scan(/\s*inet addr:([\d.]+)/)
-        puts (mac.chop + "   :   " + interface.chop   +  "    :    " + ipaddr.to_s) if interface.chop != "lo"
+        interfaces[interface.chop] = ipaddr.to_s if interface.chop != "lo"
+        puts (mac.chop + "   :   " + interface.chop   +  "    :    " + ipaddr.to_s) if interface.chop != "lo" and ipaddr.to_s != ""
     end
 end
 
-guest_httpd_dev = prompt_for_answer("Enter the interface for the Guest network:", :default => "eth0")
-admin_dev = prompt_for_answer("Enter the interface for the Admin network (this may be the same as the Guest network interface):", :default => "eth0")
+guest_httpd_dev = prompt_for_interface("Enter the interface for the Guest network:", interfaces, :default => "eth0")
+admin_dev = prompt_for_interface("Enter the interface for the Admin network (this may be the same as the Guest network interface):", interfaces, :default => "eth0")
 
 #FIXME: correctly configure separate networks.
 #For now, define admin and guest networks to be the same
@@ -172,12 +185,9 @@ File.open('/etc/resolv.conf').each_line{ |line|
 }
 dns_servers = prompt_yes_no("Use this systems's dns servers?")
 
-guest_httpd_ip = `ifconfig #{guest_httpd_dev}`
-guest_httpd_ipaddr = guest_httpd_ip.scan(/\s*inet addr:([\d.]+)/)
-guest_ip = `ifconfig #{guest_dev}`
-guest_ipaddr = guest_ip.scan(/\s*inet addr:([\d.]+)/)
-admin_ip = `ifconfig #{admin_dev}`
-admin_ipaddr = admin_ip.scan(/\s*inet addr:([\d.]+)/)
+guest_httpd_ipaddr = interfaces[guest_httpd_dev]
+guest_ipaddr = interfaces[guest_dev]
+admin_ipaddr = interfaces[admin_dev]
 
 if dns_servers == "y"
     guest_ipaddr_lookup = Socket.getaddrinfo(guest_ipaddr.to_s,nil)
