@@ -1,5 +1,6 @@
 # -*- ruby -*-
 require 'permission'
+require 'privilege'
 require 'task'
 require 'vm'
 require 'vm_task'

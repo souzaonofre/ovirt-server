@@ -24,7 +24,7 @@ require 'resources_controller'
 class ResourcesController; def rescue_action(e) raise e end; end
 
 class ResourcesControllerTest < ActionController::TestCase
-  fixtures :permissions, :pools
+  fixtures :privileges, :roles, :permissions, :pools
 
   def setup
     @controller = ResourcesController.new

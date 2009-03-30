@@ -31,7 +31,7 @@ class ResourcesController < PoolController
 
   def list
     @user = get_login_user
-    @vm_resource_pools = VmResourcePool.list_for_user(@user, Permission::PRIV_VIEW)
+    @vm_resource_pools = VmResourcePool.list_for_user(@user, Privilege::VIEW)
     @vms = Set.new
     @vm_resource_pools.each { |vm_resource_pool| @vms += vm_resource_pool.vms}
     @vms = @vms.entries

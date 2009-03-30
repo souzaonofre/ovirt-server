@@ -57,14 +57,14 @@ class PoolController < ApplicationController
 
   # resource's users list page
   def show_users
-    @roles = Permission::ROLES.keys
+    @roles = Role.find(:all).collect{ |role| [role.name, role.id] }
     show
   end
 
   def users_json
     attr_list = []
     attr_list << :grid_id if params[:checkboxes]
-    attr_list += [:uid, :user_role, :source]
+    attr_list += [:uid, [:role, :name], :source]
     json_list(@pool.permissions, attr_list)
   end
 

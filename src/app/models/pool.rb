@@ -23,7 +23,7 @@ class Pool < ActiveRecord::Base
   has_many :membership_audit_events, :as => :container_target, :dependent => :destroy
   # moved associations here so that nested set :include directives work
   # TODO: find a way to put this back into vm_resource_pool.rb
-  has_many :vms, :dependent => :nullify, :order => "id ASC", :foreign_key => :vm_resource_pool_id
+  has_many :vms, :dependent => :nullify, :order => "vms.id ASC", :foreign_key => :vm_resource_pool_id
   # TODO: find a way to put this back into hardware_pool.rb
   has_many :hosts, :include => :nics, :dependent => :nullify, :order => "hosts.id ASC", :foreign_key => "hardware_pool_id" do
     def total_cpus
@@ -37,7 +37,7 @@ class Pool < ActiveRecord::Base
     end
   end
 
-  has_many :storage_pools, :dependent => :nullify, :order => "id ASC", :foreign_key => 'hardware_pool_id' do
+  has_many :storage_pools, :dependent => :nullify, :order => "storage_pools.id ASC", :foreign_key => 'hardware_pool_id' do
     def total_size_in_gb
       find(:all).inject(0){ |sum, sp| sum + sp.storage_volumes.total_size_in_gb }
     end
@@ -57,20 +57,7 @@ class Pool < ActiveRecord::Base
     :in => %w( DirectoryPool HardwarePool VmResourcePool SmartPool )
 
   # overloading this method such that we can use permissions.admins to get all the admins for an object
-  has_many :permissions, :dependent => :destroy, :order => "id ASC" do
-    def super_admins
-      find_all_by_user_role(Permission::ROLE_SUPER_ADMIN)
-    end
-    def admins
-      find_all_by_user_role(Permission::ROLE_ADMIN)
-    end
-    def users
-      find_all_by_user_role(Permission::ROLE_USER)
-    end
-    def monitors
-      find_all_by_user_role(Permission::ROLE_MONITOR)
-    end
-  end
+  has_many :permissions, :dependent => :destroy, :include => :role, :order => "permissions.id ASC"
 
   has_one :quota, :dependent => :destroy
 
@@ -81,7 +68,7 @@ class Pool < ActiveRecord::Base
       parent.permissions.each do |permission|
         new_permission = Permission.new({:pool_id     => id,
                                          :uid         => permission.uid,
-                                         :user_role   => permission.user_role,
+                                         :role_id     => permission.role_id,
                                          :inherited_from_id =>
                                           permission.inherited_from_id.nil? ?
                                           permission.id :
@@ -104,10 +91,10 @@ class Pool < ActiveRecord::Base
     else
       inherited_clause = "and permissions.inherited_from_id is null"
     end
-    pools = find(:all, :include => "permissions",
-                 :conditions => "permissions.uid='#{user}' #{inherited_clause} and
-                       permissions.user_role in
-                       ('#{Permission.roles_for_privilege(privilege).join("', '")}')")
+    pools = find(:all, :include => [{:permissions => {:role => :privileges}}],
+                 :conditions => ["permissions.uid=:user #{inherited_clause} and
+                                  privileges.name=:priv",
+                                 { :user => user, :priv => privilege }])
   end
 
   def self.select_hardware_pools(pools)
@@ -142,26 +129,26 @@ class Pool < ActiveRecord::Base
   end
 
   def can_view(user)
-    has_privilege(user, Permission::PRIV_VIEW)
+    has_privilege(user, Privilege::VIEW)
   end
   def can_control_vms(user)
-    has_privilege(user, Permission::PRIV_VM_CONTROL)
+    has_privilege(user, Privilege::VM_CONTROL)
   end
   def can_modify(user)
-    has_privilege(user, Permission::PRIV_MODIFY)
+    has_privilege(user, Privilege::MODIFY)
   end
   def can_view_perms(user)
-    has_privilege(user, Permission::PRIV_PERM_VIEW)
+    has_privilege(user, Privilege::PERM_VIEW)
   end
   def can_set_perms(user)
-    has_privilege(user, Permission::PRIV_PERM_SET)
+    has_privilege(user, Privilege::PERM_SET)
   end
 
   def has_privilege(user, privilege)
-    permissions.find(:first,
-                          :conditions => "permissions.uid='#{user}' and
-                         permissions.user_role in
-                         ('#{Permission.roles_for_privilege(privilege).join("', '")}')")
+    permissions.find(:first, :include => [:role => :privileges],
+                     :conditions => ["permissions.uid=:user and
+                                      privileges.name=:priv",
+                                     { :user => user, :priv => privilege }])
   end
 
   def total_resources
@@ -239,10 +226,9 @@ class Pool < ActiveRecord::Base
     type = opts.delete(:type)
     smart_pool_set = opts.delete(:smart_pool_set)
     if privilege and user
-      opts[:include] = "permissions"
-      opts[:conditions] = "permissions.uid='#{user}' and
-                       permissions.user_role in
-                       ('#{Permission.roles_for_privilege(privilege).join("', '")}')"
+      opts[:include] = [{:permissions => {:role => :privileges}}]
+      opts[:conditions] = ["permissions.uid=:user and privileges.name=:priv",
+                           { :user => user, :priv => privilege }]
     end
     current_id = opts.delete(:current_id)
     opts.delete(:order)

@@ -42,6 +42,7 @@ class PermissionController < ApplicationController
     @pool = Pool.find(params[:pool_id])
     filter = @pool.permissions.collect{ |permission| permission.uid }
     @users = Account.names(filter)
+    @roles = Role.find(:all).collect{ |role| [role.name, role.id] }
     set_perms(@permission.pool)
     # admin permission required to view permissions
     unless @can_set_perms
@@ -74,7 +75,7 @@ class PermissionController < ApplicationController
   #FIXME: we need permissions checks. user must have permission. We also need to fail
   # for pools that aren't currently empty
   def update_roles
-    role = params[:user_role]
+    role = params[:role_id]
     permission_ids_str = params[:permission_ids]
     permission_ids = permission_ids_str.split(",").collect {|x| x.to_i}
 

@@ -1,0 +1,10 @@
+set_perms:
+  name: set_perms
+view_perms:
+  name: view_perms
+modify:
+  name: modify
+vm_control:
+  name: vm_control
+view:
+  name: view

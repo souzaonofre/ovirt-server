@@ -24,60 +24,18 @@ class Permission < ActiveRecord::Base
   has_many   :child_permissions, :dependent => :destroy,
              :class_name => "Permission", :foreign_key => "inherited_from_id"
 
+  belongs_to :role
+
   validates_presence_of :pool_id
+  validates_presence_of :role_id
 
   validates_presence_of :uid
   validates_uniqueness_of :uid, :scope => [:pool_id, :inherited_from_id]
-
-
-  ROLE_SUPER_ADMIN = "Super Admin"
-  ROLE_ADMIN       = "Administrator"
-  ROLE_USER        = "User"
-  ROLE_MONITOR     = "Monitor"
-
-  PRIV_PERM_SET    = "set_perms"
-  PRIV_PERM_VIEW   = "view_perms"
-  PRIV_MODIFY      = "modify"
-  PRIV_VM_CONTROL  = "vm_control"
-  PRIV_VIEW        = "view"
-
-  ROLES = { ROLE_SUPER_ADMIN => [PRIV_VIEW, PRIV_VM_CONTROL, PRIV_MODIFY, 
-                                 PRIV_PERM_VIEW, PRIV_PERM_SET],
-            ROLE_ADMIN       => [PRIV_VIEW, PRIV_VM_CONTROL, PRIV_MODIFY],
-            ROLE_USER        => [PRIV_VIEW, PRIV_VM_CONTROL],
-            ROLE_MONITOR     => [PRIV_VIEW]}
- 
-
-  validates_inclusion_of :user_role,
-     :in => ROLES.keys
-
-  def self.invert_roles
-    return_hash = {}
-    ROLES.each do |role, privs|
-      privs.each do |priv|
-        priv_key = return_hash[priv]
-        priv_key ||= []
-        priv_key << role
-        return_hash[priv] = priv_key
-      end
-    end
-    return_hash
-  end
 
   def name
     @account ||= Account.find("uid=#{uid}")
 
     @account.cn
-  end
-
-  PRIVILEGES = self.invert_roles
-
-  def self.privileges_for_role(role)
-    ROLES[role]
-  end
-
-  def self.roles_for_privilege(privilege)
-    PRIVILEGES[privilege]
   end
 
   def is_primary?
@@ -94,10 +52,10 @@ class Permission < ActiveRecord::Base
   end
   def update_role(new_role)
     self.transaction do
-      self.user_role = new_role
+      self.role_id = new_role
       self.save!
       child_permissions.each do |permission|
-        permission.user_role = new_role
+        permission.role_id = new_role
         permission.save!
       end
     end
@@ -108,7 +66,7 @@ class Permission < ActiveRecord::Base
       pool.all_children.each do |subpool|
           new_permission = Permission.new({:pool_id     => subpool.id,
                                            :uid         => uid,
-                                           :user_role   => user_role,
+                                           :role_id     => role_id,
                                            :inherited_from_id => id})
           new_permission.save!
       end

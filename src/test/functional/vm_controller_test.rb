@@ -24,7 +24,7 @@ require 'vm_controller'
 class VmController; def rescue_action(e) raise e end; end
 
 class VmControllerTest < Test::Unit::TestCase
-  fixtures :permissions, :pools, :vms
+  fixtures :privileges, :roles, :permissions, :pools, :vms
 
   def setup
     @controller = VmController.new
@@ -46,11 +46,9 @@ class VmControllerTest < Test::Unit::TestCase
   end
 
   def test_new
-    get :new, :hardware_pool_id => @default_pool.id
-
-    assert_response :redirect
-    assert_redirected_to :controller => 'resources', :action => 'show'
-
+    get :new, :hardware_pool_id => @default_pool.id, :format => "json"
+    json = ActiveSupport::JSON.decode(@response.body)
+    assert_equal 'You do not have permission to create or modify this item ', json['alert']
     assert_not_nil assigns(:vm)
   end
 

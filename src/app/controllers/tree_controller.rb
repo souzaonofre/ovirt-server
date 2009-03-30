@@ -2,9 +2,9 @@ class TreeController < ApplicationController
   def get_pools
     # TODO: split these into separate hash elements for HW and smart pools
     pools = HardwarePool.get_default_pool.full_set_nested(:method => :json_hash_element,
-                       :privilege => Permission::PRIV_VIEW, :user => get_login_user)
+                       :privilege => Privilege::VIEW, :user => get_login_user)
     pools += DirectoryPool.get_smart_root.full_set_nested(:method => :json_hash_element,
-                       :privilege => Permission::PRIV_VIEW, :user => get_login_user,
+                       :privilege => Privilege::VIEW, :user => get_login_user,
                        :smart_pool_set => true)
   end
 
@@ -32,13 +32,13 @@ class TreeController < ApplicationController
     pools = build_json(
                 HardwarePool.get_default_pool.full_set_nested(
                     :method => :json_hash_element,
-                    :privilege => Permission::PRIV_VIEW,
+                    :privilege => Privilege::VIEW,
                     :user => get_login_user))
     smart_pools = adjust_smart_pool_list(
                       build_json(
                           DirectoryPool.get_smart_root.full_set_nested(
                               :method => :json_hash_element,
-                              :privilege => Permission::PRIV_VIEW,
+                              :privilege => Privilege::VIEW,
                               :user => get_login_user,
                               :smart_pool_set => true)))
     @serverHash = {:pools => smart_pools + pools }

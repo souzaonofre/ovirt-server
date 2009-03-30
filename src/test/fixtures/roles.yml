@@ -1,0 +1,12 @@
+super_admin:
+  name: Super Admin
+  privileges: view, vm_control, modify, view_perms, set_perms
+administrator:
+  name: Administrator
+  privileges: view, vm_control, modify
+user:
+  name: User
+  privileges: view, vm_control
+monitor:
+  name: Monitor
+  privileges: view

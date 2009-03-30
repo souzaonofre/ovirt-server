@@ -24,7 +24,7 @@ require 'permission_controller'
 class PermissionController; def rescue_action(e) raise e end; end
 
 class PermissionControllerTest < Test::Unit::TestCase
-  fixtures :permissions, :pools
+  fixtures :privileges, :roles, :permissions, :pools
 
   def setup
     @controller = PermissionController.new
@@ -55,9 +55,9 @@ class PermissionControllerTest < Test::Unit::TestCase
 
   def test_create
     num_permissions = Permission.count
-    post :create, :permission => { :user_role => 'Administrator',
-                                    :uid => 'admin',
-                                    :pool_id => pools(:corp_com_production_vmpool).id}
+    post :create, :permission => { :role_id => roles(:administrator).id,
+                                   :uid => 'admin',
+                                   :pool_id => pools(:corp_com_production_vmpool).id}
     assert_response :success
     assert_equal num_permissions + 1, Permission.count
   end

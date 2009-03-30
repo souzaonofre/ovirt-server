@@ -74,7 +74,7 @@ class SmartPool < Pool
 
   def self.smart_pools_for_user(user)
     nested_pools = DirectoryPool.get_smart_root.full_set_nested(
-                       :privilege => Permission::PRIV_MODIFY, :user => user,
+                       :privilege => Privilege::MODIFY, :user => user,
                        :smart_pool_set => true)[0][:children]
     user_pools = []
     other_pools = []

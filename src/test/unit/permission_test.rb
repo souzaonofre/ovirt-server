@@ -20,19 +20,19 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class PermissionTest < Test::Unit::TestCase
-  fixtures :permissions
+  fixtures :privileges, :roles, :permissions
   fixtures :pools
 
   def setup
     @permission = Permission.new(
         :uid => 'foobar',
-        :user_role => 'Super Admin' )
+        :role_id => Role.find_by_name(Role::SUPER_ADMIN).id )
     @permission.pool = pools(:root_dir_pool)
   end
 
   # Replace this with your real tests.
   def test_simple_permission
-    assert_equal permissions(:ovirtadmin_root).user_role, 'Super Admin'
+    assert_equal permissions(:ovirtadmin_root).role.name, 'Super Admin'
     assert_equal permissions(:ovirtadmin_root).pool.name, 'root'
   end
 
@@ -51,13 +51,9 @@ class PermissionTest < Test::Unit::TestCase
     flunk 'Permission must specify uid' if @permission.valid?
   end
 
-  def test_valid_fails_without_user_role
-    @permission.user_role = ''
-    flunk 'Permission must specify user role' if @permission.valid?
+  def test_valid_fails_without_role_id
+    @permission.role_id = ''
+    flunk 'Permission must specify role' if @permission.valid?
   end
 
-  def test_valid_fails_with_invalid_user_role
-    @permission.user_role = 'foobar'
-    flunk 'Permission must specify valid user role' if @permission.valid?
-  end
 end

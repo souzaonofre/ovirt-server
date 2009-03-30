@@ -61,10 +61,10 @@ class HardwareController < PoolController
   end
 
   def json_view_tree
-    json_tree_internal(Permission::PRIV_VIEW, :select_hardware_and_vm_pools)
+    json_tree_internal(Privilege::VIEW, :select_hardware_and_vm_pools)
   end
   def json_move_tree
-    json_tree_internal(Permission::PRIV_MODIFY, :select_hardware_pools)
+    json_tree_internal(Privilege::MODIFY, :select_hardware_pools)
   end
   def json_tree_internal(privilege, filter_method)
     id = params[:id]
@@ -81,7 +81,7 @@ class HardwareController < PoolController
       pools = @pool.children
       open_list = []
     else
-      pools = Pool.list_for_user(get_login_user,Permission::PRIV_VIEW)
+      pools = Pool.list_for_user(get_login_user,Privilege::VIEW)
       hw_root = HardwarePool.get_default_pool
       if !(pools.include?(hw_root))
         if pools.include?(DirectoryPool.get_directory_root)
@@ -183,7 +183,7 @@ class HardwareController < PoolController
     @resource_type = params[:resource_type]
     @id = params[:id]
     @pools = HardwarePool.get_default_pool.full_set_nested(:method => :json_hash_element,
-                       :privilege => Permission::PRIV_MODIFY, :user => get_login_user, :current_id => @id,
+                       :privilege => Privilege::MODIFY, :user => get_login_user, :current_id => @id,
                        :type => :select_hardware_pools).to_json
     render :layout => 'popup'
   end

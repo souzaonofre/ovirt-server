@@ -24,7 +24,8 @@ require 'storage_controller'
 class StorageController; def rescue_action(e) raise e end; end
 
 class StorageControllerTest < Test::Unit::TestCase
-  fixtures :permissions, :pools, :storage_volumes, :storage_pools
+  fixtures :privileges, :roles, :permissions, :pools,
+           :storage_volumes, :storage_pools
 
   def setup
     @controller = StorageController.new
@@ -103,8 +104,10 @@ class StorageControllerTest < Test::Unit::TestCase
   end
 
   def test_no_perms_to_destroy
-    post :destroy, :id => storage_pools(:corp_com_dev_nfs_ovirtnfs).id
-    assert_response :redirect #Is this really what we want? Or should we just pop up the login page?
+    xml_http_request :post, :destroy, :id => storage_pools(:corp_com_dev_nfs_ovirtnfs).id, :format => "json"
+    assert_response :success
+    json = ActiveSupport::JSON.decode(@response.body)
+    assert_equal 'You do not have permission to create or modify this item ', json['alert']
   end
 
   #FIXME: write the code to make this a real test!

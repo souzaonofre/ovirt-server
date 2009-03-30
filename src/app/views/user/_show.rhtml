@@ -31,7 +31,7 @@
     var permissions = get_selected_users();
     if (validate_selected(permissions, "users")) {
       $.post('<%= url_for :controller => "permission", :action => "update_roles" %>',
-             { permission_ids: permissions.toString(), user_role: role },
+             { permission_ids: permissions.toString(), role_id: role },
              function(data,status){
                $tabs.tabs("load",$tabs.data('selected.tabs'));
                if (data.alert) {

@@ -26,14 +26,12 @@ class VmController < ApplicationController
   before_filter :pre_vm_action, :only => [:vm_action, :cancel_queued_tasks, :console]
 
   def index
-      roles = "('" +
-          Permission::roles_for_privilege(Permission::PRIV_VIEW).join("', '") +
-          "')"
-      user = get_login_user
-      @vms = Vm.find(:all,
-         :joins => "join permissions p on (vm_resource_pool_id = p.pool_id)",
-         :conditions => [ "p.uid = :user and p.user_role in #{roles}",
-                          { :user => user }])
+    @vms = Vm.find(:all,
+                   :include => [{:vm_resource_pool =>
+                                  {:permissions => {:role => :privileges}}}],
+                   :conditions => ["privileges.name=:priv
+                               and permissions.uid=:user",
+                             { :user => get_login_user, :priv => Privilege::VIEW }])
       respond_to do |format|
           format.xml  { render :xml => @vms.to_xml(:include => :host) }
       end
