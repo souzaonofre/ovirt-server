@@ -248,7 +248,7 @@ class HostBrowser
         Cpu.delete_all(['host_id = ?', host.id])
 
         puts "Saving new CPU records"
-        cpu_info.collect do |cpu|
+        cpu_info.each do |cpu|
             detail = Cpu.new(
                 "cpu_number"      => cpu['CPUNUM'].to_i,
                 "core_number"     => cpu['CORENUM]'].to_i,
@@ -271,37 +271,37 @@ class HostBrowser
 
         puts "Updating NIC records for the node"
         nics = Array.new
+        nics_to_delete = Array.new
 
-        host.nics.collect do |nic|
+        host.nics.each do |nic|
             found = false
 
-            nic_info.collect do |detail|
+            nic_info.each do |detail|
                 # if we have a match, then update the database and remove
                 # the received data to avoid creating a dupe later
-                if detail['MAC'] == nic.mac
-                    nic_info.delete(detail)
-
-                    updated_nic = Nic.find_by_id(nic.id)
-
-                    updated_nic.bandwidth = detail['BANDWIDTH'].to_i
-                    updated_nic.interface_name = detail['IFACE_NAME']
-
-                    updated_nic.save!
-                    found=true
-                    nic_info.delete detail
+                puts "Searching for existing record for: #{detail['MAC'].upcase}"
+                if detail['MAC'].upcase == nic.mac
+                  puts "Updating details for: #{detail['IFACE_NAME']} [#{nic.mac}]}"
+                  nic.bandwidth = detail['BANDWIDTH'].to_i
+                  nic.interface_name = detail['IFACE_NAME']
+                  nic.save!
+                  found = true
+                  nic_info.delete(detail)
                 end
             end
 
             # if the record wasn't found, then remove it from the database
             unless found
-                host.nics.delete(nic)
-                nic.destroy
+              puts "Marking NIC for removal: #{nic.interface_name} [#{nic.mac}]"
+                nics_to_delete << nic
             end
         end
 
+        nics_to_delete.each { |nic| puts "Removing NIC: #{nic.interface_name} []#{nic.mac}]"; host.nics.delete(nic) }
+
         # iterate over any nics left and create new records for them.
-        nic_info.collect do |nic|
-            puts "Creating a new nic..."
+        nic_info.each do |nic|
+            puts "Creating a new nic: #{nic['IFACE_NAME']} [#{nic['MAC']}]"
             detail = Nic.new(
                 'mac'          => nic['MAC'].upcase,
                 'bandwidth'    => nic['BANDWIDTH'].to_i,
