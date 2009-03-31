@@ -26,27 +26,6 @@ class ManagedNodeControllerTest < ActionController::TestCase
   fixtures :hosts
   fixtures :nics
 
-  # Ensures that the request fails if it's missing a hostname, or if the
-  # hostname is invalid.
-  #
-  def test_config_with_invalid_hostname
-    get :config
-
-    assert_response :error
-
-    get :config, {:host => 'invalid.prod.com'}
-
-    assert_response :error
-  end
-
-  # Ensures the request fails if no mac addresses are supplied.
-  #
-  def test_config_without_macs
-    get :config, {:host => hosts(:mailservers_managed_node).hostname}
-
-    assert_response :error
-  end
-
   # Ensures the request succeeds if it is well-formed.
   #
   def test_config

@@ -23,7 +23,7 @@ ldapserver_nic_one:
   mac: 00:03:02:00:09:06
   usage_type: 1
   bandwidth: 100
-  bridge: breth0
+  bridge:
   host: ldapserver_managed_node
   physical_network: static_physical_network_one
 
@@ -39,7 +39,7 @@ buildserver_nic_two:
   usage_type: 1
   bandwidth: 100
   host: buildserver_managed_node
-  physical_network: static_physical_network_two
+  physical_network: static_physical_network_one
 
 mediaserver_nic_one:
   mac: 07:17:19:65:03:32
