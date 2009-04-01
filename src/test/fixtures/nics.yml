@@ -3,21 +3,21 @@ mailserver_nic_one:
   usage_type: 1
   bandwidth: 100
   host: mailservers_managed_node
-  physical_network: dhcp_physical_network_one
+  physical_network: mail_network_one
 
 mailserver_nic_two:
   mac: 22:11:33:66:44:55
   usage_type: 1
   bandwidth: 100
   host: mailservers_managed_node
-  physical_network: dhcp_physical_network_one
+  physical_network: mail_network_two
 
 fileserver_nic_one:
   mac: 00:99:00:99:13:07
   usage_type: 1
   bandwidth: 100
   host: fileserver_managed_node
-  physical_network: dhcp_physical_network_one
+  physical_network: fileserver_network
 
 ldapserver_nic_one:
   mac: 00:03:02:00:09:06
@@ -39,18 +39,18 @@ buildserver_nic_two:
   usage_type: 1
   bandwidth: 100
   host: buildserver_managed_node
-  physical_network: static_physical_network_one
+  physical_network: static_physical_network_two
 
 mediaserver_nic_one:
   mac: 07:17:19:65:03:32
   usage_type: 1
   bandwidth: 100
   host: mediaserver_managed_node
-  physical_network: dhcp_physical_network_one
+  physical_network: mediaserver_network_one
 
 mediaserver_nic_two:
   mac: 07:17:19:65:03:31
   usage_type: 1
   bandwidth: 100
   host: mediaserver_managed_node
-  physical_network: dhcp_physical_network_one
+  physical_network: mediaserver_network_two

@@ -60,10 +60,11 @@ class NicTest < Test::Unit::TestCase
     flunk 'Nic must have a host' if @nic.valid?
   end
 
-  def test_valid_fails_without_physical_network
-    @nic.physical_network = nil
+  def test_valid_fails_without_unique_physical_network
+    @nic.host = hosts(:ldapserver_managed_node)
 
-    flunk 'Nic must have a physical network' if @nic.valid?
+    assert_equal false, @nic.valid?, 'This nic is not valid'
+    flunk 'This physical network is already used on this host.' if @nic.valid?
   end
 
   def test_valid_fails_with_invalid_bandwidth
