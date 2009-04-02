@@ -17,22 +17,30 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
-class Privilege < ActiveRecord::Base
-  has_and_belongs_to_many :roles
+class AddCloudRoles < ActiveRecord::Migration
+  def self.up
+    Role.transaction do
+      role_cloud_user = Role.new({:name => "Cloud User"})
+      role_cloud_user.save!
 
-  validates_presence_of :name
-  validates_uniqueness_of :name
+      priv_cloud_create = Privilege.new({:name => "cloud_create"})
+      priv_cloud_create.save!
+      priv_cloud_view = Privilege.new({:name => "cloud_view"})
+      priv_cloud_view.save!
+      priv_vm_control = Privilege.find_by_name("vm_control")
 
+      role_cloud_user.privileges = [priv_cloud_view,
+                                    priv_vm_control,
+                                    priv_cloud_create]
+      role_cloud_user.save!
+    end
+  end
 
-  #default privileges
-  PERM_SET    = "set_perms"
-  PERM_VIEW   = "view_perms"
-  MODIFY      = "modify"
-  VM_CONTROL  = "vm_control"
-  VIEW        = "view"
-
-  CLOUD_CREATE = "cloud_create"
-  CLOUD_VIEW   = "cloud_view"
-
-
+  def self.down
+    Role.transaction do
+      Role.find_by_name("Cloud User").destroy
+      Privilege.find_by_name("cloud_create").destroy
+      Privilege.find_by_name("cloud_view").destroy
+    end
+  end
 end

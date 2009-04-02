@@ -10,3 +10,6 @@ user:
 monitor:
   name: Monitor
   privileges: view
+cloud_user:
+  name: Cloud User
+  privileges: cloud_view, vm_control, cloud_create

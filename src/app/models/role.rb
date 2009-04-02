@@ -30,5 +30,5 @@ class Role < ActiveRecord::Base
   ADMIN       = "Administrator"
   USER        = "User"
   MONITOR     = "Monitor"
-
+  CLOUD_USER  = "Cloud User"
 end
