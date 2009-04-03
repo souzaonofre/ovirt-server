@@ -110,7 +110,7 @@ class ManagedNodeConfiguration
     if bootproto == "static"
       entry += "|IPADDR=#{ipaddress}|NETMASK=#{netmask}|BROADCAST=#{broadcast}|GATEWAY=#{gateway}"
     end
-    entry += "|TYPE=bridge|PEERDNS=no|ONBOOT=yes"
+    entry += "|TYPE=Bridge|PEERDNS=no|ONBOOT=yes"
     result.puts entry
   end
 

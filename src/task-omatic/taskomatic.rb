@@ -352,13 +352,13 @@ class TaskOmatic
          device = Nic.find(:first,
                            :conditions => ["host_id = ? AND physical_network_id = ?",
                                            db_host.id, db_vm.network_id ])
-         net_device = device.interface_name unless device.nil?
+         net_device = "br" + device.interface_name unless device.nil?
 
       else
          device = Bonding.find(:first,
                                :conditions => ["host_id = ? AND vlan_id = ?",
                                                db_host.id, db_vm.network_id])
-         net_device = device.interface_name unless device.nil?
+         net_device = "br" + device.interface_name unless device.nil?
       end
     end
 
