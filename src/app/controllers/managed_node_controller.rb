@@ -44,7 +44,7 @@ class ManagedNodeController < ApplicationController
   def load_host
     @host = Host.find_by_hostname(params[:host])
 
-    render :nothing => true, :status => :error unless @host
+    render :nothing => true unless @host
   end
 
   def load_macs
@@ -54,10 +54,10 @@ class ManagedNodeController < ApplicationController
     if mac_text != nil
       mac_text.scan(/([^,]+)\,?/).each do |line|
         key, value = line.first.split("=")
-        @macs[key] = value
+        @macs[key.upcase] = value
       end
     end
 
-    render :nothing => true, :status => :error if @macs.empty?
+    render :nothing => true if @macs.empty?
   end
 end

@@ -21,9 +21,39 @@ static_physical_network_one:
   name: Static Physical Network 1
   boot_type: boot_type_static_ip
 
+mail_network_one:
+  type: PhysicalNetwork
+  name: DHCP Mail Network 1
+  boot_type: boot_type_dhcp
+
+mail_network_two:
+  type: PhysicalNetwork
+  name: DHCP Mail Network 2
+  boot_type: boot_type_dhcp
+
+fileserver_network:
+  type: PhysicalNetwork
+  name: DHCP Fileserver Network
+  boot_type: boot_type_dhcp
+
+mediaserver_network_one:
+  type: PhysicalNetwork
+  name: DHCP Mediaserver Network 1
+  boot_type: boot_type_dhcp
+
+mediaserver_network_two:
+  type: PhysicalNetwork
+  name: DHCP Mediaserver Network 2
+  boot_type: boot_type_dhcp
+
 dhcp_physical_network_one:
   type: PhysicalNetwork
   name: DHCP Physical Network 1
+  boot_type: boot_type_dhcp
+
+dhcp_physical_network_two:
+  type: PhysicalNetwork
+  name: DHCP Physical Network 2
   boot_type: boot_type_dhcp
 
 bootp_physical_network_one:

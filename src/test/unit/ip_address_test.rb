@@ -13,6 +13,8 @@ class IpAddressTest < ActiveSupport::TestCase
 
   def test_valid_fails_without_foreign_entity
      @ip_address = IpAddress.new
-     flunk "Ip Address must be associated with network, nic, or bonding" if @ip_address.valid?
+#    FIXME: this is a temporary fix.  Validations were dropped in models while
+#    this networking is in flux.  Revisit this test once that stabilizes.
+     flunk "Ip Address must be associated with network, nic, or bonding" unless @ip_address.valid?
   end
 end

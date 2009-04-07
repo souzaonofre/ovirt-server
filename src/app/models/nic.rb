@@ -43,6 +43,45 @@ class Nic < ActiveRecord::Base
      :scope => :host_id,
      :unless => Proc.new { |nic| nic.physical_network_id.nil? }
 
+  # Returns whether the nic has networking defined.
+  def networking?
+    (physical_network != nil)
+  end
+
+  # Returns the boot protocol for the nic if networking is defined.
+  def boot_protocol
+    return physical_network.boot_type.proto if networking?
+  end
+
+  # Returns whether the nic is enslaved by a bonded interface.
+  def bonded?
+    !bondings.empty?
+  end
+
+  # Returns the ip address for the nic if networking is defined.
+  def ip_address
+    return ip_addresses.first.address if networking? && !ip_addresses.empty?
+    return nil
+  end
+
+  # Returns the netmask for the nic if networking is defined.
+  def netmask
+    return physical_network.ip_addresses.first.netmask if networking? && !physical_network.ip_addresses.empty?
+    return nil
+  end
+
+  # Returns the broadcast address for the nic if networking is defined.
+  def broadcast
+    return physical_network.ip_addresses.first.broadcast if networking? && !physical_network.ip_addresses.empty?
+    return nil
+  end
+
+  # Returns the gateway address fo rthe nic if networking is defined.
+  def gateway
+    return physical_network.ip_addresses.first.gateway if networking? && !physical_network.ip_addresses.empty?
+    return nil
+  end
+
   # validate 'bridge' or 'usage_type' attribute ?
 
   protected

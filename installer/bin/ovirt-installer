@@ -50,6 +50,28 @@ def prompt_for_answer(prompt, options={})
     return answer
 end
 
+# prompt a user for a password, with confirmation
+def prompt_for_password(prompt, confirm)
+  loop do
+    pass = prompt_for_answer(prompt, :password => true)
+    conf = prompt_for_answer(confirm, :password => true)
+    if pass == conf
+      return pass
+    end
+    @cli.say("Passwords do not match!")
+  end
+end
+
+def prompt_for_interface(prompt, interfaces, options={})
+    loop do
+    nic = prompt_for_answer(prompt,options)
+    if interfaces.has_key?(nic)
+        return nic
+    end
+    @cli.say("Please pick an active device from the list")
+    end
+end
+
 # Allow a user to enter a Yes/No
 # And repeat the prompt until they do
 def prompt_yes_no(prompt, options={})
@@ -84,6 +106,20 @@ welcome =  "This installer will configure the ovirt installation based on a seri
 of questions. When complete, you will be asked to install oVirt or\n\
 do the installation manually. Would you like to continue?"
 
+# verify hostname is not on the loopback line in /etc/hosts to prevent kerberos problems
+hostname = `hostname`
+hostsfile = File.new("/etc/hosts", "r")
+while (line = hostsfile.gets)
+     if line =~ /127.0.0.1/ && line.include?(hostname.chomp)
+         if hostname !~ /localhost.localdomain/
+         @cli.say("\nHostname must not be on the loopback 127.0.0.1 line in /etc/hosts")
+         @cli.say("#{line}")
+         exit(0)
+         end
+     end
+end
+hostsfile.close
+
 if (prompt_yes_no(welcome, :default => "y") == "n")
     exit(0)
 end
@@ -115,20 +151,23 @@ if dev_ct == 0
     exit
 else
     puts ""
-    @cli.say("Below are the detected networking devices\n\n")
+    @cli.say("Below are the active networking devices, if there are any missing devices\n\n")
+    @cli.say("ensure they are active and have an ip address before running the installer")
     @cli.say("mac address           interface        ip address")
+    interfaces = {}
     net_devs.each_line do |dev|
         dev = dev.chomp
         interface = `hal-get-property --udi #{dev} --key net.interface`
         mac = `hal-get-property --udi #{dev} --key net.address`
         ip = `ifconfig #{interface}`
         ipaddr = ip.scan(/\s*inet addr:([\d.]+)/)
-        puts (mac.chop + "   :   " + interface.chop   +  "    :    " + ipaddr.to_s) if interface.chop != "lo"
+        interfaces[interface.chop] = ipaddr.to_s if interface.chop != "lo"
+        puts (mac.chop + "   :   " + interface.chop   +  "    :    " + ipaddr.to_s) if interface.chop != "lo" and ipaddr.to_s != ""
     end
 end
 
-guest_httpd_dev = prompt_for_answer("Enter the interface for the Guest network:", :default => "eth0")
-admin_dev = prompt_for_answer("Enter the interface for the Admin network (this may be the same as the Guest network interface):", :default => "eth0")
+guest_httpd_dev = prompt_for_interface("Enter the interface for the Guest network:", interfaces, :default => "eth0")
+admin_dev = prompt_for_interface("Enter the interface for the Admin network (this may be the same as the Guest network interface):", interfaces, :default => "eth0")
 
 #FIXME: correctly configure separate networks.
 #For now, define admin and guest networks to be the same
@@ -146,12 +185,9 @@ File.open('/etc/resolv.conf').each_line{ |line|
 }
 dns_servers = prompt_yes_no("Use this systems's dns servers?")
 
-guest_httpd_ip = `ifconfig #{guest_httpd_dev}`
-guest_httpd_ipaddr = guest_httpd_ip.scan(/\s*inet addr:([\d.]+)/)
-guest_ip = `ifconfig #{guest_dev}`
-guest_ipaddr = guest_ip.scan(/\s*inet addr:([\d.]+)/)
-admin_ip = `ifconfig #{admin_dev}`
-admin_ipaddr = admin_ip.scan(/\s*inet addr:([\d.]+)/)
+guest_httpd_ipaddr = interfaces[guest_httpd_dev]
+guest_ipaddr = interfaces[guest_dev]
+admin_ipaddr = interfaces[admin_dev]
 
 if dns_servers == "y"
     guest_ipaddr_lookup = Socket.getaddrinfo(guest_ipaddr.to_s,nil)
@@ -179,7 +215,7 @@ if dhcp_setup == "n"
     dhcp_start = prompt_for_answer("Enter the dhcp pool start address (example: 3):", :regex => OCTET)
     dhcp_stop = prompt_for_answer("Enter the dhcp pool end addess (example: 100):", :regex => OCTET)
     dhcp_domain = prompt_for_answer("Enter the dhcp domain you wish to use (example: example.com):", :default => dnsdomainname.chomp, :regex => IP_OR_FQDN)
-    admin_dns_server = admin_ip.scan(/\s*inet addr:([\d.]+)/)
+    admin_dns_server = interfaces[admin_dev]
     admin_network_gateway = prompt_for_answer("Enter the network gateway for your Admin network (example: 192.168.50.254):", :default => default_gw.chomp, :regex => IP_OR_FQDN)
     tftp_setup = prompt_yes_no("Provide pxe/tftp capability?")
 end
@@ -195,17 +231,16 @@ elsif cobbler_setup == "n"
 end
 
 cobbler_user_name= prompt_for_answer("Enter your cobbler username:")
-cobbler_user_password = prompt_for_answer("Enter your cobbler user password:", :password => true)
+cobbler_user_password = prompt_for_password("Enter your cobbler user password:", "Confirm your cobbler user password:")
 
 # Postgres Configuration
 db_username = "ovirt"
-db_password = prompt_for_answer("Enter a password for the ovirt postgres account:", :password => true)
-
+db_password = prompt_for_password("Enter a password for the ovirt postgres account:", "Confirm your ovirt postgres password")
 # FreeIPA Configuration
 realm_name = prompt_for_answer("Enter your realm name (example: example.com):", :regex => FQDN)
 
-freeipa_password = prompt_for_answer("NOTE: The following pasword will also be your ovirtadmin password for the web management login\n\
-Enter an administrator password for FreeIPA:", :password => true)
+@cli.say("NOTE: The following password will also be your ovirtadmin password for the web management login")
+freeipa_password = prompt_for_password("Enter an administrator password for FreeIPA:", "Confirm your FreeIPA admin password:")
 ldap_dn = ""
 ldap_dn_temp = realm_name.split(".")
 ldap_dn_temp.each do |i|

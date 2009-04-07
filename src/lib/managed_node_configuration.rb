@@ -65,35 +65,37 @@ class ManagedNodeConfiguration
     # now process the network interfaces  and bondings
 
     host.bondings.each do |bonding|
-      entry = "ifcfg=none|#{bonding.interface_name}|BONDING_OPTS=\"mode=#{bonding.bonding_type.mode} miimon=100\""
+      entry  = "ifcfg=none|#{bonding.interface_name}"
+      entry += "|BONDING_OPTS=\"mode=#{bonding.bonding_type.mode} miimon=100\""
+      entry += "|BRIDGE=br#{bonding.interface_name}"
+      entry += "|ONBOOT=yes"
+      result.puts entry
 
-      if bonding.ip_addresses.empty?
-        entry += "|BOOTPROTO=dhcp"
-      else
-        ip = bonding.ip_addresses[0]
-        entry += "|BOOTPROTO=static|IPADDR=#{ip.address}|NETMASK=#{ip.netmask}|BROADCAST=#{ip.broadcast}"
+      if bonding.networking?
+        add_bridge(result,"none",bonding.interface_name,
+                   bonding.boot_protocol, bonding.ip_address,
+                   bonding.netmask, bonding.broadcast,
+                   bonding.gateway)
       end
 
-      result.puts "#{entry}|ONBOOT=yes"
-
       bonding.nics.each do |nic|
-        process_nic result, nic, macs, bonding
+        iface_name = macs[nic.mac]
+        if iface_name
+          add_slave(result, nic.mac, iface_name, bonding.interface_name)
+        end
       end
     end
 
-    has_bridge = false
     host.nics.each do |nic|
-      # only process this nic if it doesn't have a bonding
-      # TODO remove the hack to force a bridge into the picture
-      if nic.bondings.empty?
-        process_nic result, nic, macs, nil, false, true
-
-	# TODO remove this when bridges are properly supported
-	unless has_bridge
-	  macs[nic.mac] = "breth0"
-	  process_nic result, nic, macs, nil, true, false
-	  has_bridge = true
-	end
+      if nic.networking? && !nic.bonded?
+        iface_name = macs[nic.mac]
+        if iface_name
+          add_bridge(result, nic.mac, iface_name,
+                     nic.boot_protocol, nic.ip_address,
+                     nic.netmask, nic.broadcast,
+                     nic.gateway)
+          add_nic(result, nic.mac, iface_name)
+        end
       end
     end
 
@@ -102,27 +104,21 @@ class ManagedNodeConfiguration
 
   private
 
-  def self.process_nic(result, nic, macs, bonding = nil, is_bridge = false, bridged = true)
-    iface_name = macs[nic.mac]
-
-    if iface_name
-      entry = "ifcfg=#{nic.mac}|#{iface_name}"
-
-      if bonding
-        entry += "|MASTER=#{bonding.interface_name}|SLAVE=yes"
-      else
-        entry += "|BOOTPROTO=#{nic.physical_network.boot_type.proto}"
-        if nic.physical_network.boot_type.proto == 'static'
-          ip = nic.ip_addresses[0]
-          entry += "|IPADDR=#{ip.address}|NETMASK=#{ip.netmask}|BROADCAST=#{ip.broadcast}"
-        end
-        entry += "|BRIDGE=#{nic.bridge}" if nic.bridge && !is_bridge
-        entry += "|BRIDGE=breth0" if !nic.bridge && !is_bridge
-        entry += "|TYPE=bridge" if is_bridge
-      end
-      entry += "|ONBOOT=yes"
+  def self.add_bridge(result, mac, iface_name, bootproto,
+                      ipaddress, netmask, broadcast, gateway)
+    entry = "ifcfg=#{mac}|br#{iface_name}|BOOTPROTO=#{bootproto}"
+    if bootproto == "static"
+      entry += "|IPADDR=#{ipaddress}|NETMASK=#{netmask}|BROADCAST=#{broadcast}|GATEWAY=#{gateway}"
     end
+    entry += "|TYPE=Bridge|PEERDNS=no|ONBOOT=yes"
+    result.puts entry
+  end
 
-    result.puts entry if defined? entry
+  def self.add_nic(result, mac, iface_name)
+    result.puts "ifcfg=#{mac}|#{iface_name}|BRIDGE=br#{iface_name}|ONBOOT=yes"
+  end
+
+  def self.add_slave(result, mac, iface_name, master)
+    result.puts "ifcfg=#{mac}|#{iface_name}|MASTER=#{master}|SLAVE=yes|ONBOOT=yes"
   end
 end

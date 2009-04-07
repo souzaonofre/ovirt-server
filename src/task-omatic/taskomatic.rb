@@ -266,7 +266,12 @@ class TaskOmatic
     raise "Unable to get node that vm is on??" unless node
 
     if vm.state == "shutdown" or vm.state == "shutoff"
-      set_vm_shut_down(db_vm)
+      result = vm.undefine
+      if result.status == 0
+        @logger.info "Deleted VM #{db_vm.description}."
+        set_vm_shut_down(db_vm)
+        teardown_storage_pools(node)
+      end
       return
     elsif vm.state == "suspended"
       raise "Cannot shutdown suspended domain"
@@ -276,9 +281,11 @@ class TaskOmatic
 
     if action == :shutdown
       result = vm.shutdown
+      @logger.info "shutdown - result.status is #{result.status}"
       raise "Error shutting down VM: #{result.text}" unless result.status == 0
     elsif action == :destroy
       result = vm.destroy
+      @logger.info "destroy - result.status is #{result.status}"
       raise "Error destroying VM: #{result.text}" unless result.status == 0
     end
 
@@ -288,12 +295,18 @@ class TaskOmatic
     # FIXME: we really should have a marker in the database somehow so that
     # we can tell if this domain was migrated; that way, we can tell the
     # difference between a real undefine failure and one because of migration
+    #
+    # We only set the vm to shutdown if the undefine succeeds.  Otherwise,
+    # dbomatic will pick up any state changes.  doing a 'shutdown' rather
+    # than destroy for instance can possibly take quite some time.
     result = vm.undefine
-    @logger.info "Error undefining VM: #{result.text}" unless result.status == 0
-
-    teardown_storage_pools(node)
-
-    set_vm_shut_down(db_vm)
+    if result.status == 0
+        @logger.info "Deleted VM #{db_vm.description}."
+        set_vm_shut_down(db_vm)
+        teardown_storage_pools(node)
+    else
+        @logger.info "Error undefining VM: #{result.text}" unless result.status == 0
+    end
   end
 
   def task_start_vm(task)
@@ -339,13 +352,13 @@ class TaskOmatic
          device = Nic.find(:first,
                            :conditions => ["host_id = ? AND physical_network_id = ?",
                                            db_host.id, db_vm.network_id ])
-         net_device = device.interface_name unless device.nil?
+         net_device = "br" + device.interface_name unless device.nil?
 
       else
          device = Bonding.find(:first,
                                :conditions => ["host_id = ? AND vlan_id = ?",
                                                db_host.id, db_vm.network_id])
-         net_device = device.interface_name unless device.nil?
+         net_device = "br" + device.interface_name unless device.nil?
       end
     end
 

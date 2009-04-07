@@ -72,6 +72,46 @@ class Bonding < ActiveRecord::Base
      :greater_than_or_equal_to => 0,
      :unless => Proc.new { |bonding| bonding.arp_interval.nil? }
 
+  # Returns whether networking is defined for this interface.
+  def networking?
+    # there is network if there's a vlan defined.
+    (vlan.nil? == false)
+  end
+
+  # Returns the boot protocol for the interface, or +nil+ if networking
+  # is not defined.
+  def boot_protocol
+    return vlan.boot_type.proto if networking?
+    return nil
+  end
+
+  # Returns the ip address assigned to this bonded interface, or +nil+
+  # if no networking is defined.
+  def ip_address
+    return ip_addresses.first.address if networking? && !ip_addresses.empty?
+    return nil
+  end
+
+  # Returns the netmask assigned to this bonded interface, or +nil+
+  # if no networking is defined.
+  def netmask
+    return vlan.ip_addresses.first.netmask if networking? && !vlan.ip_addresses.empty?
+    return nil
+  end
+
+  # Returns the broadcast address assigned to this bonded interface,
+  # or +nil if no networking is defined.
+  def broadcast
+    return vlan.ip_addresses.first.broadcast if networking? && !vlan.ip_addresses.empty?
+    return nil
+  end
+
+  # Returns the gateway address for the bonded interface if networking is defined.
+  def gateway
+    return vlan.ip_addresses.first.gateway if networking? && !vlan.ip_addresses.empty?
+    return nil
+  end
+
  protected
   def validate
     if ! vlan.nil? and

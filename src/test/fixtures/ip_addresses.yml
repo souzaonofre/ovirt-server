@@ -10,6 +10,15 @@ ip_v4_ldapserver_nic_one:
   nic: ldapserver_nic_one
   type: IpV4Address
   address: 172.31.0.25
+  netmask: 255.255.255.0
+  broadcast: 172.31.0.255
+  gateway: 172.31.0.1
+
+ip_v4_ldapserver_physical_nic_one:
+  network: static_physical_network_one
+  address: 172.31.0.26
+  netmask: 255.255.255.0
+  broadcast: 172.31.0.255
   gateway: 172.31.0.1
 
 ip_v4_buildserver_nic_one:

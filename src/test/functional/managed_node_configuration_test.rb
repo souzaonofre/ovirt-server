@@ -48,8 +48,8 @@ class ManagedNodeConfigurationTest < Test::Unit::TestCase
 
     expected = <<-HERE
 # THIS FILE IS GENERATED!
-ifcfg=#{nic.mac}|eth0|BOOTPROTO=dhcp|BRIDGE=breth0|ONBOOT=yes
-ifcfg=#{nic.mac}|breth0|BOOTPROTO=dhcp|TYPE=bridge|ONBOOT=yes
+ifcfg=#{nic.mac}|breth0|BOOTPROTO=#{nic.boot_protocol}|TYPE=bridge|PEERDNS=no|ONBOOT=yes
+ifcfg=#{nic.mac}|eth0|BRIDGE=breth0|ONBOOT=yes
     HERE
 
     result = ManagedNodeConfiguration.generate(
@@ -67,8 +67,8 @@ ifcfg=#{nic.mac}|breth0|BOOTPROTO=dhcp|TYPE=bridge|ONBOOT=yes
 
     expected = <<-HERE
 # THIS FILE IS GENERATED!
-ifcfg=#{nic.mac}|eth0|BOOTPROTO=#{nic.physical_network.boot_type.proto}|IPADDR=#{nic.ip_addresses.first.address}|NETMASK=#{nic.ip_addresses.first.netmask}|BROADCAST=#{nic.ip_addresses.first.broadcast}|BRIDGE=#{nic.bridge}|ONBOOT=yes
-ifcfg=#{nic.mac}|breth0|BOOTPROTO=#{nic.physical_network.boot_type.proto}|IPADDR=#{nic.ip_addresses.first.address}|NETMASK=|BROADCAST=#{nic.ip_addresses.first.netmask}|TYPE=bridge|ONBOOT=yes
+ifcfg=#{nic.mac}|breth0|BOOTPROTO=#{nic.boot_protocol}|IPADDR=#{nic.ip_address}|NETMASK=#{nic.netmask}|BROADCAST=#{nic.broadcast}|GATEWAY=#{nic.gateway}|TYPE=bridge|PEERDNS=no|ONBOOT=yes
+ifcfg=#{nic.mac}|eth0|BRIDGE=breth0|ONBOOT=yes
     HERE
 
     result = ManagedNodeConfiguration.generate(
@@ -87,9 +87,10 @@ ifcfg=#{nic.mac}|breth0|BOOTPROTO=#{nic.physical_network.boot_type.proto}|IPADDR
 
     expected = <<-HERE
 # THIS FILE IS GENERATED!
-ifcfg=#{nic1.mac}|eth0|BOOTPROTO=#{nic1.physical_network.boot_type.proto}|IPADDR=#{nic1.ip_addresses.first.address}|NETMASK=#{nic1.ip_addresses.first.netmask}|BROADCAST=#{nic1.ip_addresses.first.broadcast}|BRIDGE=breth0|ONBOOT=yes
-ifcfg=#{nic1.mac}|breth0|BOOTPROTO=#{nic1.physical_network.boot_type.proto}|IPADDR=#{nic1.ip_addresses.first.address}|NETMASK=#{nic1.ip_addresses.first.netmask}|BROADCAST=#{nic1.ip_addresses.first.broadcast}|TYPE=bridge|ONBOOT=yes
-ifcfg=#{nic2.mac}|eth1|BOOTPROTO=#{nic2.physical_network.boot_type.proto}|BRIDGE=breth0|ONBOOT=yes
+ifcfg=#{nic1.mac}|breth0|BOOTPROTO=#{nic1.boot_protocol}|IPADDR=#{nic1.ip_address}|NETMASK=#{nic1.netmask}|BROADCAST=#{nic1.broadcast}|GATEWAY=#{nic1.gateway}|TYPE=bridge|PEERDNS=no|ONBOOT=yes
+ifcfg=#{nic1.mac}|eth0|BRIDGE=breth0|ONBOOT=yes
+ifcfg=#{nic2.mac}|breth1|BOOTPROTO=#{nic2.boot_protocol}|TYPE=bridge|PEERDNS=no|ONBOOT=yes
+ifcfg=#{nic2.mac}|eth1|BRIDGE=breth1|ONBOOT=yes
     HERE
 
     result = ManagedNodeConfiguration.generate(
@@ -114,7 +115,8 @@ ifcfg=#{nic2.mac}|eth1|BOOTPROTO=#{nic2.physical_network.boot_type.proto}|BRIDGE
     expected = <<-HERE
 # THIS FILE IS GENERATED!
 bonding=#{bonding.interface_name}
-ifcfg=none|#{bonding.interface_name}|BONDING_OPTS="mode=#{bonding.bonding_type.mode} miimon=100"|BOOTPROTO=static|IPADDR=#{bonding.ip_addresses.first.address}|NETMASK=#{bonding.ip_addresses.first.netmask}|BROADCAST=#{bonding.ip_addresses.first.broadcast}|ONBOOT=yes
+ifcfg=none|#{bonding.interface_name}|BONDING_OPTS="mode=#{bonding.bonding_type.mode} miimon=100"|BRIDGE=br#{bonding.interface_name}|ONBOOT=yes
+ifcfg=none|br#{bonding.interface_name}|BOOTPROTO=dhcp|TYPE=bridge|PEERDNS=no|ONBOOT=yes
 ifcfg=#{nic1.mac}|eth0|MASTER=#{bonding.interface_name}|SLAVE=yes|ONBOOT=yes
 ifcfg=#{nic2.mac}|eth1|MASTER=#{bonding.interface_name}|SLAVE=yes|ONBOOT=yes
 HERE
@@ -140,7 +142,8 @@ HERE
     expected = <<-HERE
 # THIS FILE IS GENERATED!
 bonding=#{bonding.interface_name}
-ifcfg=none|#{bonding.interface_name}|BONDING_OPTS="mode=#{bonding.bonding_type.mode} miimon=100"|BOOTPROTO=dhcp|ONBOOT=yes
+ifcfg=none|#{bonding.interface_name}|BONDING_OPTS="mode=#{bonding.bonding_type.mode} miimon=100"|BRIDGE=br#{bonding.interface_name}|ONBOOT=yes
+ifcfg=none|br#{bonding.interface_name}|BOOTPROTO=#{bonding.boot_protocol}|TYPE=bridge|PEERDNS=no|ONBOOT=yes
 ifcfg=#{nic1.mac}|eth0|MASTER=#{bonding.interface_name}|SLAVE=yes|ONBOOT=yes
 ifcfg=#{nic2.mac}|eth1|MASTER=#{bonding.interface_name}|SLAVE=yes|ONBOOT=yes
 HERE
