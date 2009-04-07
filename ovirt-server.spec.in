@@ -5,7 +5,7 @@
 Summary: oVirt Server Suite
 Name: ovirt-server
 Version: @VERSION@
-Release: 1%{?dist}%{?extra_release}
+Release: 0%{?dist}%{?extra_release}
 Source0: %{name}-%{version}.tar.gz
 #Entire source code is GPL except for vendor/plugins/will_paginate and
 #vendor/plugins/betternestedset, which are MIT, and
