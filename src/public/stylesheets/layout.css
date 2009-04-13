@@ -256,13 +256,11 @@ a { color:#000000; text-decoration: none;}
   background: #DEE7EB;
   border-top: #CCCCCC solid 1px;
   overflow: auto;
+  padding: 10px 10px 10px 15px;
 }
 
 .selection_left {
-  padding: 10px 10px 10px 15px;
-  height: 126px;
   float:left;
-  width: 40%;
 }
 
 .selection_title {
@@ -315,12 +313,9 @@ a { color:#000000; text-decoration: none;}
 }
 
 .selection_right {
-  width:55%;
   float: right;
-   padding-top: 10px;
-   /*background: #F0F0F0;*/
-   height: 140px;
- }
+  padding-right: 10px;
+}
  
  .selection_right_title {
    padding: 4px 4px 4px 6px;

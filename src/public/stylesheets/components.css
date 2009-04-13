@@ -208,11 +208,14 @@
 }
 
 /* snapshot graphs on hardware / resource summary tab */
-#snapshot_graphs table {
-  width: 98%;
-}
 #snapshot_graphs th    { background: #EEEEEE; text-align: left; padding-left: 10px;border:1px solid #CCCCCC;}
-#snapshot_graphs td    { padding-left: 10px; background: #FFFFFF;border:1px solid #CCCCCC;}
+#snapshot_graphs td {
+  padding-left: 10px;
+  padding-right: 10px;
+  white-space: nowrap;
+  background: #FFFFFF;
+  border:1px solid #CCCCCC;
+}
 .snapshot_graph_container{
   width: 180px;
   height: 10px;

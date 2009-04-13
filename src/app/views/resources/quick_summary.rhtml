@@ -38,7 +38,6 @@
              }, 'json');
   }
 </script>
-
     <div id="vmpool_selection_id" style="display:none"><%= @pool.id %></div>
     <% resources = @pool.full_resources %>
     <div class="selection_key">
@@ -58,7 +57,6 @@
           <%= item[2]%><br>
         <% end %>
     </div>
-</div>
-<div class="selection_right">  
+<%- content_for :right do -%>
     <%= render_component :controller=> 'graph', :action => 'snapshot_graph', :id => @pool.id, :target => 'resource' %>
-</div>
+<% end -%>
