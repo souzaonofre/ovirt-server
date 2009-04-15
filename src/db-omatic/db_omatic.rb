@@ -412,7 +412,7 @@ class DbOmatic < Qpid::Qmf::Console
         begin
            VmVnc.deallocate_all
          rescue Exception => e # just log any errors here
-            @logger.error "Error with closing all VM VNCs operation: " + e
+            @logger.error "Error with closing all VM VNCs operation: #{e.message}"
          end
 
         db_vm = Vm.find(:all)
@@ -421,6 +421,14 @@ class DbOmatic < Qpid::Qmf::Console
             vm.state = Vm::STATE_STOPPED
             vm.save
         end
+    end
+
+    def broker_connected(broker)
+        @logger.info "Connected to broker."
+    end
+
+    def broker_disconnected(broker)
+        @logger.error "Broker disconnected."
     end
 
 
