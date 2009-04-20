@@ -85,6 +85,7 @@ class HostBrowser
         result = Hash.new
         result['HOSTNAME'] = @session.peeraddr[2]
         result['IPADDR']   = @session.peeraddr[3]
+        result['NICINFO']  = Array.new
 
         @session.write("INFO?\n")
 
