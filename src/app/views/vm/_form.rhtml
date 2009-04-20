@@ -3,8 +3,7 @@
 <%  start_resources = @vm.vm_resource_pool.available_resources_for_vm(@vm) %>
 
 <!--[form:vm]-->
-<%= hidden_field 'vm', 'vm_resource_pool_id' unless @vm_resource_pool_name %>
-<%= hidden_field_tag 'vm_resource_pool_name', @vm_resource_pool_name if @vm_resource_pool_name %>
+<%= hidden_field 'vm', 'vm_resource_pool_id' %>
 <%= hidden_field_tag 'hardware_pool_id', @hardware_pool.id if @hardware_pool %>
 
     <%= text_field_with_label "Name:", "vm", "description", {:style=>"width:250px;"}  %>

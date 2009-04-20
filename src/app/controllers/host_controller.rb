@@ -53,12 +53,7 @@ class HostController < ApplicationController
 
 
   def show
-    set_perms(@perm_obj)
-    unless @can_view
-      flash[:notice] = 'You do not have permission to view this host: redirecting to top level'
-      #perm errors for ajax should be done differently
-      redirect_to :controller => 'dashboard', :action => 'list'
-    else
+    if authorize_view
       respond_to do |format|
         format.html { render :layout => 'selection' }
         format.xml { render :xml => @host.to_xml(:include => [ :cpus ] ) }
@@ -68,13 +63,9 @@ class HostController < ApplicationController
 
   def quick_summary
     pre_show
-    set_perms(@perm_obj)
-    unless @can_view
-      flash[:notice] = 'You do not have permission to view this host: redirecting to top level'
-      #perm errors for ajax should be done differently
-      redirect_to :controller => 'dashboard', :action => 'list'
+    if authorize_view
+      render :layout => false
     end
-    render :layout => false
   end
 
   # retrieves data used by snapshot graphs
@@ -89,8 +80,7 @@ class HostController < ApplicationController
   def pre_addhost
     @pool = Pool.find(params[:hardware_pool_id])
     @parent = @pool.parent
-    @perm_obj = @pool
-    @current_pool_id=@pool.id
+    set_perms(@pool)
     authorize_admin
   end
 
@@ -192,14 +182,13 @@ class HostController < ApplicationController
   end
   def pre_action
     @host = Host.find(params[:id])
-    @perm_obj = @host.hardware_pool
+    set_perms(@host.hardware_pool)
     @json_hash = { :object => :host }
     authorize_admin
   end
   def pre_show
     @host = Host.find(params[:id])
-    @perm_obj = @host.hardware_pool
-    @current_pool_id=@perm_obj.id
+    set_perms(@host.hardware_pool)
   end
 
 

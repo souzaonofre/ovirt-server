@@ -166,8 +166,8 @@ class ResourcesController < PoolController
   def pre_edit
     @pool = VmResourcePool.find(params[:id])
     @parent = @pool.parent
-    @perm_obj = @pool.parent
     @current_pool_id=@pool.id
+    set_perms(@pool.parent)
   end
   def pre_show
     @pool = VmResourcePool.find(params[:id])
@@ -177,7 +177,7 @@ class ResourcesController < PoolController
   def pre_vm_actions
     @pool = VmResourcePool.find(params[:id])
     @parent = @pool.parent
-    @perm_obj = @pool
+    set_perms(@pool)
     authorize_user
   end
 

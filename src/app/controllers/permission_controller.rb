@@ -29,11 +29,7 @@ class PermissionController < ApplicationController
   def show
     @permission = Permission.find(params[:id])
     set_perms(@permission.pool)
-    # admin permission required to view permissions
-    unless @can_view_perms
-      flash[:notice] = 'You do not have permission to view this permission record'
-      redirect_to_parent
-    end
+    authorize_action(Privilege::PERM_VIEW)
   end
 
   def new
@@ -45,10 +41,7 @@ class PermissionController < ApplicationController
     @roles = Role.find(:all).collect{ |role| [role.name, role.id] }
     set_perms(@permission.pool)
     # admin permission required to view permissions
-    unless @can_set_perms
-      flash[:notice] = 'You do not have permission to create this permission record'
-      redirect_to_parent
-    else
+    if authorize_action(Privilege::PERM_SET)
       render :layout => 'popup'
     end
   end
@@ -56,11 +49,7 @@ class PermissionController < ApplicationController
   def create
     @permission = Permission.new(params[:permission])
     set_perms(@permission.pool)
-    unless @can_set_perms
-      # FIXME: need to handle proper error messages w/ ajax
-      flash[:notice] = 'You do not have permission to create this permission record'
-      redirect_to_parent
-    else
+    if authorize_action(Privilege::PERM_SET)
       begin
         @permission.save_with_new_children
         render :json => { :object => "permission", :success => true,
@@ -118,10 +107,7 @@ class PermissionController < ApplicationController
   def destroy
     @permission = Permission.find(params[:id])
     set_perms(@permission.pool)
-    unless @can_set_perms
-      flash[:notice] = 'You do not have permission to delete this permission record'
-      redirect_to_parent
-    else
+    if authorize_action(Privilege::PERM_SET)
       pool =  @permission.pool
       if @permission.destroy
         if pool

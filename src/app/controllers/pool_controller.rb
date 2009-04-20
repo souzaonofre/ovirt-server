@@ -104,8 +104,7 @@ class PoolController < ApplicationController
   protected
   def pre_new
     @parent = Pool.find(params[:parent_id])
-    @perm_obj = @parent
-    @current_pool_id=@parent.id
+    set_perms(@parent)
   end
   def pre_create
     #this is currently only true for the rest API for hardware pools
@@ -114,24 +113,14 @@ class PoolController < ApplicationController
     else
       @parent = Pool.find(params[:parent_id])
     end
-    @perm_obj = @parent
-    @current_pool_id=@parent.id
+    set_perms(@parent)
   end
   def pre_show_pool
     pre_show
   end
   def pre_show
-    @perm_obj = @pool
-    @current_pool_id=@pool.id
-    set_perms(@perm_obj)
-    unless @can_view
-      flash[:notice] = 'You do not have permission to view this pool: redirecting to top level'
-      respond_to do |format|
-        format.html { redirect_to :controller => "dashboard" }
-        format.xml { head :forbidden }
-      end
-      return
-    end
+    set_perms(@pool)
+    authorize_view
   end
 
 end

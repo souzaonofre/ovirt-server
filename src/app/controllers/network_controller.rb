@@ -28,7 +28,7 @@ class NetworkController < ApplicationController
      #  or by extending permission model to accomodate
      #  any object
      @default_pool = HardwarePool.get_default_pool
-     @perm_obj=@default_pool
+     set_perms(@default_pool)
      super('You do not have permission to access networks')
    end
 

@@ -47,10 +47,7 @@ class StorageController < ApplicationController
     if @attach_to_pool
       pool = HardwarePool.find(@attach_to_pool)
       set_perms(pool)
-      unless @can_view
-        flash[:notice] = 'You do not have permission to view this storage pool list: redirecting to top level'
-        redirect_to :controller => 'dashboard'
-      else
+      if authorize_view
         conditions = "hardware_pool_id is null"
         conditions += " or hardware_pool_id=#{pool.parent_id}" if pool.parent
         @storage_pools = StoragePool.find(:all, :conditions => conditions)
@@ -71,13 +68,7 @@ class StorageController < ApplicationController
   def show
     @storage_pool = StoragePool.find(params[:id])
     set_perms(@storage_pool.hardware_pool)
-    unless @can_view
-      flash[:notice] = 'You do not have permission to view this storage pool: redirecting to top level'
-      respond_to do |format|
-        format.html { redirect_to :controller => 'dashboard' }
-        format.xml { head :forbidden }
-      end
-    else
+    if authorize_view
       respond_to do |format|
         format.html { render :layout => 'selection' }
         format.xml {
@@ -234,7 +225,7 @@ class StorageController < ApplicationController
 
   def pre_new
     @hardware_pool = HardwarePool.find(params[:hardware_pool_id])
-    @perm_obj = @hardware_pool
+    set_perms(@hardware_pool)
     authorize_admin
     @storage_pools = @hardware_pool.storage_volumes
     @storage_types = StoragePool::STORAGE_TYPE_PICKLIST
@@ -250,7 +241,7 @@ class StorageController < ApplicationController
       new_params[:port] = 3260
     end
     @storage_pool = StoragePool.factory(params[:storage_type], new_params)
-    @perm_obj = @storage_pool.hardware_pool
+    set_perms(@storage_pool.hardware_pool)
     authorize_admin
   end
   def pre_create
@@ -259,11 +250,11 @@ class StorageController < ApplicationController
       type = pool.delete(:storage_type)
     end
     @storage_pool = StoragePool.factory(type, pool)
-    @perm_obj = @storage_pool.hardware_pool
+    set_perms(@storage_pool.hardware_pool)
   end
   def pre_edit
     @storage_pool = StoragePool.find(params[:id])
-    @perm_obj = @storage_pool.hardware_pool
+    set_perms(@storage_pool.hardware_pool)
   end
   def pre_pool_admin
     pre_edit

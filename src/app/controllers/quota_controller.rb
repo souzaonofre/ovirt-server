@@ -28,13 +28,7 @@ class QuotaController < ApplicationController
 
   def show
     @quota = Quota.find(params[:id])
-    set_perms(@quota.pool)
-
-    unless @can_view
-      flash[:notice] = 'You do not have permission to view this quota: redirecting to top level'
-      redirect_to_parent
-    end
-                      
+    authorize_view
   end
 
   def new
@@ -83,19 +77,19 @@ class QuotaController < ApplicationController
   protected
   def pre_new
     @quota = Quota.new( { :pool_id => params[:pool_id]})
-    @perm_obj = @quota.pool
+    set_perms(@quota.pool)
   end
   def pre_create
     @quota = Quota.new(params[:quota])
-    @perm_obj = @quota.pool
+    set_perms(@quota.pool)
   end
   def pre_show
     @quota = Quota.find(params[:id])
-    @perm_obj = @quota
+    set_perms(@quota.pool)
   end
   def pre_edit
     @quota = Quota.find(params[:id])
-    @perm_obj = @quota.pool
+    set_perms(@quota.pool)
   end
 
 end

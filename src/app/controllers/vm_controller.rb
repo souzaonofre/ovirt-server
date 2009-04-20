@@ -17,13 +17,16 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 require 'socket'
+require 'services/vm_service'
 
 class VmController < ApplicationController
+  include VmService
+
   # GETs should be safe (see http://www.w3.org/2001/tag/doc/whenToUseGet.html)
   verify :method => :post, :only => [ :destroy, :create, :update ],
          :redirect_to => { :controller => 'dashboard' }
 
-  before_filter :pre_vm_action, :only => [:vm_action, :cancel_queued_tasks, :console]
+  before_filter :pre_console, :only => [:console]
 
   def index
     @vms = Vm.find(:all,
@@ -38,13 +41,13 @@ class VmController < ApplicationController
   end
 
   def show
-    set_perms(@perm_obj)
-    @actions = @vm.get_action_hash(@user)
-    unless @can_view
-      flash[:notice] = 'You do not have permission to view this vm: redirecting to top level'
-      redirect_to :controller => 'resources', :controller => 'dashboard'
+    begin
+      svc_show(params[:id])
+      @actions = @vm.get_action_hash(@user)
+      render :layout => 'selection'
+    rescue PermissionError => perm_error
+      handle_auth_error(perm_error.message)
     end
-    render :layout => 'selection'
   end
 
   def add_to_smart_pool
@@ -58,38 +61,15 @@ class VmController < ApplicationController
   end
 
   def create
+    params[:vm][:forward_vnc] = params[:forward_vnc]
     begin
-      Vm.transaction do
-        @vm.save!
-        _setup_vm_provision(params)
-        @task = VmTask.new({ :user        => @user,
-                             :task_target => @vm,
-                             :action      => VmTask::ACTION_CREATE_VM,
-                             :state       => Task::STATE_QUEUED})
-        @task.save!
-      end
-      start_now = params[:start_now]
-      if (start_now)
-        if @vm.get_action_list.include?(VmTask::ACTION_START_VM)
-          @task = VmTask.new({ :user        => @user,
-                               :task_target => @vm,
-                               :action      => VmTask::ACTION_START_VM,
-                               :state       => Task::STATE_QUEUED})
-          @task.save!
-          alert = "VM was successfully created. VM Start action queued."
-        else
-          alert = "VM was successfully created. Resources are not available to start VM now."
-        end
-      else
-        alert = "VM was successfully created."
-      end
+      alert = svc_create(params[:vm], params[:start_now])
       render :json => { :object => "vm", :success => true, :alert => alert  }
+    rescue PermissionError => perm_error
+      handle_auth_error(perm_error.message)
     rescue Exception => error
-      # FIXME: need to distinguish vm vs. task save errors (but should mostly be vm)
-      render :json => { :object => "vm", :success => false,
-                        :errors => @vm.errors.localize_error_messages.to_a }
+      json_error("vm", @vm, error)
     end
-
   end
 
   def edit
@@ -98,58 +78,20 @@ class VmController < ApplicationController
   end
 
   def update
+    params[:vm][:forward_vnc] = params[:forward_vnc]
     begin
-      #needs restart if certain fields are changed (since those will only take effect the next startup)
-      needs_restart = false
-      unless @vm.get_pending_state == Vm::STATE_STOPPED
-        Vm::NEEDS_RESTART_FIELDS.each do |field|
-          unless @vm[field].to_s == params[:vm][field]
-            needs_restart = true
-            break
-          end
-        end
-        current_storage_ids = @vm.storage_volume_ids.sort
-        new_storage_ids = params[:vm][:storage_volume_ids]
-        new_storage_ids = [] unless new_storage_ids
-        new_storage_ids = new_storage_ids.sort.collect {|x| x.to_i }
-        needs_restart = true unless current_storage_ids == new_storage_ids
-      end
-
-      params[:vm][:forward_vnc] = params[:forward_vnc]
-      params[:vm][:needs_restart] = 1 if needs_restart
-      @vm.update_attributes!(params[:vm])
-      _setup_vm_provision(params)
-
-      if (params[:start_now] and @vm.get_action_list.include?(VmTask::ACTION_START_VM) )
-        @task = VmTask.new({ :user        => @user,
-                             :task_target => @vm,
-                             :action      => VmTask::ACTION_START_VM,
-                             :state       => Task::STATE_QUEUED})
-        @task.save!
-      elsif ( params[:restart_now] and @vm.get_action_list.include?(VmTask::ACTION_SHUTDOWN_VM) )
-        @task = VmTask.new({ :user        => @user,
-                             :task_target => @vm,
-                             :action      => VmTask::ACTION_SHUTDOWN_VM,
-                             :state       => Task::STATE_QUEUED})
-        @task.save!
-        @task = VmTask.new({ :user    => @user,
-                             :task_target => @vm,
-                             :action  => VmTask::ACTION_START_VM,
-                             :state   => Task::STATE_QUEUED})
-        @task.save!
-      end
-
-
-      render :json => { :object => "vm", :success => true,
-                        :alert => 'Vm was successfully updated.'  }
-    rescue
+      alert = svc_update(params[:id], params[:vm], params[:start_now],
+                         params[:restart_now])
+      render :json => { :object => "vm", :success => true, :alert => alert  }
+    rescue Exception => error
       # FIXME: need to distinguish vm vs. task save errors (but should mostly be vm)
-      render :json => { :object => "vm", :success => false,
-                        :errors => @vm.errors.localize_error_messages.to_a }
+      json_error("vm", @vm, error)
     end
   end
 
   #FIXME: we need permissions checks. user must have permission. Also state checks
+  # this should probably be implemented as an action on the containing VM pool once
+  # that service module is defined
   def delete
     vm_ids_str = params[:vm_ids]
     vm_ids = vm_ids_str.split(",").collect {|x| x.to_i}
@@ -181,15 +123,13 @@ class VmController < ApplicationController
   end
 
   def destroy
-    vm_resource_pool = @vm.vm_resource_pool_id
-    if (@vm.is_destroyable?)
-      destroy_cobbler_system(@vm)
-      @vm.destroy
-      render :json => { :object => "vm", :success => true,
-        :alert => "Virtual Machine was successfully deleted." }
-    else
-      render :json => { :object => "vm", :success => false,
-        :alert => "Vm must be stopped to delete it." }
+    begin
+      alert = svc_destroy(params[:id])
+      render :json => { :object => "vm", :success => true, :alert => alert  }
+    rescue ActionError => error
+      json_error("vm", @vm, error)
+    rescue Exception => error
+      json_error("vm", @vm, error)
     end
   end
 
@@ -204,35 +144,30 @@ class VmController < ApplicationController
   end
 
   def vm_action
-    vm_action = params[:vm_action]
-    data = params[:vm_action_data]
     begin
-      if @vm.queue_action(get_login_user, vm_action, data)
-        render :json => { :object => "vm", :success => true, :alert => "#{vm_action} was successfully queued." }
-      else
-        render :json => { :object => "vm", :success => false, :alert => "#{vm_action} is an invalid action." }
-      end
-    rescue
-      render :json => { :object => "vm", :success => false, :alert => "Error in queueing #{vm_action}." }
+      alert = svc_vm_action(params[:id], params[:vm_action],
+                            params[:vm_action_data])
+      render :json => { :object => "vm", :success => true, :alert => alert  }
+    rescue ActionError => error
+      json_error("vm", @vm, error)
+    rescue Exception => error
+      json_error("vm", @vm, error)
     end
   end
 
   def cancel_queued_tasks
     begin
-      Task.transaction do
-        @vm.tasks.queued.each { |task| task.cancel}
-      end
-      render :json => { :object => "vm", :success => true, :alert => "queued tasks were canceled." }
-    rescue
-      render :json => { :object => "vm", :success => true, :alert => "queued tasks cancel failed." }
+      alert = svc_cancel_queued_tasks(params[:id])
+      render :json => { :object => "vm", :success => true, :alert => alert  }
+    rescue Exception => error
+      json_error("vm", @vm, error)
     end
   end
 
   def migrate
     @vm = Vm.find(params[:id])
-    @perm_obj = @vm.get_hardware_pool
-    @redir_obj = @vm
     @current_pool_id=@vm.vm_resource_pool.id
+    set_perms(@vm.get_hardware_pool)
     authorize_admin
     render :layout => 'popup'
   end
@@ -268,53 +203,10 @@ class VmController < ApplicationController
     end
   end
 
-  # FIXME: move this to an edit_vm task in taskomatic
-  def _setup_vm_provision(params)
-    # spaces are invalid in the cobbler name
-    name = params[:vm][:uuid]
-    mac = params[:vm][:vnic_mac_addr]
-    provision = params[:vm][:provisioning_and_boot_settings]
-    # determine what type of provisioning was selected for the VM
-    provisioning_type = :pxe_or_hd_type
-    provisioning_type = :image_type  if provision.index "#{Vm::IMAGE_PREFIX}@#{Vm::COBBLER_PREFIX}"
-    provisioning_type = :system_type if provision.index "#{Vm::PROFILE_PREFIX}@#{Vm::COBBLER_PREFIX}"
-
-    unless provisioning_type == :pxe_or_hd_type
-      cobbler_name = provision.slice(/(.*):(.*)/, 2)
-      system = Cobbler::System.find_one(name)
-      unless system
-        nic = Cobbler::NetworkInterface.new({'mac_address' => mac})
-
-        case provisioning_type
-        when :image_type:
-            system = Cobbler::System.new("name" => name, "image"    => cobbler_name)
-        when :system_type:
-            system = Cobbler::System.new("name" => name, "profile" => cobbler_name)
-        end
-
-        system.interfaces = [nic]
-        system.save
-      end
-    end
-  end
-
   def pre_new
-    # if no vm_resource_pool is passed in, find (or auto-create) it based on hardware_pool_id
     unless params[:vm_resource_pool_id]
-      unless params[:hardware_pool_id]
-        flash[:notice] = "VM Resource Pool or Hardware Pool is required."
-        redirect_to :controller => 'dashboard'
-      end
-      @hardware_pool = HardwarePool.find(params[:hardware_pool_id])
-      @user = get_login_user
-      vm_resource_pool = @hardware_pool.sub_vm_resource_pools.select {|pool| pool.name == @user}.first
-      if vm_resource_pool
-        params[:vm_resource_pool_id] = vm_resource_pool.id
-      else
-        @vm_resource_pool = VmResourcePool.new({:name => vm_resource_pool})
-        @vm_resource_pool.tmp_parent = @hardware_pool
-        @vm_resource_pool_name = @user
-      end
+      flash[:notice] = "VM Resource Pool is required."
+      redirect_to :controller => 'dashboard'
     end
 
     # random MAC
@@ -331,50 +223,25 @@ class VmController < ApplicationController
     unless params[:vm_resource_pool_id]
       @vm.vm_resource_pool = @vm_resource_pool
     end
-    @perm_obj = @vm.vm_resource_pool
-    @current_pool_id=@perm_obj.id
+    set_perms(@vm.vm_resource_pool)
     @networks = Network.find(:all).collect{ |net| [net.name, net.id] }
     _setup_provisioning_options
-  end
-  def pre_create
-    params[:vm][:state] = Vm::STATE_PENDING
-    vm_resource_pool_name = params[:vm_resource_pool_name]
-    hardware_pool_id = params[:hardware_pool_id]
-    if vm_resource_pool_name and hardware_pool_id
-      hardware_pool = HardwarePool.find(hardware_pool_id)
-      vm_resource_pool = VmResourcePool.new({:name => vm_resource_pool_name})
-      vm_resource_pool.create_with_parent(hardware_pool)
-      params[:vm][:vm_resource_pool_id] = vm_resource_pool.id
-    end
-    params[:vm][:forward_vnc] = params[:forward_vnc]
-    @vm = Vm.new(params[:vm])
-    @perm_obj = @vm.vm_resource_pool
-    @current_pool_id=@perm_obj.id
-  end
-  def pre_show
-    @vm = Vm.find(params[:id])
-    @perm_obj = @vm.vm_resource_pool
-    @current_pool_id=@perm_obj.id
   end
   def pre_edit
     @vm = Vm.find(params[:id])
-    @perm_obj = @vm.vm_resource_pool
-    @current_pool_id=@perm_obj.id
+    set_perms(@vm.vm_resource_pool)
     @networks = Network.find(:all).collect{ |net| [net.name, net.id] }
     _setup_provisioning_options
   end
-  def pre_vm_action
+  def pre_console
     pre_edit
     authorize_user
   end
-
-  private
-
-  def destroy_cobbler_system(vm)
-    # Destroy the Cobbler system first if it's defined
-    if vm.uses_cobbler?
-      system = Cobbler::System.find_one(vm.cobbler_system_name)
-      system.remove if system
-    end
+  # FIXME: remove these when service transition is complete. these are here
+  # to keep from running permissions checks and other setup steps twice
+  def tmp_pre_update
   end
+  def tmp_authorize_admin
+  end
+
 end

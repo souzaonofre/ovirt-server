@@ -20,18 +20,34 @@
 # Filters added to this controller apply to all controllers in the application.
 # Likewise, all the methods added will be available for all controllers.
 
+# FIXME: once all controller classes include this, remove here
+require 'services/application_service'
+
 class ApplicationController < ActionController::Base
+  # FIXME: once all controller classes include this, remove here
+  include ApplicationService
+
   # Pick a unique cookie name to distinguish our session data from others'
   session :session_key => '_ovirt_session_id'
   init_gettext "ovirt"
   layout :choose_layout
 
+  # FIXME: once service layer is complete, the following before_filters will be
+  # removed as their functionality has been moved to the service layer
+  # pre_create
+  # pre_edit will remain only for :edit, not :update or :destroy
+  # pre_show
+  # authorize_admin will remain only for :new, :edit
   before_filter :pre_new, :only => [:new]
   before_filter :pre_create, :only => [:create]
-  before_filter :pre_edit, :only => [:edit, :update, :destroy]
+  before_filter :pre_edit, :only => [:edit]
+  # the following is to facilitate transition to service layer
+  before_filter :tmp_pre_update, :only => [:update, :destroy]
   before_filter :pre_show, :only => [:show]
-  before_filter :authorize_admin, :only => [:new, :create, :edit, :update, :destroy]
+  before_filter :authorize_admin, :only => [:new, :edit]
+  before_filter :tmp_authorize_admin, :only => [:create, :update, :destroy]
   before_filter :is_logged_in, :get_help_section
+
 
   def choose_layout
     if(params[:component_layout])
@@ -61,62 +77,66 @@ class ApplicationController < ActionController::Base
     (ENV["RAILS_ENV"] == "production") ? session[:user] : "ovirtadmin"
   end
 
-  def set_perms(hwpool)
-    @user = get_login_user
-    @can_view = hwpool.can_view(@user)
-    @can_control_vms = hwpool.can_control_vms(@user)
-    @can_modify = hwpool.can_modify(@user)
-    @can_view_perms = hwpool.can_view_perms(@user)
-    @can_set_perms = hwpool.can_set_perms(@user)
-  end
-
   protected
   # permissions checking
 
   def pre_new
   end
-  def pre_create
-  end
   def pre_edit
+  end
+
+  # FIXME: remove these when service layer transition is complete
+  def tmp_pre_update
+    pre_edit
+  end
+  def tmp_authorize_admin
+    authorize_admin
+  end
+  def pre_create
   end
   def pre_show
   end
 
+  def authorize_view(msg=nil)
+    authorize_action(Privilege::VIEW,msg)
+  end
   def authorize_user(msg=nil)
-    authorize_action(false,msg)
+    authorize_action(Privilege::VM_CONTROL,msg)
   end
   def authorize_admin(msg=nil)
-    authorize_action(true,msg)
+    authorize_action(Privilege::MODIFY,msg)
   end
-  def authorize_action(is_modify_action, msg=nil)
-    msg ||= 'You do not have permission to create or modify this item '
-    if @perm_obj
-      set_perms(@perm_obj)
-      unless (is_modify_action ? @can_modify : @can_control_vms)
-        respond_to do |format|
-          format.html do
-            @title = "Access denied"
-            @errmsg = msg
-            @ajax = params[:ajax]
-            @nolayout = params[:nolayout]
-            if @ajax
-              render :template => 'layouts/popup-error', :layout => 'tabs-and-content'
-            elsif @nolayout
-              render :template => 'layouts/popup-error', :layout => 'help-and-content'
-            else
-              render :template => 'layouts/popup-error', :layout => 'popup'
-            end
-          end
-          format.json do
-            @json_hash ||= {}
-            @json_hash[:success] = false
-            @json_hash[:alert] = msg
-            render :json => @json_hash
-          end
-          format.xml { head :forbidden }
+  def authorize_action(privilege, msg=nil)
+    msg ||= 'You have insufficient privileges to perform action.'
+    unless authorized?(privilege)
+      handle_auth_error(msg)
+      false
+    else
+      true
+    end
+  end
+  def handle_auth_error(msg)
+    respond_to do |format|
+      format.html do
+        @title = "Access denied"
+        @errmsg = msg
+        @ajax = params[:ajax]
+        @nolayout = params[:nolayout]
+        if @ajax
+          render :template => 'layouts/popup-error', :layout => 'tabs-and-content'
+        elsif @nolayout
+          render :template => 'layouts/popup-error', :layout => 'help-and-content'
+        else
+          render :template => 'layouts/popup-error', :layout => 'popup'
         end
-        false
       end
+      format.json do
+        @json_hash ||= {}
+        @json_hash[:success] = false
+        @json_hash[:alert] = msg
+        render :json => @json_hash
+      end
+      format.xml { head :forbidden }
     end
   end
 
@@ -155,6 +175,11 @@ class ApplicationController < ActionController::Base
     render :json => json_hash(full_items, attributes, arg_list, find_opts, id_method).to_json
   end
 
-
+  def json_error(obj_type, obj, exception)
+    json_hash = { :object => obj_type, :success => false}
+    json_hash[:errors] = obj.errors.localize_error_messages.to_a if obj
+    json_hash[:alert] = exception.message if obj.errors.size == 0
+    render :json => json_hash
+  end
 
 end

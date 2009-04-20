@@ -23,11 +23,7 @@ class NicController < ApplicationController
          :redirect_to => { :controller => 'dashboard' }
 
   def show
-    set_perms(@perm_obj)
-    unless @can_view
-      flash[:notice] = 'You do not have permission to view this NIC: redirecting to top level'
-      redirect_to :controller => 'pool', :action => 'list'
-    end
+    authorize_view
   end
 
   def new
@@ -62,7 +58,7 @@ class NicController < ApplicationController
   end
   def pre_show
     @nic = Nic.find(params[:id])
-    @perm_obj = @nic.host.hardware_pool
+    set_perms(@nic.host.hardware_pool)
   end
 
 end

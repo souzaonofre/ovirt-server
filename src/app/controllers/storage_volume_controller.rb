@@ -94,19 +94,12 @@ class StorageVolumeController < ApplicationController
     @storage_volume = StorageVolume.find(params[:id])
     set_perms(@storage_volume.storage_pool.hardware_pool)
     @storage_pool = @storage_volume.storage_pool
-    unless @can_view
-      flash[:notice] = 'You do not have permission to view this storage volume: redirecting to top level'
-      respond_to do |format|
-        format.html { redirect_to :controller => 'dashboard' }
-        format.json { redirect_to :controller => 'dashboard' }
-        format.xml { head :forbidden }
-      end
-    else
+    if authorize_view
       respond_to do |format|
         format.html { render :layout => 'selection' }
         format.json do
           attr_list = []
-          attr_list << :id if (@storage_pool.user_subdividable and @can_modify)
+          attr_list << :id if (@storage_pool.user_subdividable and authorized?(Privilege::MODIFY)
           attr_list += [:display_name, :size_in_gb, :get_type_label]
           json_list(@storage_pool.storage_volumes, attr_list)
         end
@@ -118,13 +111,8 @@ class StorageVolumeController < ApplicationController
   def destroy
     @storage_volume = StorageVolume.find(params[:id])
     set_perms(@storage_volume.storage_pool.hardware_pool)
-    unless @can_modify and @storage_volume.storage_pool.user_subdividable
-      respond_to do |format|
-        format.json { render :json => { :object => "storage_volume",
-            :success => false,
-            :alert => "You do not have permission to delete this storage volume." } }
-        format.xml { head :forbidden }
-      end
+    unless authorized?(Privilege::MODIFY) and @storage_volume.storage_pool.user_subdividable
+      handle_auth_error("You do not have permission to delete this storage volume.")
     else
       alert, success = delete_volume_internal(@storage_volume)
       respond_to do |format|
@@ -141,14 +129,14 @@ class StorageVolumeController < ApplicationController
       type = volume.delete(:storage_type)
     end
     @storage_volume = StorageVolume.factory(type, volume)
-    @perm_obj = @storage_volume.storage_pool.hardware_pool
+    set_perms(@storage_volume.storage_pool.hardware_pool)
     authorize_admin
   end
 
   private
   def new_volume_internal(storage_pool, new_params)
     @storage_volume = StorageVolume.factory(storage_pool.get_type_label, new_params)
-    @perm_obj = @storage_volume.storage_pool.hardware_pool
+    set_perms(@storage_volume.storage_pool.hardware_pool)
     authorize_admin
   end
 

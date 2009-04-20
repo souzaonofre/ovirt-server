@@ -199,20 +199,17 @@ class SmartPoolsController < PoolController
   def pre_new
     @pool = SmartPool.new
     @parent = DirectoryPool.get_or_create_user_root(get_login_user)
-    @perm_obj = @parent
-    @current_pool_id=@parent.id
+    set_perms(@parent)
   end
   def pre_create
     @pool = SmartPool.new(params[:smart_pool])
     @parent = DirectoryPool.get_or_create_user_root(get_login_user)
-    @perm_obj = @parent
-    @current_pool_id=@parent.id
+    set_perms(@parent)
   end
   def pre_edit
     @pool = SmartPool.find(params[:id])
     @parent = @pool.parent
-    @perm_obj = @pool
-    @current_pool_id=@pool.id
+    set_perms(@pool)
   end
   def pre_show
     @pool = SmartPool.find(params[:id])

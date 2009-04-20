@@ -71,11 +71,7 @@ class HardwareController < PoolController
     if id
       @pool = Pool.find(id)
       set_perms(@pool)
-      unless @pool.has_privilege(@user, privilege)
-        flash[:notice] = 'You do not have permission to access this hardware pool: redirecting to top level'
-        redirect_to :controller => "dashboard"
-        return
-      end
+      return unless authorize_action(privilege)
     end
     if @pool
       pools = @pool.children
@@ -386,8 +382,7 @@ class HardwareController < PoolController
   def pre_edit
     @pool = HardwarePool.find(params[:id])
     @parent = @pool.parent
-    @perm_obj = @pool
-    @current_pool_id=@pool.id
+    set_perms(@pool)
   end
   def pre_show
     @pool = HardwarePool.find(params[:id])
