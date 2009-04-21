@@ -859,7 +859,7 @@ class TaskOmatic
             state = Task::STATE_FAILED
             task.message = "Unknown task type"
           end
-        rescue => ex
+        rescue Exception => ex
           @logger.error "Task action processing failed: #{ex.class}: #{ex.message}"
           @logger.error ex.backtrace
           state = Task::STATE_FAILED
@@ -868,7 +868,12 @@ class TaskOmatic
 
         task.state = state
         task.time_ended = Time.now
-        task.save!
+        begin
+          task.save!
+        rescue Exception => ex
+          @logger.error "Error saving task state for task #{task.id}: #{ex.class}: #{ex.message}"
+          @logger.error ex.backtrace
+        end
         @logger.info "done"
       end
       # FIXME: here, we clean up "orphaned" tasks.  These are tasks
