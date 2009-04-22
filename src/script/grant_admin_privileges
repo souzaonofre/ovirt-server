@@ -14,7 +14,7 @@ ActiveLdap::Base.establish_connection :base => base, :host => host, :try_sasl =>
 if Account.exists?("uid=#{uid}")
   puts "Creating an admin account for #{uid}..."
   $pool = DirectoryPool.get_directory_root
-  permission = Permission.new(:user_role => Role.find_by_name(Role::SUPER_ADMIN).id,
+  permission = Permission.new(:role_id => Role.find_by_name(Role::SUPER_ADMIN).id,
                               :uid       => uid,
                               :pool_id   => $pool.id)
   permission.save_with_new_children
