@@ -216,6 +216,7 @@ class TaskOmatic
   end
 
   def task_create_vm(task)
+    @logger.info "starting task_create_vm"
     # This is mostly just a place holder.
     vm = find_vm(task, false)
     if vm.state != Vm::STATE_PENDING
@@ -255,6 +256,7 @@ class TaskOmatic
 
 
   def task_shutdown_or_destroy_vm(task, action)
+    @logger.info "starting task_shutdown_or_destroy_vm"
     db_vm = task.vm
     vm = @session.object(:class => 'domain', 'uuid' => db_vm.uuid)
     if !vm
@@ -310,6 +312,7 @@ class TaskOmatic
   end
 
   def task_start_vm(task)
+    @logger.info "starting task_start_vm"
     db_vm = find_vm(task, false)
 
     vm = @session.object(:class => "domain", 'uuid' => db_vm.uuid)
@@ -329,6 +332,7 @@ class TaskOmatic
     node = @session.object(:class => "node", 'hostname' => db_host.hostname)
 
     raise "Unable to find host #{db_host.hostname} to create VM on." unless node
+    @logger.info("VM will be started on node #{node.hostname}")
 
     image_volume = task_storage_cobbler_setup(db_vm)
 
@@ -399,6 +403,7 @@ class TaskOmatic
   end
 
   def task_suspend_vm(task)
+    @logger.info "starting task_suspend_vm"
     db_vm = task.vm
     dom = @session.object(:class => 'domain', 'uuid' => db_vm.uuid)
     raise "Unable to locate VM to suspend" unless dom
@@ -416,6 +421,7 @@ class TaskOmatic
   end
 
   def task_resume_vm(task)
+    @logger.info "starting task_resume_vm"
     db_vm = task.vm
     dom = @session.object(:class => 'domain', 'uuid' => db_vm.uuid)
     raise "Unable to locate VM to resume" unless dom
@@ -436,6 +442,7 @@ class TaskOmatic
   end
 
   def task_save_vm(task)
+    @logger.info "starting task_save_vm"
 
     # FIXME: This task is actually very broken.  It saves to a local
     # disk on the node which could be volatile memory, and there is no
@@ -457,6 +464,7 @@ class TaskOmatic
   end
 
   def task_restore_vm(task)
+    @logger.info "starting task_restore_vm"
 
     # FIXME: This is also broken, see task_save_vm FIXME.
     db_vm = task.vm
@@ -535,7 +543,7 @@ class TaskOmatic
   end
 
   def task_migrate_vm(task)
-    @logger.info "migrate_vm"
+    @logger.info "starting task_migrate_vm"
 
     # here, we are given an id for a VM to migrate; we have to lookup which
     # physical host it is running on
@@ -585,7 +593,7 @@ class TaskOmatic
   #                   represented in the database
 
   def task_refresh_pool(task)
-    @logger.info "refresh_pool"
+    @logger.info "starting task_refresh_pool"
 
     db_pool_phys = task.storage_pool
     raise "Could not find storage pool" unless db_pool_phys
@@ -601,6 +609,8 @@ class TaskOmatic
     # little tricky, though; we have to make sure that we don't pull the
     # database entry out from underneath a possibly running VM (or do we?)
     begin
+      @logger.info("refresh being done on node #{node.hostname}")
+
       phys_libvirt_pool = LibvirtPool.factory(db_pool_phys)
       phys_libvirt_pool.connect(@session, node)
       db_pool_phys.state = StoragePool::STATE_AVAILABLE
@@ -678,7 +688,7 @@ class TaskOmatic
   end
 
   def task_create_volume(task)
-    @logger.info "create_volume"
+    @logger.info "starting task_create_volume"
 
     db_volume = task.storage_volume
     raise "Could not find storage volume to create" unless db_volume
@@ -730,7 +740,7 @@ class TaskOmatic
   end
 
   def task_delete_volume(task)
-    @logger.info "delete_volume"
+    @logger.info "starting task_delete_volume"
 
     db_volume = task.storage_volume
     raise "Could not find storage volume to create" unless db_volume
@@ -792,6 +802,7 @@ class TaskOmatic
   end
 
   def task_clear_vms_host(task)
+    @logger.info "starting task_clear_vms_host"
     src_host = task.host
 
     src_host.vms.each do |vm|
