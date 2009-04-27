@@ -156,7 +156,8 @@ class ovirt::setup {
                 enable => true,
 		require => [Package[ovirt-server],Single_Exec[db_migrate]],
                 ensure => running,
-		notify => Service[httpd]
+		notify => Service[httpd],
+                hasstatus => true
         }
 
 	service {"ovirt-taskomatic" :
