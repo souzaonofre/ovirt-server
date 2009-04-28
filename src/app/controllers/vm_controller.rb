@@ -41,13 +41,9 @@ class VmController < ApplicationController
   end
 
   def show
-    begin
-      svc_show(params[:id])
-      @actions = @vm.get_action_hash(@user)
-      render :layout => 'selection'
-    rescue PermissionError => perm_error
-      handle_auth_error(perm_error.message)
-    end
+    svc_show(params[:id])
+    @actions = @vm.get_action_hash(@user)
+    render :layout => 'selection'
   end
 
   def add_to_smart_pool
@@ -62,14 +58,8 @@ class VmController < ApplicationController
 
   def create
     params[:vm][:forward_vnc] = params[:forward_vnc]
-    begin
-      alert = svc_create(params[:vm], params[:start_now])
-      render :json => { :object => "vm", :success => true, :alert => alert  }
-    rescue PermissionError => perm_error
-      handle_auth_error(perm_error.message)
-    rescue Exception => error
-      json_error("vm", @vm, error)
-    end
+    alert = svc_create(params[:vm], params[:start_now])
+    render :json => { :object => "vm", :success => true, :alert => alert  }
   end
 
   def edit
@@ -79,14 +69,9 @@ class VmController < ApplicationController
 
   def update
     params[:vm][:forward_vnc] = params[:forward_vnc]
-    begin
-      alert = svc_update(params[:id], params[:vm], params[:start_now],
-                         params[:restart_now])
-      render :json => { :object => "vm", :success => true, :alert => alert  }
-    rescue Exception => error
-      # FIXME: need to distinguish vm vs. task save errors (but should mostly be vm)
-      json_error("vm", @vm, error)
-    end
+    alert = svc_update(params[:id], params[:vm], params[:start_now],
+                       params[:restart_now])
+    render :json => { :object => "vm", :success => true, :alert => alert  }
   end
 
   #FIXME: we need permissions checks. user must have permission. Also state checks
@@ -123,14 +108,8 @@ class VmController < ApplicationController
   end
 
   def destroy
-    begin
-      alert = svc_destroy(params[:id])
-      render :json => { :object => "vm", :success => true, :alert => alert  }
-    rescue ActionError => error
-      json_error("vm", @vm, error)
-    rescue Exception => error
-      json_error("vm", @vm, error)
-    end
+    alert = svc_destroy(params[:id])
+    render :json => { :object => "vm", :success => true, :alert => alert  }
   end
 
   def storage_volumes_for_vm_json
@@ -144,24 +123,14 @@ class VmController < ApplicationController
   end
 
   def vm_action
-    begin
-      alert = svc_vm_action(params[:id], params[:vm_action],
-                            params[:vm_action_data])
-      render :json => { :object => "vm", :success => true, :alert => alert  }
-    rescue ActionError => error
-      json_error("vm", @vm, error)
-    rescue Exception => error
-      json_error("vm", @vm, error)
-    end
+    alert = svc_vm_action(params[:id], params[:vm_action],
+                          params[:vm_action_data])
+    render :json => { :object => "vm", :success => true, :alert => alert  }
   end
 
   def cancel_queued_tasks
-    begin
-      alert = svc_cancel_queued_tasks(params[:id])
-      render :json => { :object => "vm", :success => true, :alert => alert  }
-    rescue Exception => error
-      json_error("vm", @vm, error)
-    end
+    alert = svc_cancel_queued_tasks(params[:id])
+    render :json => { :object => "vm", :success => true, :alert => alert  }
   end
 
   def migrate

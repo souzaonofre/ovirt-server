@@ -113,8 +113,8 @@ class ResourcesController < PoolController
       @success_list = @vms
       @failures = {}
       render :layout => 'confirmation'
-    rescue PermissionError => perm_error
-      handle_auth_error(perm_error.message)
+    rescue PermissionError
+      raise
     rescue PartialSuccessError => error
       @success_list = error.successes
       @failures = error.failures

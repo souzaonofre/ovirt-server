@@ -108,7 +108,10 @@ class StorageVolumeController < ApplicationController
 
   def destroy
     unless authorized?(Privilege::MODIFY) and @storage_volume.storage_pool.user_subdividable
-      handle_auth_error("You do not have permission to delete this storage volume.")
+      handle_error(:message =>
+                   "You do not have permission to delete this storage volume.",
+                   :status => :forbidden,
+                   :title => "Access Denied")
     else
       alert, success = delete_volume_internal(@storage_volume)
       respond_to do |format|

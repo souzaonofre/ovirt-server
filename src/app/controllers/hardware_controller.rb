@@ -111,14 +111,10 @@ class HardwareController < PoolController
   end
 
   def show_storage
-    begin
-      svc_show(params[:id])
-      @storage_tree = @pool.storage_tree(:filter_unavailable => false,
-                                         :include_used => true).to_json
-      render_show
-    rescue PermissionError => perm_error
-      handle_auth_error(perm_error.message)
-    end
+    svc_show(params[:id])
+    @storage_tree = @pool.storage_tree(:filter_unavailable => false,
+                                       :include_used => true).to_json
+    render_show
   end
 
   def show_tasks
@@ -219,24 +215,13 @@ class HardwareController < PoolController
   end
 
   def edit_items(svc_method, target_pool_id, item_action)
-    begin
-      alert = send(svc_method, params[:id], params[:resource_ids].split(","),
-                   target_pool_id)
-      render :json => { :success => true, :alert => alert,
-                        :storage => @pool.storage_tree({:filter_unavailable =>
-                                                        false,
-                                                        :include_used => true,
-                                                        :state =>
-                                                        item_action.to_s})}
-    rescue PermissionError => perm_error
-      handle_auth_error(perm_error.message)
-      # If we need to give more details as to which hosts/storage succeeded,
-      # they're in the exception
-    rescue PartialSuccessError => error
-      render :json => { :success => false, :alert => error.message }
-    rescue Exception => ex
-      render :json => { :success => false, :alert => error.message }
-    end
+    alert = send(svc_method, params[:id], params[:resource_ids].split(","),
+                 target_pool_id)
+    render :json => { :success => true, :alert => alert,
+      :storage => @pool.storage_tree({:filter_unavailable => false,
+                                       :include_used => true,
+                                       :state =>
+                                       item_action.to_s})}
   end
 
   def removestorage

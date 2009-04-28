@@ -46,6 +46,10 @@ class ApplicationController < ActionController::Base
   before_filter :tmp_authorize_admin, :only => [:create, :update, :destroy]
   before_filter :is_logged_in, :get_help_section
 
+  # General error handlers, must be in order from least specific
+  # to most specific
+  rescue_from Exception, :with => :handle_general_error
+  rescue_from PermissionError, :with => :handle_perm_error
 
   def choose_layout
     if(params[:component_layout])
@@ -107,28 +111,38 @@ class ApplicationController < ActionController::Base
   def authorize_action(privilege, msg=nil)
     msg ||= 'You have insufficient privileges to perform action.'
     unless authorized?(privilege)
-      handle_auth_error(msg)
+      handle_error(:message => msg,
+                   :title => "Access Denied", :status => :forbidden)
       false
     else
       true
     end
   end
-  def handle_auth_error(msg)
+
+  def handle_perm_error(error)
+    handle_error(:error => error, :status => :forbidden,
+                 :title => "Access denied")
+  end
+
+  def handle_general_error(error)
+    handle_error(:error => error, :status => :internal_server_error,
+                 :title => "Internal Server Error")
+  end
+
+  def handle_error(hash)
+    log_error(hash[:error])
+    msg = hash[:message] || hash[:error].message
+    title = hash[:title] || "Internal Server Error"
+    status = hash[:status] || :internal_server_error
     respond_to do |format|
-      format.html do
-        html_error_page(msg)
-      end
-      format.json do
-        @json_hash ||= {}
-        @json_hash[:success] = false
-        @json_hash[:alert] = msg
-        render :json => @json_hash
-      end
-      format.xml { head :forbidden }
+      format.html { html_error_page(title, msg) }
+      format.json { render :json => json_error_hash(msg, status) }
+      format.xml { render :xml => xml_errors(msg), :status => status }
     end
   end
-  def html_error_page(msg)
-    @title = "Access denied"
+
+  def html_error_page(title, msg)
+    @title = title
     @errmsg = msg
     @ajax = params[:ajax]
     @nolayout = params[:nolayout]
@@ -140,6 +154,7 @@ class ApplicationController < ActionController::Base
       render :template => 'layouts/popup-error', :layout => 'popup'
     end
   end
+
   # don't define find_opts for array inputs
   def json_hash(full_items, attributes, arg_list=[], find_opts={}, id_method=:id)
     page = params[:page].to_i
@@ -175,11 +190,37 @@ class ApplicationController < ActionController::Base
     render :json => json_hash(full_items, attributes, arg_list, find_opts, id_method).to_json
   end
 
-  def json_error(obj_type, obj, exception)
-    json_hash = { :object => obj_type, :success => false}
-    json_hash[:errors] = obj.errors.localize_error_messages.to_a if obj
-    json_hash[:alert] = exception.message if obj.errors.size == 0
-    render :json => json_hash
+  private
+  def json_error_hash(msg, status)
+    json = {}
+    json[:success] = (status == :ok)
+    json.merge!(instance_errors)
+    # There's a potential issue here: if we add :errors for an object
+    # that the view won't generate inline error messages for, the user
+    # won't get any indication what the error is. But if we set :alert
+    # unconditionally, the user will get validation errors twice: once
+    # inline in the form, and once in the flash
+    json[:alert] = msg unless json[:errors]
+    return json
   end
 
+  def xml_errors(msg)
+    xml = {}
+    xml[:message] = msg
+    xml.merge!(instance_errors)
+    return xml
+  end
+
+  def instance_errors
+    hash = {}
+    instance_variables.each do |ivar|
+      val = instance_variable_get(ivar)
+      if val && val.respond_to?(:errors) && val.errors.size > 0
+        hash[:object] = ivar[1, ivar.size]
+        hash[:errors] ||= []
+        hash[:errors] += val.errors.localize_error_messages.to_a
+      end
+    end
+    return hash
+  end
 end

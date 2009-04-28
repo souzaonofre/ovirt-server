@@ -35,13 +35,9 @@ class SmartPoolsController < PoolController
   end
 
   def show_storage
-    begin
-      svc_show(params[:id])
-      @storage_tree = @pool.storage_tree(:filter_unavailable => false, :include_used => true).to_json
-      render_show
-    rescue PermissionError => perm_error
-      handle_auth_error(perm_error.message)
-    end
+    svc_show(params[:id])
+    @storage_tree = @pool.storage_tree(:filter_unavailable => false, :include_used => true).to_json
+    render_show
   end
 
   def additional_create_params
@@ -138,22 +134,9 @@ class SmartPoolsController < PoolController
   end
 
   def add_or_remove_items(item_class, item_action)
-    begin
-      alert = svc_add_remove_items(params[:id], item_class, item_action,
-                           params[:resource_ids].split(","))
-      render :json => { :success => true, :alert => alert}
-    rescue
-      render :json => { :success => false,
-        :alert => "#{item_action.to_s} #{item_class.table_name.humanize} failed." }
-    rescue PermissionError => perm_error
-      handle_auth_error(perm_error.message)
-      # If we need to give more details as to which hosts/storage succeeded,
-      # they're in the exception
-    rescue PartialSuccessError => error
-      render :json => { :success => false, :alert => error.message }
-    rescue Exception => ex
-      render :json => { :success => false, :alert => error.message }
-    end
+    alert = svc_add_remove_items(params[:id], item_class, item_action,
+                                 params[:resource_ids].split(","))
+    render :json => { :success => true, :alert => alert}
   end
 
   def add_items
@@ -164,22 +147,8 @@ class SmartPoolsController < PoolController
       class_and_id[1] = class_and_id[1].to_a
     end
 
-    begin
-      alert = svc_add_remove_items(params[:id], nil, :add, class_and_ids)
-      render :json => { :success => true, :alert => alert}
-    rescue
-      render :json => { :success => false,
-        :alert => "#{item_action.to_s} failed." }
-    rescue PermissionError => perm_error
-      handle_auth_error(perm_error.message)
-    # If we need to give more details as to which hosts/storage succeeded,
-    # they're in the exception
-    rescue PartialSuccessError => error
-      render :json => { :success => false, :alert => error.message }
-    rescue Exception => ex
-      render :json => { :success => false, :alert => error.message }
-    end
-
+    alert = svc_add_remove_items(params[:id], nil, :add, class_and_ids)
+    render :json => { :success => true, :alert => alert}
   end
 
   protected

@@ -37,12 +37,8 @@ class PoolController < ApplicationController
   end
 
   def show
-    begin
-      svc_show(params[:id])
-      render_show
-    rescue PermissionError => perm_error
-      handle_auth_error(perm_error.message)
-    end
+    svc_show(params[:id])
+    render_show
   end
 
   def render_show
@@ -58,12 +54,8 @@ class PoolController < ApplicationController
 
   end
   def quick_summary
-    begin
-      svc_show(params[:id])
-      render :layout => 'selection'
-    rescue PermissionError => perm_error
-      handle_auth_error(perm_error.message)
-    end
+    svc_show(params[:id])
+    render :layout => 'selection'
   end
 
   # resource's users list page
@@ -111,56 +103,36 @@ class PoolController < ApplicationController
   def create
     # FIXME: REST and browsers send params differently. Should be fixed
     # in the views
-    begin
-      alert = svc_create(params[:pool] ? params[:pool] : params[:hardware_pool],
-                         additional_create_params)
-      respond_to do |format|
-        format.json {
-          reply = { :object => "pool", :success => true,
-            :alert => alert }
-          reply[:resource_type] = params[:resource_type] if params[:resource_type]
-          render :json => reply
-        }
-        format.xml {
-          render :xml => @pool.to_xml(XML_OPTS),
-          :status => :created,
-          :location => hardware_pool_url(@pool)
-        }
-      end
-    rescue PermissionError => perm_error
-      handle_auth_error(perm_error.message)
-    rescue Exception => ex
-      respond_to do |format|
-        format.json { json_error("pool", @pool, ex) }
-        format.xml  { render :xml => @pool.errors,
-          :status => :unprocessable_entity }
-      end
+    alert = svc_create(params[:pool] ? params[:pool] : params[:hardware_pool],
+                       additional_create_params)
+    respond_to do |format|
+      format.json {
+        reply = { :object => "pool", :success => true,
+          :alert => alert }
+        reply[:resource_type] = params[:resource_type] if params[:resource_type]
+        render :json => reply
+      }
+      format.xml {
+        render :xml => @pool.to_xml(XML_OPTS),
+        :status => :created,
+        :location => hardware_pool_url(@pool)
+      }
     end
   end
 
   def update
-    begin
-      alert = svc_update(params[:id], params[:pool] ? params[:pool] :
-                                      params[:hardware_pool])
-      respond_to do |format|
-        format.json {
-          reply = { :object => "pool", :success => true, :alert => alert }
-          render :json => reply
-        }
-        format.xml {
-          render :xml => @pool.to_xml(XML_OPTS),
-          :status => :created,
-          :location => hardware_pool_url(@pool)
-        }
-      end
-    rescue PermissionError => perm_error
-      handle_auth_error(perm_error.message)
-    rescue Exception => ex
-      respond_to do |format|
-        format.json { json_error("pool", @pool, ex) }
-        format.xml  { render :xml => @pool.errors,
-          :status => :unprocessable_entity }
-      end
+    alert = svc_update(params[:id], params[:pool] ? params[:pool] :
+                       params[:hardware_pool])
+    respond_to do |format|
+      format.json {
+        reply = { :object => "pool", :success => true, :alert => alert }
+        render :json => reply
+      }
+      format.xml {
+        render :xml => @pool.to_xml(XML_OPTS),
+        :status => :created,
+        :location => hardware_pool_url(@pool)
+      }
     end
   end
 
