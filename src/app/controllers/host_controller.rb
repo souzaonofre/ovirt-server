@@ -19,8 +19,13 @@
 
 class HostController < ApplicationController
 
-  EQ_ATTRIBUTES = [ :state, :arch, :hostname, :uuid,
-                    :hardware_pool_id ]
+  include HostService
+
+  # GETs should be safe (see http://www.w3.org/2001/tag/doc/whenToUseGet.html)
+  verify :method => [:post, :put], :only => [ :create, :update ],
+         :redirect_to => { :action => :list }
+  verify :method => [:post, :delete], :only => :destroy,
+         :redirect_to => { :action => :list }
 
   def index
     list
@@ -30,42 +35,21 @@ class HostController < ApplicationController
     end
   end
 
-  before_filter :pre_action, :only => [:host_action, :enable, :disable, :clear_vms, :edit_network]
-  before_filter :pre_addhost, :only => [:addhost]
-
-  # GETs should be safe (see http://www.w3.org/2001/tag/doc/whenToUseGet.html)
-  verify :method => [:post, :put], :only => [ :create, :update ],
-         :redirect_to => { :action => :list }
-  verify :method => [:post, :delete], :only => :destroy,
-         :redirect_to => { :action => :list }
-
-   def list
-     conditions = []
-     EQ_ATTRIBUTES.each do |attr|
-       if params[attr]
-         conditions << "#{attr} = :#{attr}"
-       end
-     end
-     @hosts = Host.find(:all,
-                        :conditions => [conditions.join(" and "), params],
-                        :order => "id")
-   end
-
+  def list
+    svc_list(params)
+  end
 
   def show
-    if authorize_view
-      respond_to do |format|
-        format.html { render :layout => 'selection' }
-        format.xml { render :xml => @host.to_xml(:include => [ :cpus ] ) }
-      end
+    svc_show(params[:id])
+    respond_to do |format|
+      format.html { render :layout => 'selection' }
+      format.xml { render :xml => @host.to_xml(:include => [ :cpus ] ) }
     end
   end
 
   def quick_summary
-    pre_show
-    if authorize_view
-      render :layout => false
-    end
+    svc_show(id)
+    render :layout => false
   end
 
   # retrieves data used by snapshot graphs
@@ -73,15 +57,17 @@ class HostController < ApplicationController
   end
 
   def addhost
-    @hardware_pool = Pool.find(params[:hardware_pool_id])
-    render :layout => 'popup'
-  end
+    # FIXME: This probably should go into PoolService.svc_modify,
+    # so that we have permission checks in only one place
 
-  def pre_addhost
+    # Old pre_addhost
     @pool = Pool.find(params[:hardware_pool_id])
     @parent = @pool.parent
     set_perms(@pool)
     authorize_admin
+    # Old addhost
+    @hardware_pool = Pool.find(params[:hardware_pool_id])
+    render :layout => 'popup'
   end
 
   def add_to_smart_pool
@@ -89,6 +75,11 @@ class HostController < ApplicationController
     render :layout => 'popup'
   end
 
+  # FIXME: We implement the standard controller actions, but catch
+  # them in filters and kick out friendly warnings that you can't
+  # perform them on hosts. Tat's overkill - the only way for a user
+  # to get to these actions is with URL surgery or from a bug in the
+  # application, both of which deserve a noisy error
   def new
   end
 
@@ -116,52 +107,40 @@ class HostController < ApplicationController
   end
 
   def disable
-    set_disabled(1)
-  end
-  def enable
-    set_disabled(0)
+    svc_enable(params[:id], "disabled")
+    render :json => {
+      :object => :host,
+      :alert => "Host was successfully disabled",
+      :success => true
+    }
   end
 
-  def set_disabled(value)
-    operation = value == 1 ? "disabled" : "enabled"
-    begin
-      @host.is_disabled = value
-      @host.save!
-      @json_hash[:alert]="Host was successfully #{operation}"
-      @json_hash[:success]=true
-    rescue
-      @json_hash[:alert]="Error setting host to #{operation}"
-      @json_hash[:success]=false
-    end
-    render :json => @json_hash
+  def enable
+    svc_enable(params[:id], "enabled")
+    render :json => {
+      :object => :host,
+      :alert => "Host was successfully enabled",
+      :success => true
+    }
   end
 
   def clear_vms
-    begin
-      Host.transaction do
-        task = HostTask.new({ :user        => get_login_user,
-                              :task_target => @host,
-                              :action      => HostTask::ACTION_CLEAR_VMS,
-                              :state       => Task::STATE_QUEUED})
-        task.save!
-        @host.is_disabled = true
-        @host.save!
-      end
-      @json_hash[:alert]="Clear VMs action was successfully queued."
-      @json_hash[:success]=true
-    rescue
-      @json_hash[:alert]="Error in queueing Clear VMs action."
-      @json_hash[:success]=false
-    end
-    render :json => @json_hash
+    svc_clear_vms(params[:id])
+    render :json => {
+      :object => :host,
+      :alert => "Clear VMs action was successfully queued.",
+      :success => true
+    }
   end
 
   def edit_network
+    svc_modify(params[:id])
     render :layout => 'popup'
   end
 
   def bondings_json
-    bondings = Host.find(params[:id]).bondings
+    svc_show(params[:id])
+    bondings = @host.bondings
     render :json => bondings.collect{ |x| {:id => x.id, :name => x.name} }
   end
 
@@ -179,12 +158,6 @@ class HostController < ApplicationController
     @host = Host.find(params[:id])
     flash[:notice] = 'Hosts may not be edited via the web UI'
     redirect_to :action=> 'show', :id => @host
-  end
-  def pre_action
-    @host = Host.find(params[:id])
-    set_perms(@host.hardware_pool)
-    @json_hash = { :object => :host }
-    authorize_admin
   end
   def pre_show
     @host = Host.find(params[:id])
