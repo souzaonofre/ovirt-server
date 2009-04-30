@@ -677,7 +677,7 @@ class TaskOmatic
             if not existing_vol
               add_volume_to_db(lvm_db_pool, lvm_volume, "0744", "0744", "0744");
             else
-              @logger.error "volume #{lvm_volume.name} already exists in db.."
+              @logger.info "volume #{lvm_volume.name} already exists in db.."
             end
           end
         end
@@ -737,6 +737,18 @@ class TaskOmatic
         end
       end
     end
+
+    # Now that we created a new volume, we need to refresh
+    # the storage pools to ensure that they pick up the changes.
+    # I currently refresh ALL storage pools at this time as it
+    # shouldn't be a long operation and it doesn't hurt to refresh
+    # them once in a while.
+    pools = @session.objects(:class => 'pool')
+    pools.each do |pool|
+      result = pool.refresh
+      @logger.info "Problem refreshing pool (you can probably ignore this): #{result.text}" unless result.status == 0
+    end
+
   end
 
   def task_delete_volume(task)

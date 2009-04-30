@@ -159,6 +159,13 @@ class LibvirtPool
 
       @remote_pool_started = true
     end
+
+    # Refresh the remote pool requesting that it rescan its volumes.  Putting
+    # it here means it will call this every time we connect to a pool from
+    # taskomatic.  This includes when starting a VM which is probably the most
+    # important time.
+    result = @remote_pool.refresh
+    puts "Error refreshing storage pool: #{result.text}" unless result.status == 0
   end
 
   def create_vol(type, name, size, owner, group, mode)
