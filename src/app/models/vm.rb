@@ -380,6 +380,19 @@ class Vm < ActiveRecord::Base
     return i
   end
 
+  # Make method for calling paginated vms easier for clients.
+  # TODO: Might want to have an optional param for per_page var
+  def self.paged_with_perms(user, priv, page, order)
+    Vm.paginate(:include => [{:vm_resource_pool =>
+                              {:permissions => {:role => :privileges}}}],
+                :conditions => ["privileges.name=:priv
+                           and permissions.uid=:user",
+                         { :user => user, :priv => priv }],
+                :per_page => 5,
+                :page => page,
+                :order => order)
+  end
+
   protected
   def validate
     resources = vm_resource_pool.max_resources_for_vm(self)

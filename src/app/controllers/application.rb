@@ -60,7 +60,7 @@ class ApplicationController < ActionController::Base
   end
 
   def is_logged_in
-    redirect_to(:controller => "login", :action => "login") unless get_login_user
+    redirect_to(:controller => "/login", :action => "login") unless get_login_user
   end
 
   def get_help_section

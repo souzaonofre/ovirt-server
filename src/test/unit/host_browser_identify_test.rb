@@ -245,7 +245,7 @@ class HostBrowserIdentifyTest < Test::Unit::TestCase
 
     info = @browser.get_remote_info
 
-    assert_equal 3,info.keys.size, "Should contain four keys"
+    assert_equal 4,info.keys.size, "Should contain four keys"
     assert info.include?("CPUINFO")
   end
 
@@ -278,7 +278,7 @@ class HostBrowserIdentifyTest < Test::Unit::TestCase
 
     info = @browser.get_remote_info
 
-    assert_equal 3,info.keys.size, "Should contain four keys"
+    assert_equal 4,info.keys.size, "Should contain four keys"
     assert info.include?('CPUINFO')
     assert_equal 2, info['CPUINFO'].size, "Should contain details for two CPUs"
     assert_not_nil info['CPUINFO'][0]['key1']

@@ -160,6 +160,17 @@ class VmTask < Task
   def self.label_and_action(action)
     return [action_label(action), action, action_icon(action)]
   end
+
+  def self.get_vm_actions
+    return [label_and_action(VmTask::ACTION_START_VM),
+                label_and_action(VmTask::ACTION_SHUTDOWN_VM),
+                (label_and_action(VmTask::ACTION_POWEROFF_VM) << "break"),
+                label_and_action(VmTask::ACTION_SUSPEND_VM),
+                label_and_action(VmTask::ACTION_RESUME_VM),
+                label_and_action(VmTask::ACTION_SAVE_VM),
+                label_and_action(VmTask::ACTION_RESTORE_VM)]
+  end
+
   def host
     nil
   end

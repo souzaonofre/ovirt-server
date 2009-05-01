@@ -172,4 +172,8 @@ class VmTest < Test::Unit::TestCase
   def test_get_pending_state
     assert_equal 'stopped', vms(:production_httpd_vm).get_pending_state
   end
+
+  def test_paginated_results
+    assert_equal 5, Vm.paged_with_perms('ovirtadmin', Privilege::VIEW, 1, 'vms.id').size
+  end
 end

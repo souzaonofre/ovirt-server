@@ -122,11 +122,13 @@ class StorageVolumeTest < Test::Unit::TestCase
       storage_volumes(:ovirtpriv_lvm_volume_1).ui_parent,
       'Incorrect ui parent returned'
     #test isci volume values
-    assert_equal storage_volumes(:corp_com_ovirtpriv_storage).type.to_s + '_' +storage_volumes(:corp_com_ovirtpriv_storage).id.to_s,
+    assert_equal storage_volumes(:ovirtpriv_storage_lun_3).storage_pool.type.to_s + '_' +
+      storage_volumes(:ovirtpriv_storage_lun_3).storage_pool_id.to_s,
       storage_volumes(:ovirtpriv_storage_lun_3).ui_parent,
       'Incorrect ui parent returned'
     #test nfs volume values
-    assert_equal storage_volumes(:corp_com_nfs_ovirtnfs).type.to_s + '_' +storage_volumes(:corp_com_nfs_ovirtnfs).id.to_s,
+    assert_equal storage_volumes(:ovirt_nfs_disk_3).storage_pool.type.to_s + '_' +
+      storage_volumes(:ovirt_nfs_disk_3).storage_pool_id.to_s,
       storage_volumes(:ovirt_nfs_disk_3).ui_parent,
       'Incorrect ui parent returned'
   end

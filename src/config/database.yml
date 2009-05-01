@@ -21,7 +21,7 @@
 #   rake db:drop:all
 #   rake db:create:all
 #   rake db:migrate
-#   rake db:tests:prepare
+#   rake db:test:prepare
 #
 # And when there are changes to the database, simple run:
 #

@@ -51,13 +51,7 @@ class ResourcesController < PoolController
 
   # resource's vms list page
   def show_vms    
-    @actions = [VmTask.label_and_action(VmTask::ACTION_START_VM),
-                VmTask.label_and_action(VmTask::ACTION_SHUTDOWN_VM),
-                (VmTask.label_and_action(VmTask::ACTION_POWEROFF_VM) << "break"),
-                VmTask.label_and_action(VmTask::ACTION_SUSPEND_VM),
-                VmTask.label_and_action(VmTask::ACTION_RESUME_VM),
-                VmTask.label_and_action(VmTask::ACTION_SAVE_VM),
-                VmTask.label_and_action(VmTask::ACTION_RESTORE_VM)]
+    @actions = VmTask.get_vm_actions
     show
   end
 

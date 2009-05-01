@@ -19,7 +19,7 @@ ovirtpriv_storage_lun_3:
   storage_pool: corp_com_ovirtpriv_storage
   type: IscsiStorageVolume
   state: available
-  lvm_pool_id: corp_com_dev_lvm_ovirtlvm
+  lvm_storage_pool: corp_com_dev_lvm_ovirtlvm
 ovirtpriv_lvm_volume_1:
   size: 1048576
   path: /dev/disk/by-id/scsi-S_beaf321013
