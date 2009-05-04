@@ -29,6 +29,13 @@
 module ApplicationService
   class PermissionError < RuntimeError; end
   class ActionError < RuntimeError; end
+  class PartialSuccessError < RuntimeError
+    attr_reader :failures, :successes
+    def initialize(msg, failures={}, successes=[])
+      @failures = failures
+      @successes = successes
+    end
+  end
 
   # Including class must provide a GET_LOGIN_USER
 

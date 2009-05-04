@@ -306,6 +306,9 @@ class Pool < ActiveRecord::Base
   def class_and_id
     self.class.name + "_" + self.id.to_s
   end
+  def permission_obj
+    self
+  end
   protected
   def traverse_parents
     if id

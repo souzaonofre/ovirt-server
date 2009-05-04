@@ -177,10 +177,16 @@ class Vm < ActiveRecord::Base
      :in => EFFECTIVE_STATE.keys
 
 
+  def get_vm_pool
+    vm_resource_pool
+  end
   def get_hardware_pool
     pool = vm_resource_pool
     pool = pool.get_hardware_pool if pool
     pool
+  end
+  def permission_obj
+    vm_resource_pool
   end
   def storage_volume_ids
     storage_volumes.collect {|x| x.id }

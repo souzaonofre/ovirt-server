@@ -19,6 +19,7 @@
 #
 
 class HardwareController < PoolController
+  include HardwarePoolService
 
   EQ_ATTRIBUTES = [ :name, :parent_id ]
 
@@ -27,10 +28,7 @@ class HardwareController < PoolController
   verify :method => [:post, :delete], :only => :destroy,
          :redirect_to => { :action => :list }
 
-  before_filter :pre_modify, :only => [:add_hosts, :move_hosts,
-                                       :add_storage, :move_storage,
-                                       :create_storage, :delete_storage,
-                                       :move, :removestorage]
+  before_filter :pre_modify, :only => [:move, :removestorage]
 
   def index
     if params[:path]
@@ -113,8 +111,14 @@ class HardwareController < PoolController
   end
 
   def show_storage
-    @storage_tree = @pool.storage_tree(:filter_unavailable => false, :include_used => true).to_json
-    show
+    begin
+      svc_show(params[:id])
+      @storage_tree = @pool.storage_tree(:filter_unavailable => false,
+                                         :include_used => true).to_json
+      render_show
+    rescue PermissionError => perm_error
+      handle_auth_error(perm_error.message)
+    end
   end
 
   def show_tasks
@@ -124,12 +128,12 @@ class HardwareController < PoolController
 
   def hosts_json
     if params[:exclude_host]
-      pre_show
+      pre_show_pool
       hosts = @pool.hosts
       find_opts = {:conditions => ["id != ?", params[:exclude_host]]}
       include_pool = false
     elsif params[:id]
-      pre_show
+      pre_show_pool
       hosts = @pool.hosts
       find_opts = {}
       include_pool = false
@@ -154,7 +158,7 @@ class HardwareController < PoolController
 
   def storage_pools_json
     if params[:id]
-      pre_show
+      pre_show_pool
       storage_pools = @pool.storage_pools
       find_opts = {:conditions => "type != 'LvmStoragePool'"}
       include_pool = false
@@ -190,144 +194,48 @@ class HardwareController < PoolController
     super
   end
 
-  def create
-    resource_type = params[:resource_type]
-    resource_ids_str = params[:resource_ids]
-    resource_ids = []
-    resource_ids = resource_ids_str.split(",").collect {|x| x.to_i} if resource_ids_str
-    begin
-      @pool.create_with_resources(@parent, resource_type, resource_ids)
-      respond_to do |format|
-        format.html {
-          reply = { :object => "pool", :success => true,
-            :alert => "Hardware Pool was successfully created." }
-          reply[:resource_type] = resource_type if resource_type
-          render :json => reply
-        }
-        format.xml {
-          render :xml => @pool.to_xml(XML_OPTS),
-          :status => :created,
-          :location => hardware_pool_url(@pool)
-        }
-      end
-    rescue
-      respond_to do |format|
-        format.json {
-          render :json => { :object => "pool", :success => false,
-            :errors => @pool.errors.localize_error_messages.to_a  }
-        }
-        format.xml  { render :xml => @pool.errors,
-          :status => :unprocessable_entity }
-      end
-    end
-  end
-
-  def update
-    if params[:hardware_pool]
-      # FIXME: For the REST API, we allow moving hosts/storage through
-      # update.  It makes that operation convenient for clients, though makes
-      # the implementation here somewhat ugly.
-      [:hosts, :storage_pools].each do |k|
-        objs = params[:hardware_pool].delete(k)
-        ids = objs.reject{ |obj| obj[:hardware_pool_id] == @pool.id}.
-          collect{ |obj| obj[:id] }
-        if ids.size > 0
-          # FIXME: use self.move_hosts/self.move_storage
-          if k == :hosts
-            @pool.move_hosts(ids, @pool.id)
-          else
-            @pool.move_storage(ids, @pool.id)
-          end
-        end
-      end
-      # FIXME: HTML views should use :hardware_pool
-      params[:pool] = params.delete(:hardware_pool)
-    end
-
-    begin
-      @pool.update_attributes!(params[:pool])
-      respond_to do |format|
-        format.json {
-          render :json => { :object => "pool", :success => true,
-            :alert => "Hardware Pool was successfully modified." }
-        }
-        format.xml {
-          render :xml => @pool.to_xml(XML_OPTS),
-          :status => :created,
-          :location => hardware_pool_url(@pool)
-        }
-      end
-    rescue
-      respond_to do |format|
-        format.json {
-          render :json => { :object => "pool", :success => false,
-            :errors => @pool.errors.localize_error_messages.to_a}
-        }
-        format.xml {
-          render :xml => @pool.errors,
-          :status => :unprocessable_entity
-        }
-      end
-    end
+  def additional_create_params
+    {:resource_type => params[:resource_type],
+      :resource_ids => params[:resource_ids],
+      :parent_id => (params[:hardware_pool] ?
+                     params[:hardware_pool][:parent_id] :
+                     params[:parent_id])}
   end
 
   def add_hosts
-    edit_items(Host, :move_hosts, @pool.id, :add)
+    edit_items(@pool.id, :svc_move_hosts, :add)
   end
 
   def move_hosts
-    edit_items(Host, :move_hosts, params[:target_pool_id], :move)
+    edit_items(params[:target_pool_id], :svc_move_hosts, :move)
   end
 
   def add_storage
-    edit_items(StoragePool, :move_storage, @pool.id, :add)
+    edit_items(@pool.id, :svc_move_storage, :add)
   end
 
   def move_storage
-    edit_items(StoragePool, :move_storage, params[:target_pool_id], :move)
+    edit_items(params[:target_pool_id], :svc_move_storage, :move)
   end
 
-  #FIXME: we need permissions checks. user must have permission on src pool
-  # in addition to the current pool (which is checked). We also need to fail
-  # for storage that aren't currently empty
-  def edit_items(item_class, item_method, target_pool_id, item_action)
-    resource_ids_str = params[:resource_ids]
-    resource_ids = resource_ids_str.split(",").collect {|x| x.to_i}
-
-    # if user doesn't have modify permission on both source and destination
-    unless @pool.can_modify(@user) and Pool.find(target_pool_id).can_modify(@user)
-        render :json => { :success => false,
-               :alert => "Cannot #{item_action.to_s} #{item_class.table_name.humanize} without admin permissions on both pools" }
-        return
-    end
-
-    # relay error message if movable check fails for any resource
-    success = true
-    failed_resources = ""
-    resource_ids.each {|x|
-       unless item_class.find(x).movable?
-         success = false
-         failed_resources += x.to_s + " "
-       end
-    }
-    resource_ids.delete_if { |x| ! item_class.find(x).movable? }
-
+  def edit_items(svc_method, target_pool_id, item_action)
     begin
-      @pool.transaction do
-        @pool.send(item_method, resource_ids, target_pool_id)
-      end
-    rescue
-      success = false
-    end
-
-    if success
-      render :json => { :success => true,
-        :alert => "#{item_action.to_s} #{item_class.table_name.humanize} successful.",
-        :storage => @pool.storage_tree({:filter_unavailable => false, :include_used => true, :state => item_action.to_s})}
-    else
-      render :json => { :success => false,
-         :alert => "#{item_action.to_s} #{item_class.table_name.humanize} failed" +
-                   (failed_resources == "" ? "." : " for " + failed_resources) }
+      alert = send(svc_method, params[:id], params[:resource_ids].split(","),
+                   target_pool_id)
+      render :json => { :success => true, :alert => alert,
+                        :storage => @pool.storage_tree({:filter_unavailable =>
+                                                        false,
+                                                        :include_used => true,
+                                                        :state =>
+                                                        item_action.to_s})}
+    rescue PermissionError => perm_error
+      handle_auth_error(perm_error.message)
+      # If we need to give more details as to which hosts/storage succeeded,
+      # they're in the exception
+    rescue PartialSuccessError => error
+      render :json => { :success => false, :alert => error.message }
+    rescue Exception => ex
+      render :json => { :success => false, :alert => error.message }
     end
   end
 
@@ -335,33 +243,6 @@ class HardwareController < PoolController
     render :layout => 'popup'
   end
 
-  def destroy
-    parent = @pool.parent
-    if not(parent)
-      alert="You can't delete the top level Hardware pool."
-      success=false
-      status=:method_not_allowed
-    elsif not(@pool.children.empty?)
-      alert = "You can't delete a Pool without first deleting its children."
-      success=false
-      status=:conflict
-    else
-      if @pool.move_contents_and_destroy
-        alert="Hardware Pool was successfully deleted."
-        success=true
-        status=:ok
-      else
-        alert="Failed to delete hardware pool."
-        success=false
-        status=:internal_server_error
-      end
-    end
-    respond_to do |format|
-      format.json { render :json => { :object => "pool", :success => success,
-                                      :alert => alert } }
-      format.xml { head status }
-    end
-   end
 
   protected
   #filter methods
@@ -369,24 +250,10 @@ class HardwareController < PoolController
     @pool = HardwarePool.new
     super
   end
-  def pre_create
-    # FIXME: REST and browsers send params differently. Should be fixed
-    # in the views
-    if params[:pool]
-      @pool = HardwarePool.new(params[:pool])
-    else
-      @pool = HardwarePool.new(params[:hardware_pool])
-    end
-    super
-  end
   def pre_edit
     @pool = HardwarePool.find(params[:id])
     @parent = @pool.parent
     set_perms(@pool)
-  end
-  def pre_show
-    @pool = HardwarePool.find(params[:id])
-    super
   end
   def pre_modify
     pre_edit

@@ -134,6 +134,10 @@ class Host < ActiveRecord::Base
     hardware_pool.search_users
   end
 
+  def permission_obj
+    hardware_pool
+  end
+
   def movable?
      return vms.size == 0
   end

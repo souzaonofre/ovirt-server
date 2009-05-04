@@ -36,7 +36,7 @@ class VmTask < Task
   # for migrate VM action, args provides the optional target host
   ACTION_MIGRATE_VM  = "migrate_vm"
 
-  PRIV_OBJECT_VM_POOL = "vm_resource_pool"
+  PRIV_OBJECT_VM_POOL = "get_vm_pool"
   PRIV_OBJECT_HW_POOL = "get_hardware_pool"
 
 
@@ -145,6 +145,12 @@ class VmTask < Task
     actions
   end
 
+  def self.action_privilege(action)
+    return ACTIONS[action][:privilege][0]
+  end
+  def self.action_privilege_object(action, obj)
+    return obj.send(ACTIONS[action][:privilege][1])
+  end
   def self.action_label(action)
     return ACTIONS[action][:label]
   end

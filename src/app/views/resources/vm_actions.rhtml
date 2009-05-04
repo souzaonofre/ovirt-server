@@ -25,10 +25,10 @@ Action succeeded for these VMs:
   <% end %>
 </ul>
 
-Action invalid for these VMs:
+Action failed for these VMs:
 <ul>
-  <% for vm in @failure_list %>
-    <li><%= vm.description %></li>
+  <% for vm, msg in @failures %>
+    <li><%= vm.description %>: <%= msg %></li>
   <% end %>
 </ul>
 </div>

@@ -155,6 +155,10 @@ class StoragePool < ActiveRecord::Base
     return_hash
   end
 
+  def permission_obj
+    hardware_pool
+  end
+
   def movable?
     storage_volumes.each{ |x|
        return false unless x.movable?

@@ -20,8 +20,6 @@
 # Filters added to this controller apply to all controllers in the application.
 # Likewise, all the methods added will be available for all controllers.
 
-# FIXME: once all controller classes include this, remove here
-require 'services/application_service'
 
 class ApplicationController < ActionController::Base
   # FIXME: once all controller classes include this, remove here
@@ -118,17 +116,7 @@ class ApplicationController < ActionController::Base
   def handle_auth_error(msg)
     respond_to do |format|
       format.html do
-        @title = "Access denied"
-        @errmsg = msg
-        @ajax = params[:ajax]
-        @nolayout = params[:nolayout]
-        if @ajax
-          render :template => 'layouts/popup-error', :layout => 'tabs-and-content'
-        elsif @nolayout
-          render :template => 'layouts/popup-error', :layout => 'help-and-content'
-        else
-          render :template => 'layouts/popup-error', :layout => 'popup'
-        end
+        html_error_page(msg)
       end
       format.json do
         @json_hash ||= {}
@@ -139,7 +127,19 @@ class ApplicationController < ActionController::Base
       format.xml { head :forbidden }
     end
   end
-
+  def html_error_page(msg)
+    @title = "Access denied"
+    @errmsg = msg
+    @ajax = params[:ajax]
+    @nolayout = params[:nolayout]
+    if @ajax
+      render :template => 'layouts/popup-error', :layout => 'tabs-and-content'
+    elsif @nolayout
+      render :template => 'layouts/popup-error', :layout => 'help-and-content'
+    else
+      render :template => 'layouts/popup-error', :layout => 'popup'
+    end
+  end
   # don't define find_opts for array inputs
   def json_hash(full_items, attributes, arg_list=[], find_opts={}, id_method=:id)
     page = params[:page].to_i

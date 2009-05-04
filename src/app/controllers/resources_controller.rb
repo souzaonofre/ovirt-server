@@ -18,12 +18,11 @@
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
 class ResourcesController < PoolController
+  include VmResourcePoolService
   def index
     list
     render :action => 'list'
   end
-
-  before_filter :pre_vm_actions, :only => [:vm_actions]
 
   # GETs should be safe (see http://www.w3.org/2001/tag/doc/whenToUseGet.html)
   verify :method => :post, :only => [ :destroy, :create, :update ],
@@ -69,89 +68,62 @@ class ResourcesController < PoolController
   end
 
   def vms_json
-    pre_show
+    pre_show_pool
     super(:full_items => @pool.vms, :find_opts => {}, :include_pool => :true)
   end
 
-  def create
-    begin
-      @pool.create_with_parent(@parent)
-      render :json => { :object => "vm_resource_pool", :success => true, 
-                        :alert => "Virtual Machine Pool was successfully created." }
-    rescue
-      render :json => { :object => "vm_resource_pool", :success => false, 
-                        :errors => @pool.errors.localize_error_messages.to_a}
-    end    
+  def additional_create_params
+    {:parent_id => (params[:hardware_pool] ?
+                    params[:hardware_pool][:parent_id] :
+                    params[:parent_id])}
   end
 
-  def update
-    begin
-      @pool.update_attributes!(params[:pool])
-      render :json => { :object => "vm_resource_pool", :success => true, 
-                        :alert => "Virtual Machine Pool was successfully modified." }
-    rescue
-      render :json => { :object => "vm_resource_pool", :success => false, 
-                        :errors => @pool.errors.localize_error_messages.to_a}
-    end
-  end
-
-  #FIXME: we need permissions checks. user must have permission. We also need to fail
+   #FIXME: we need permissions checks. user must have permission. We also need to fail
   # for pools that aren't currently empty
   def delete
-    vm_pool_ids_str = params[:vm_pool_ids]
-    vm_pool_ids = vm_pool_ids_str.split(",").collect {|x| x.to_i}
-    vm_pool_names = []
-    begin
-      VmResourcePool.transaction do
-        pools = VmResourcePool.find(:all, :conditions => "id in (#{vm_pool_ids.join(', ')})")
-        pools.each do |pool|
-          vm_pool_names << pool.name
-          pool.destroy
-        end
+    vm_pool_ids = params[:vm_pool_ids].split(",")
+    successes = []
+    failures = {}
+    vm_pool_ids.each do |pool_id|
+      begin
+        svc_destroy(pool_id)
+        successes << @pool
+      rescue PermissionError => perm_error
+        failures[@pool] = perm_error.message
+      rescue Exception => ex
+        failures[@pool] = ex.message
       end
-      render :json => { :object => "vm_resource_pool", :success => true, 
-                        :alert => "Virtual Machine Pools #{vm_pool_names.join(', ')} were successfully deleted." }
-    rescue
-      render :json => { :object => "vm_resource_pool", :success => false, 
-                        :alert => "Error in deleting Virtual Machine Pools."}
     end
-  end
-
-  def destroy
-    if @pool.destroy
-      alert="Virtual Machine Pool was successfully deleted."
-      success=true
-    else
-      alert="Failed to delete virtual machine pool."
-      success=false
+    success = failures.empty?
+    alert = ""
+    if !successes.empty?
+      alert = "Virtual Machine Pools #{successes.collect{|pool| pool.name}.join(', ')} were successfully deleted."
     end
-    render :json => { :object => "vm_resource_pool", :success => success, :alert => alert }
+    if !failures.empty?
+      alert += " Errors in deleting VM Pools #{failures.collect{|pool,err| "#{pool.name}: #{err}"}.join(', ')}."
+    end
+    render :json => { :object => "vm_resource_pool", :success => success,
+                      :alert => alert }
   end
 
   def vm_actions
-    @action = params[:vm_action]
-    @action_label = VmTask.action_label(@action)
-    vms_str = params[:vm_ids]
-    @vms = vms_str.split(",").collect {|x| Vm.find(x.to_i)}
-    @success_list = []
-    @failure_list = []
     begin
-      @pool.transaction do
-        @vms.each do |vm|
-          if vm.queue_action(@user, @action)
-            @success_list << vm
-            print vm.description, vm.id, "\n"
-          else
-            @failure_list << vm
-          end
-        end
-      end
-    rescue
+      alert = svc_vm_actions_hosts(params[:id], params[:vm_action],
+                                   params[:vm_ids].split(","))
+      @success_list = @vms
+      @failures = {}
+      render :layout => 'confirmation'
+    rescue PermissionError => perm_error
+      handle_auth_error(perm_error.message)
+    rescue PartialSuccessError => error
+      @success_list = error.successes
+      @failures = error.failures
+      render :layout => 'confirmation'
+    rescue Exeption => ex
       flash[:errmsg] = 'Error queueing VM actions.'
       @success_list = []
       @failure_list = []
     end
-    render :layout => 'confirmation'    
   end
 
   protected
@@ -159,26 +131,11 @@ class ResourcesController < PoolController
     @pool = VmResourcePool.new
     super
   end
-  def pre_create
-    @pool = VmResourcePool.new(params[:pool])
-    super
-  end
   def pre_edit
     @pool = VmResourcePool.find(params[:id])
     @parent = @pool.parent
     @current_pool_id=@pool.id
     set_perms(@pool.parent)
-  end
-  def pre_show
-    @pool = VmResourcePool.find(params[:id])
-    super
-    @is_hwpool_admin = @pool.parent.can_modify(@user)
-  end
-  def pre_vm_actions
-    @pool = VmResourcePool.find(params[:id])
-    @parent = @pool.parent
-    set_perms(@pool)
-    authorize_user
   end
 
 end

@@ -53,25 +53,6 @@ class SmartPool < Pool
                                   :tagged_id=>item.id}).destroy
   end
 
-  def add_items(item_class, item_ids)
-    items = item_class.find(:all, :conditions => "id in (#{item_ids.join(', ')})")
-    transaction do
-      items.each { |item| add_item(item)}
-    end
-  end
-
-  def remove_items(item_class, item_ids)
-      tags = smart_pool_tags.find(:all,
-                                  :conditions => "tagged_id in
-                                                  (#{item_ids.join(', ')})
-                                                  and tagged_type='#{item_class.name}'")
-      transaction do
-        tags.each do |tag|
-          tag.destroy
-        end
-      end
-  end
-
   def self.smart_pools_for_user(user)
     nested_pools = DirectoryPool.get_smart_root.full_set_nested(
                        :privilege => Privilege::MODIFY, :user => user,

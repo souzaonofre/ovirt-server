@@ -32,6 +32,10 @@ class VmResourcePool < Pool
     traverse_parents { |pool| pool if pool[:type] == HardwarePool.name}
   end
 
+  def get_vm_pool
+    self
+  end
+
   def allocated_resources(exclude_vm = nil)
     pending_cpus = 0
     pending_memory = 0
