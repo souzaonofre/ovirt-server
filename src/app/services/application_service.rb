@@ -40,6 +40,7 @@ module ApplicationService
   # Including class must provide a GET_LOGIN_USER
 
   def set_perms(perm_obj)
+    return if @user && @perm_obj && @perm_obj.id == perm_obj.id
     @perm_obj = perm_obj
     @current_pool_id ||= perm_obj.id
     @user = get_login_user
