@@ -22,19 +22,16 @@ class StorageVolumeController < ApplicationController
   def new
     @return_to_workflow = params[:return_to_workflow] || false
     if params[:storage_pool_id]
-      @storage_pool = StoragePool.find(params[:storage_pool_id])
       unless @storage_pool.user_subdividable
-        #fixme: proper error page for popups
-        redirect_to :controller => 'dashboard'
+        html_error_page("User-created storage volumes are not supported on this pool")
         return
       end
-      new_volume_internal(@storage_pool,
-                          { :storage_pool_id => params[:storage_pool_id]})
+      @storage_volume = StorageVolume.factory(@storage_pool.get_type_label,
+                                              { :storage_pool_id =>
+                                                params[:storage_pool_id]})
     else
-      @source_volume = StorageVolume.find(params[:source_volume_id])
       unless @source_volume.supports_lvm_subdivision
-        #fixme: proper error page for popups
-        redirect_to :controller => 'dashboard'
+        html_error_page("LVM is not supported for this storage volume")
         return
       end
       lvm_pool = @source_volume.lvm_storage_pool
@@ -47,7 +44,8 @@ class StorageVolumeController < ApplicationController
         lvm_pool.source_volumes << @source_volume
         lvm_pool.save!
       end
-      new_volume_internal(lvm_pool, { :storage_pool_id => lvm_pool.id})
+      @storage_volume = StorageVolume.factory(lvm_pool.get_type_label,
+                                              { :storage_pool_id => lvm_pool.id})
       @storage_volume.lv_owner_perms='0744'
       @storage_volume.lv_group_perms='0744'
       @storage_volume.lv_mode_perms='0744'
@@ -99,7 +97,7 @@ class StorageVolumeController < ApplicationController
         format.html { render :layout => 'selection' }
         format.json do
           attr_list = []
-          attr_list << :id if (@storage_pool.user_subdividable and authorized?(Privilege::MODIFY)
+          attr_list << :id if (@storage_pool.user_subdividable and authorized?(Privilege::MODIFY))
           attr_list += [:display_name, :size_in_gb, :get_type_label]
           json_list(@storage_pool.storage_volumes, attr_list)
         end
@@ -109,8 +107,6 @@ class StorageVolumeController < ApplicationController
   end
 
   def destroy
-    @storage_volume = StorageVolume.find(params[:id])
-    set_perms(@storage_volume.storage_pool.hardware_pool)
     unless authorized?(Privilege::MODIFY) and @storage_volume.storage_pool.user_subdividable
       handle_auth_error("You do not have permission to delete this storage volume.")
     else
@@ -123,6 +119,16 @@ class StorageVolumeController < ApplicationController
     end
   end
 
+  def pre_new
+    if params[:storage_pool_id]
+      @storage_pool = StoragePool.find(params[:storage_pool_id])
+      set_perms(@storage_pool.hardware_pool)
+    else
+      @source_volume = StorageVolume.find(params[:source_volume_id])
+      set_perms(@source_volume.storage_pool.hardware_pool)
+    end
+  end
+
   def pre_create
     volume = params[:storage_volume]
     unless type = params[:storage_type]
@@ -132,14 +138,13 @@ class StorageVolumeController < ApplicationController
     set_perms(@storage_volume.storage_pool.hardware_pool)
     authorize_admin
   end
-
-  private
-  def new_volume_internal(storage_pool, new_params)
-    @storage_volume = StorageVolume.factory(storage_pool.get_type_label, new_params)
+  # will go away w/ svc layer
+  def pre_edit
+    @storage_volume = StorageVolume.find(params[:id])
     set_perms(@storage_volume.storage_pool.hardware_pool)
-    authorize_admin
   end
 
+  private
   def delete_volume_internal(volume)
     begin
       name = volume.display_name
