@@ -165,4 +165,8 @@ class StoragePool < ActiveRecord::Base
     }
     return true
   end
+
+  def not_movable_reason
+    return "Storage in use"
+  end
 end

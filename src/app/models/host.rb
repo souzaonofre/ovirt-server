@@ -142,4 +142,7 @@ class Host < ActiveRecord::Base
      return vms.size == 0
   end
 
+  def not_movable_reason
+    return "Host has VMs"
+  end
 end

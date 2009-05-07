@@ -34,6 +34,7 @@ module ApplicationService
     def initialize(msg, failures={}, successes=[])
       @failures = failures
       @successes = successes
+      super(msg)
     end
   end
 

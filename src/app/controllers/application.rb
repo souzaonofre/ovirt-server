@@ -50,6 +50,7 @@ class ApplicationController < ActionController::Base
   # to most specific
   rescue_from Exception, :with => :handle_general_error
   rescue_from PermissionError, :with => :handle_perm_error
+  rescue_from PartialSuccessError, :with => :handle_partial_success_error
 
   def choose_layout
     if(params[:component_layout])
@@ -122,6 +123,15 @@ class ApplicationController < ActionController::Base
   def handle_perm_error(error)
     handle_error(:error => error, :status => :forbidden,
                  :title => "Access denied")
+  end
+
+  def handle_partial_success_error(error)
+    failures_arr = error.failures.collect do |resource, reason|
+      resource.display_name + ": " + reason
+    end
+    handle_error(:error => error, :status => :ok,
+                 :message => error.message + ": " + failures_arr.join(", "),
+                 :title => "Some actions failed")
   end
 
   def handle_general_error(error)

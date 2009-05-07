@@ -214,7 +214,7 @@ class HardwareController < PoolController
     edit_items(params[:target_pool_id], :svc_move_storage, :move)
   end
 
-  def edit_items(svc_method, target_pool_id, item_action)
+  def edit_items(target_pool_id, svc_method, item_action)
     alert = send(svc_method, params[:id], params[:resource_ids].split(","),
                  target_pool_id)
     render :json => { :success => true, :alert => alert,

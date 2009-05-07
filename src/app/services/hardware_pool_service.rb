@@ -69,7 +69,7 @@ module HardwarePoolService
     resources.each do |resource|
       begin
         if !resource.movable?
-          failed_resources[resource] = "Not Movable"
+          failed_resources[resource] = resource.not_movable_reason
         elsif ! resource.hardware_pool.can_modify(@user)
           failed_resources[resource] = "Failed permission check"
         else
@@ -82,7 +82,8 @@ module HardwarePoolService
       end
     end
     unless failed_resources.empty?
-      raise PartialSuccessError.new("Move #{item_class.table_name.humanize} only partially successful",
+      raise PartialSuccessError.new("Move failed for some " +
+                                    "#{item_class.table_name.humanize}",
                                     failed_resources, successful_resources)
     end
     return "Move #{item_class.table_name.humanize} successful."
