@@ -4,7 +4,7 @@
 
 <%- content_for :action_links do -%>
   <%if @can_control_vms and @vm.has_console -%>
-    <%= link_to image_tag("icon_x.png") + " Open Console",
+    <%= link_to image_tag("icon_x_11px.png") + " Open Console",
                           {:controller => 'vm', :action => 'console', :id => @vm},
                           :id=>"vnc_console_link" %>
     <script type="text/javascript">
@@ -14,7 +14,7 @@
     </script>
   <% end -%>
   <%if @can_modify -%>
-    <%= link_to image_tag("icon_edit.png") + " Edit",
+    <%= link_to image_tag("icon_edit_11px.png") + " Edit",
                           {:controller => 'vm', :action => 'edit', :id => @vm},
                           :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
     <% for name, action in @actions %>
@@ -30,10 +30,10 @@
       <% end -%>
     <% end %>
     <a href="#confirm_cancel"  rel="facebox[.bolder]">
-      <%= image_tag "icon_x.png" %> Cancel queued tasks
+      <%= image_tag "icon_cancel_11px.png" %> Cancel queued tasks
     </a> 
     <a href="#confirm_delete"  rel="facebox[.bolder]">
-      <%= image_tag "icon_x.png" %> Delete
+      <%= image_tag "icon_delete_11px.png" %> Delete
     </a> 
   <% end -%>
 <% end -%>

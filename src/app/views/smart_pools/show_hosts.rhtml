@@ -1,6 +1,6 @@
 <div id="toolbar_nav">
  <ul>
-    <li><a href="<%= url_for :controller => 'host', :action => 'add_to_smart_pool', :smart_pool_id => @pool %>" rel="facebox[.bolder]"><%= image_tag "icon_addhost.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;Add Host</a></li>
+    <li><a href="<%= url_for :controller => 'host', :action => 'add_to_smart_pool', :smart_pool_id => @pool %>" rel="facebox[.bolder]"><%= image_tag "icon_add_host.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;Add Host</a></li>
     <li><a href="#" onClick="remove_hosts_from_smart_pool()"><%= image_tag "icon_remove.png" %>&nbsp;&nbsp;Remove</a></li>
  </ul>
 </div>
@@ -60,7 +60,7 @@
    </div>
    <div class="selection_detail" id="smart_hosts_selection">
      <div class="selection_left">
-       <div>Select a host above.</div>
+       <div>Select a host.</div>
      </div>
    </div>
 <% else %>
@@ -70,7 +70,7 @@
 
           <div class="no-grid-items-text">
             No hosts found in this pool. <br/><br/>
-            <%= image_tag "icon_addhost.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;
+            <%= image_tag "icon_add_host.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;
             <a href="<%= url_for :controller => 'host', :action => 'add_to_smart_pool', :smart_pool_id => @pool %>" rel="facebox[.bolder]">Add first host to this smart pool</a>
           </div>
        </div>

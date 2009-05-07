@@ -1,6 +1,6 @@
 <div id="toolbar_nav">
 <ul>
-    <li><a href="<%= url_for :controller => 'storage', :action => 'add_to_smart_pool', :smart_pool_id => @pool %>" rel="facebox[.bolder]"><%= image_tag "icon_addstorage.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;Add Storage Pool</a></li>
+    <li><a href="<%= url_for :controller => 'storage', :action => 'add_to_smart_pool', :smart_pool_id => @pool %>" rel="facebox[.bolder]"><%= image_tag "icon_add_storage.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;Add Storage Pool</a></li>
     <li><a href="#" onClick="remove_storage_from_smart_pool()"><%= image_tag "icon_remove.png" %>&nbsp;&nbsp;Remove</a></li>
   </ul>
 </div>
@@ -94,8 +94,8 @@ ${htmlList(pools, id)}
           <%= image_tag 'no-grid-items.png', :style => 'float: left;' %>
 
           <div class="no-grid-items-text">
-            No storage Pools found in this pool. <br/><br/>
-            <%= image_tag "icon_addstorage.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;
+            No storage pools found in this pool. <br/><br/>
+            <%= image_tag "icon_add_storage.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;
             <a href="<%= url_for :controller => 'storage', :action => 'add_to_smart_pool', :smart_pool_id => @pool %>" rel="facebox[.bolder]">Add first storage volume to this smart pool</a>
           </div>
        </div>

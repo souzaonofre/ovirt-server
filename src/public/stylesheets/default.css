@@ -21,7 +21,7 @@ hr { height: 1px; border: none; border-top: 1px solid #bbbbbb; margin: 14px 0px;
 /* ========= TABLE ========== */
 
 #main { width: 976px; }
-#main td { vertical-align: top;}
+#main td { vertical-align: top; }
 
 /* ========= TREE ========== */
 

@@ -3,11 +3,11 @@
 <%- end -%>
 
 <%- content_for :action_links do -%>
-  <%= link_to image_tag("icon_edit.png") + "Edit",
+  <%= link_to image_tag("icon_edit_11px.png") + "Edit",
         {:action => 'edit', :id => @network.id },
          :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
 
-  <%= link_to image_tag("icon_edit.png") + "Edit Routing Info",
+  <%= link_to image_tag("icon_edit_11px.png") + "Edit Routing Info",
         {:action => 'edit_network_ip_addresses', :id => @network.id },
          :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
 <%- end -%>

@@ -1,6 +1,6 @@
 <div id="toolbar_nav">
  <ul>
-    <li><a href="<%= url_for :controller => 'vm', :action => 'add_to_smart_pool', :smart_pool_id => @pool %>" rel="facebox[.bolder]"><%= image_tag "icon_addhost.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;Add Virtual Machine</a></li>
+    <li><a href="<%= url_for :controller => 'vm', :action => 'add_to_smart_pool', :smart_pool_id => @pool %>" rel="facebox[.bolder]"><%= image_tag "icon_add_vm.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;Add Virtual Machine</a></li>
     <li><a href="#" onClick="remove_vms_from_smart_pool()"><%= image_tag "icon_remove.png" %>&nbsp;&nbsp;Remove</a></li>
  </ul>
 </div>
@@ -59,7 +59,7 @@
    </div>
    <div class="selection_detail" id="smart_vms_selection">
      <div class="selection_left">
-       <div>Select a vm above.</div>
+       <div>Select a virtual machine.</div>
      </div>
    </div>
 <% else %>
@@ -68,9 +68,9 @@
           <%= image_tag 'no-grid-items.png', :style => 'float: left;' %>
 
           <div class="no-grid-items-text">
-            No vms found in this pool. <br/><br/>
-            <%= image_tag "icon_addvm.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;
-            <a href="<%= url_for :controller => 'vm', :action => 'add_to_smart_pool', :smart_pool_id => @pool %>" rel="facebox[.bolder]">Add first VM to this smart pool</a>
+            No virtual machines found in this pool. <br/><br/>
+            <%= image_tag "icon_add_vm.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;
+            <a href="<%= url_for :controller => 'vm', :action => 'add_to_smart_pool', :smart_pool_id => @pool %>" rel="facebox[.bolder]">Add first virtual machine to this smart pool</a>
           </div>
        </div>
    </div>

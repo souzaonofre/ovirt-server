@@ -181,7 +181,7 @@
                   {if !item.available}disabled="disabled" style="display:none"{/if}
                   {if item.selected}checked="checked"{/if}/> ${item.name} {if item.size}(${item.size} GB){/if}
                   {if item.create_volume}
-                    <input type="hidden" name="return_item" value="true"/><%=image_tag("icon_addstorage.png")%>
+                    <input type="hidden" name="return_item" value="true"/><%=image_tag("icon_add_storage.png")%>
                     <a href="<%= url_for :controller => 'storage', :action => 'new_volume'%>?source_volume_id=${item.id}"
                       class="selection_facebox"></a>
                   {/if}

@@ -11,7 +11,7 @@
 .ovirt-tree, .ovirt-tree ul {
     list-style: none;
     margin:0;
-    padding:5px 0 5px 16px;
+    padding:1px 0 1px 22px;
     margin-right: 8px;
 }
 
@@ -19,6 +19,7 @@
     background-repeat: no-repeat;
     background-position: left;
     padding: 4px 0 4px 4px;
+    width: 100%;
     cursor: pointer; /* maybe move this into a clickable class? */
 }
 
@@ -59,16 +60,16 @@
 }
 
 .expandable {
-    background: url('../../images/plus.gif') no-repeat left;
+    background: url('../../images/dir_closed.png') no-repeat left;
 }
 
 .expanded {
-    background: url('../../images/minus.gif') no-repeat left;
+    background: url('../../images/dir_open.png') no-repeat left;
 }
 
 .ovirt-tree .current {
     background-color: #698FA6;
-    color:#000000;
+    color:#FFFFFF;
     width: 100%;
 }
 

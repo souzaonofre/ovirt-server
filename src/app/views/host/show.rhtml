@@ -5,19 +5,19 @@
   <%if @can_modify -%>
     <%if @host.disabled?  -%>
       <a href="#" onClick="host_action('enable')">
-        <%= image_tag "icon_start.png" %> Enable Host
+        <%= image_tag "icon_start_11px.png" %> Enable Host
       </a>
     <% else -%>
       <a href="#" onClick="host_action('disable')">
-        <%= image_tag "icon_suspend.png" %> Disable Host
+        <%= image_tag "icon_suspend_11px.png" %> Disable Host
       </a>
     <% end -%>
     <%if @host.is_clear_task_valid? -%>
       <a href="#" onClick="host_action('clear_vms')">
-        <%= image_tag "icon_x.png" %> Clear VMs
+        <%= image_tag "icon_x_11px.png" %> Clear VMs
       </a>
     <% end -%>
-    <%= link_to image_tag("icon_edit.png") +"Edit Network",
+    <%= link_to image_tag("icon_edit_11px.png") +"Edit Network",
                  {:controller => 'host',
                   :action => 'edit_network', :id => @host.id},
                  :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
