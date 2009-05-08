@@ -22,43 +22,78 @@ module HardwarePoolService
 
   include PoolService
 
-  def svc_create(pool_hash, other_args)
-    # from before_filter
-    @pool = HardwarePool.new(pool_hash)
-    @parent = Pool.find(other_args[:parent_id])
-    authorized!(Privilege::MODIFY,@parent)
+  # Load a new HardwarePool for creating
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] loads a new HardwarePool object into memory
+  # [<tt>@parent</tt>] stores the parent of <tt>@pool</tt> as specified by
+  #                    +parent_id+
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the parent pool
+  def svc_new(parent_id, attributes=nil)
+    @pool = HardwarePool.new(attributes)
+    super(parent_id)
+  end
 
-    alert = "Hardware Pool was successfully created."
+  # Save a new HardwarePool
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] the newly saved HardwarePool
+  # [<tt>@parent</tt>] stores the parent of <tt>@pool</tt> as specified by
+  #                    +parent_id+
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the parent pool
+  def svc_create(pool_hash, other_args)
+    svc_new(other_args[:parent_id], pool_hash)
+
     Pool.transaction do
       @pool.create_with_parent(@parent)
       begin
-        if other_args[:resource_type] == "hosts"
-          svc_move_hosts(@pool.id, other_args[:resource_ids].split(","), @pool.id)
-        elsif other_args[:resource_type] == "storage"
-          svc_move_storage(@pool.id, other_args[:resource_ids].split(","), @pool.id)
+        if other_args[:resource_type]
+          svc_move_items_internal(@pool.id, other_args[:resource_type],
+                                  other_args[:resource_ids].split(","),
+                                  @pool.id)
         end
-        # wrapped in a transaction, so fail on partial success
+      # wrapped in a transaction, so fail on partial success
       rescue PartialSuccessError => ex
         # Raising ActionError here since we're aborting the transaction. Errors
         # on creation here result in no persistent changes to the database.
         raise ActionError.new("Could not move all hosts or storage to this pool")
       end
     end
-    return alert
+    return "Hardware Pool was successfully created."
   end
 
+  # Move Hosts identified by +host_ids+ from one Hardware Pool to another. The
+  # target pool for the hosts is specified as +target_pool_id+.
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] the current HardwarePool
+  # [<tt>@parent</tt>] the parent of <tt>@pool</tt>
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the target pool as well as the current
+  #                              pool for each moved host
   def svc_move_hosts(pool_id, host_ids, target_pool_id)
     svc_move_items_internal(pool_id, Host, host_ids, target_pool_id)
   end
+
+  # Move Storage Pools identified by +storage_pool_ids+ from one Hardware Pool
+  # to another. The target pool for the hosts is specified as +target_pool_id+.
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] the current HardwarePool
+  # [<tt>@parent</tt>] the parent of <tt>@pool</tt>
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the target pool as well as the current
+  #                              pool for each moved Storage Pool
   def svc_move_storage(pool_id, storage_pool_ids, target_pool_id)
     svc_move_items_internal(pool_id, StoragePool, storage_pool_ids, target_pool_id)
   end
   def svc_move_items_internal(pool_id, item_class, resource_ids, target_pool_id)
     # from before_filter
-    @pool = HardwarePool.find(pool_id)
     target_pool = Pool.find(target_pool_id)
     authorized!(Privilege::MODIFY,target_pool)
-    authorized!(Privilege::MODIFY,@pool) unless @pool == target_pool
+    lookup(pool_id, Privilege::MODIFY)
 
     resources = item_class.find(resource_ids)
 

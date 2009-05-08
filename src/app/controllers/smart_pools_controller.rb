@@ -21,7 +21,6 @@
 class SmartPoolsController < PoolController
   include SmartPoolService
 
-  before_filter :pre_modify, :only => [:add_pool_dialog]
   def show_vms
     show
   end
@@ -41,12 +40,11 @@ class SmartPoolsController < PoolController
   end
 
   def additional_create_params
-    {:parent_id => (params[:hardware_pool] ?
-                    params[:hardware_pool][:parent_id] :
-                    params[:parent_id])}
+    {}
   end
 
   def add_pool_dialog
+    svc_modify(params[:id])
     @selected_pools = @pool.tagged_pools.collect {|pool| pool.id}
     render :layout => 'popup'
   end
@@ -80,7 +78,7 @@ class SmartPoolsController < PoolController
 
   def items_json_internal(item_class, item_assoc)
     if params[:id]
-      pre_show_pool
+      svc_show(params[:id])
       full_items = @pool.send(item_assoc)
       find_opts = {}
       include_pool = false
@@ -152,20 +150,8 @@ class SmartPoolsController < PoolController
   end
 
   protected
-  #filter methods
-  def pre_new
-    @pool = SmartPool.new
-    @parent = DirectoryPool.get_or_create_user_root(get_login_user)
-    set_perms(@parent)
-  end
-  def pre_edit
-    @pool = SmartPool.find(params[:id])
-    @parent = @pool.parent
-    set_perms(@pool)
-  end
-  def pre_modify
-    pre_edit
-    authorize_admin
+  def get_parent_id
+    DirectoryPool.get_or_create_user_root(get_login_user).id
   end
 
 end

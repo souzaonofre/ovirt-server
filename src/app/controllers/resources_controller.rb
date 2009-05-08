@@ -68,7 +68,7 @@ class ResourcesController < PoolController
   end
 
   def vms_json
-    pre_show_pool
+    svc_show(params[:id])
     super(:full_items => @pool.vms, :find_opts => {}, :include_pool => :true)
   end
 
@@ -78,8 +78,6 @@ class ResourcesController < PoolController
                     params[:parent_id])}
   end
 
-   #FIXME: we need permissions checks. user must have permission. We also need to fail
-  # for pools that aren't currently empty
   def delete
     vm_pool_ids = params[:vm_pool_ids].split(",")
     successes = []
@@ -94,48 +92,20 @@ class ResourcesController < PoolController
         failures[@pool] = ex.message
       end
     end
-    success = failures.empty?
-    alert = ""
-    if !successes.empty?
-      alert = "Virtual Machine Pools #{successes.collect{|pool| pool.name}.join(', ')} were successfully deleted."
-    end
-    if !failures.empty?
-      alert += " Errors in deleting VM Pools #{failures.collect{|pool,err| "#{pool.name}: #{err}"}.join(', ')}."
+    unless failures.empty?
+      raise PartialSuccessError.new("Delete failed for some VM Pools",
+                                    failures, successes)
     end
     render :json => { :object => "vm_resource_pool", :success => success,
-                      :alert => alert }
+                      :alert => "VM Pools were successfully deleted." }
   end
 
   def vm_actions
-    begin
-      alert = svc_vm_actions_hosts(params[:id], params[:vm_action],
-                                   params[:vm_ids].split(","))
-      @success_list = @vms
-      @failures = {}
-      render :layout => 'confirmation'
-    rescue PermissionError
-      raise
-    rescue PartialSuccessError => error
-      @success_list = error.successes
-      @failures = error.failures
-      render :layout => 'confirmation'
-    rescue Exeption => ex
-      flash[:errmsg] = 'Error queueing VM actions.'
-      @success_list = []
-      @failure_list = []
-    end
+    @layout = 'confirmation'
+    alert = svc_vm_actions(params[:id], params[:vm_action],
+                           params[:vm_ids].split(","))
+    @successes = @vms
+    @failures = {}
+    render :layout => @layout
   end
-
-  protected
-  def pre_new
-    @pool = VmResourcePool.new
-    super
-  end
-  def pre_edit
-    @pool = VmResourcePool.find(params[:id])
-    @parent = @pool.parent
-    @current_pool_id=@pool.id
-    set_perms(@pool.parent)
-  end
-
 end

@@ -22,22 +22,56 @@ module VmResourcePoolService
 
   include PoolService
 
+  # Load the VmResourcePool with +id+ for editing
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] stores the Pool with +id+
+  # [<tt>@parent</tt>] stores the parent of <tt>@pool</tt>
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the parent pool
+  def svc_modify(id)
+    lookup(id, Privilege::MODIFY, true)
+  end
+
+  # Load a new VmResourcePool for creating
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] loads a new VmResourcePool object into memory
+  # [<tt>@parent</tt>] stores the parent of <tt>@pool</tt> as specified by
+  #                    +parent_id+
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the parent pool
+  def svc_new(parent_id, attributes=nil)
+    @pool = VmResourcePool.new(attributes)
+    super(parent_id)
+  end
+
+  # Save a new VmResourcePool
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] the newly saved VmResourcePool
+  # [<tt>@parent</tt>] stores the parent of <tt>@pool</tt> as specified by
+  #                    +parent_id+
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the parent pool
   def svc_create(pool_hash, other_args)
-    # from before_filter
-    @pool = VmResourcePool.new(pool_hash)
-    @parent = Pool.find(other_args[:parent_id])
-    authorized!(Privilege::MODIFY,@parent)
-
-    alert = "VM Pool was successfully created."
+    svc_new(other_args[:parent_id], pool_hash)
     @pool.create_with_parent(@parent)
-    return alert
+    return "VM Pool was successfully created."
   end
 
-  def update_perms
-    @current_pool_id=@pool.id
-    set_perms(@pool.parent)
-  end
-
+  # Perform action +vm_action+ on vms identified by +vm_id+ within Pool
+  #  +pool_id+
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] the current VmResourcePool
+  # [<tt>@parent</tt>] the parent of <tt>@pool</tt>
+  # [<tt>@action</tt>] action identified by +vm_action+
+  # [<tt>@action_label</tt>] label for action identified by +vm_action+
+  # [<tt>@vms</tt>] VMs identified by +vm_ids+
+  # === Required permissions
+  # permission is action-specific as determined by
+  #   <tt>VmTask.action_privilege(@action)</tt>
   def svc_vm_actions(pool_id, vm_action, vm_ids)
     # from before_filter
     @pool = VmResourcePool.find(pool_id)
@@ -65,12 +99,10 @@ module VmResourcePoolService
       end
     end
     unless failed_vms.empty?
-      raise PartialSuccessError.new("#{@action} only partially successful",
+      raise PartialSuccessError.new("#{@action} failed for some VMs",
                                     failed_vms, successful_vms)
     end
     return "Action #{@action} successful."
   end
-
-
 
 end

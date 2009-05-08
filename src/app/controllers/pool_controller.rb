@@ -20,10 +20,6 @@
 
 class PoolController < ApplicationController
 
-  before_filter :pre_show_pool, :only => [:users_json, :show_tasks, :tasks,
-                                          :vm_pools_json,
-                                          :pools_json, :storage_volumes_json]
-
   XML_OPTS  = {
     :include => [ :storage_pools, :hosts, :quota ]
   }
@@ -34,6 +30,16 @@ class PoolController < ApplicationController
   end
   def tasks_conditions
     {}
+  end
+
+  def show_tasks
+    svc_show(params[:id])
+    super
+  end
+
+  def tasks
+    svc_show(params[:id])
+    super
   end
 
   def show
@@ -65,6 +71,7 @@ class PoolController < ApplicationController
   end
 
   def users_json
+    svc_show(params[:id])
     attr_list = []
     attr_list << :grid_id if params[:checkboxes]
     attr_list += [:uid, [:role, :name], :source]
@@ -97,6 +104,7 @@ class PoolController < ApplicationController
   end
 
   def new
+    svc_new(get_parent_id)
     render :layout => 'popup'
   end
 
@@ -141,44 +149,22 @@ class PoolController < ApplicationController
   end
 
   def edit
+    svc_modify(params[:id])
     render :layout => 'popup'
   end
 
   def destroy
-    alert = nil
-    success = true
-    status = :ok
-    begin
-      alert = svc_destroy(params[:id])
-    rescue ActionError => error
-      alert = error.message
-      success = false
-      status = :conflict
-    rescue PermissionError => error
-      alert = error.message
-      success = false
-      status = :forbidden
-    rescue Exception => error
-      alert = error.message
-      success = false
-      status = :method_not_allowed
-    end
+    alert = svc_destroy(params[:id])
     respond_to do |format|
-      format.json { render :json => { :object => "pool", :success => success,
+      format.json { render :json => { :object => "pool", :success => true,
           :alert => alert } }
-      format.xml { head status }
+      format.xml { head(:ok) }
     end
   end
 
   protected
-  def pre_new
-    @parent = Pool.find(params[:parent_id])
-    set_perms(@parent)
-  end
-  def pre_show_pool
-    @pool = Pool.find(params[:id])
-    set_perms(@pool)
-    authorize_view
+  def get_parent_id
+    params[:parent_id]
   end
   # FIXME: remove these when service transition is complete. these are here
   # to keep from running permissions checks and other setup steps twice

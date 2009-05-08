@@ -28,8 +28,6 @@ class HardwareController < PoolController
   verify :method => [:post, :delete], :only => :destroy,
          :redirect_to => { :action => :list }
 
-  before_filter :pre_modify, :only => [:move, :removestorage]
-
   def index
     if params[:path]
       @pools = []
@@ -124,12 +122,12 @@ class HardwareController < PoolController
 
   def hosts_json
     if params[:exclude_host]
-      pre_show_pool
+      svc_show(params[:id])
       hosts = @pool.hosts
       find_opts = {:conditions => ["id != ?", params[:exclude_host]]}
       include_pool = false
     elsif params[:id]
-      pre_show_pool
+      svc_show(params[:id])
       hosts = @pool.hosts
       find_opts = {}
       include_pool = false
@@ -146,6 +144,7 @@ class HardwareController < PoolController
   end
 
   def vm_pools_json
+    svc_show(params[:id])
     json_list(Pool,
               [:id, :name, :id],
               [@pool, :children],
@@ -154,7 +153,7 @@ class HardwareController < PoolController
 
   def storage_pools_json
     if params[:id]
-      pre_show_pool
+      svc_show(params[:id])
       storage_pools = @pool.storage_pools
       find_opts = {:conditions => "type != 'LvmStoragePool'"}
       include_pool = false
@@ -171,11 +170,13 @@ class HardwareController < PoolController
   end
 
   def storage_volumes_json
+    svc_show(params[:id])
     json_list(@pool.all_storage_volumes,
               [:display_name, :size_in_gb, :get_type_label])
   end
 
   def move
+    svc_modify(params[:id])
     @resource_type = params[:resource_type]
     @id = params[:id]
     @pools = HardwarePool.get_default_pool.full_set_nested(:method => :json_hash_element,
@@ -191,15 +192,17 @@ class HardwareController < PoolController
   end
 
   def additional_create_params
-    {:resource_type => params[:resource_type],
-      :resource_ids => params[:resource_ids],
-      :parent_id => (params[:hardware_pool] ?
-                     params[:hardware_pool][:parent_id] :
-                     params[:parent_id])}
+    ret_hash = {:resource_ids => params[:resource_ids],
+                :parent_id => (params[:hardware_pool] ?
+                               params[:hardware_pool][:parent_id] :
+                               params[:parent_id])}
+    ret_hash[:resource_type] = Host if params[:resource_type] == "hosts"
+    ret_hash[:resource_type] = Storage if params[:resource_type] == "storage"
+    ret_hash
   end
 
   def add_hosts
-    edit_items(@pool.id, :svc_move_hosts, :add)
+    edit_items(params[:id], :svc_move_hosts, :add)
   end
 
   def move_hosts
@@ -207,7 +210,7 @@ class HardwareController < PoolController
   end
 
   def add_storage
-    edit_items(@pool.id, :svc_move_storage, :add)
+    edit_items(params[:id], :svc_move_storage, :add)
   end
 
   def move_storage
@@ -225,23 +228,8 @@ class HardwareController < PoolController
   end
 
   def removestorage
+    svc_modify(params[:id])
     render :layout => 'popup'
   end
 
-
-  protected
-  #filter methods
-  def pre_new
-    @pool = HardwarePool.new
-    super
-  end
-  def pre_edit
-    @pool = HardwarePool.find(params[:id])
-    @parent = @pool.parent
-    set_perms(@pool)
-  end
-  def pre_modify
-    pre_edit
-    authorize_admin
-  end
 end

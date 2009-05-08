@@ -22,39 +22,82 @@ module PoolService
 
   include ApplicationService
 
-  def svc_show(pool_id)
-    # from before_filter
-    @pool = Pool.find(pool_id)
-    authorized!(Privilege::VIEW,@pool)
+  # Load the Pool with +id+ for viewing
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] stores the Pool with +id+
+  # [<tt>@parent</tt>] stores the parent of <tt>@pool</tt>
+  # === Required permissions
+  # [<tt>Privilege::VIEW</tt>] for the pool
+  def svc_show(id)
+    lookup(id, Privilege::VIEW)
   end
 
-  def update_perms
-    set_perms(@pool)
+  # Load the Pool with +id+ for editing
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] stores the Pool with +id+
+  # [<tt>@parent</tt>] stores the parent of <tt>@pool</tt>
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the pool
+  def svc_modify(id)
+    lookup(id, Privilege::MODIFY)
   end
+
   def additional_update_actions(pool, pool_hash)
   end
 
-  def svc_update(pool_id, pool_hash)
+  # Update attributes for the Pool with +id+
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] stores the Pool with +id+
+  # [<tt>@parent</tt>] stores the parent of <tt>@pool</tt>
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the pool
+  def svc_update(id, pool_hash)
     # from before_filter
-    @pool = Pool.find(params[:id])
-    @parent = @pool.parent
-    update_perms
-    authorized!(Privilege::MODIFY)
+    svc_modify(id)
     Pool.transaction do
       additional_update_actions(@pool, pool_hash)
       @pool.update_attributes!(pool_hash)
     end
   end
 
-  def svc_destroy(pool_id)
-    # from before_filter
-    @pool = Pool.find(pool_id)
-    authorized!(Privilege::MODIFY, @pool)
+  # Load a new  Pool for creating
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] loads a new Pool object into memory
+  # [<tt>@parent</tt>] stores the parent of <tt>@pool</tt> as specified by
+  #                    +parent_id+
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the parent pool
+  def svc_new(parent_id, attributes=nil)
+    @parent = Pool.find(parent_id)
+    authorized!(Privilege::MODIFY, @parent)
+  end
+
+  # Destroy the Pool object with +id+
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] the destroyed pool
+  # [<tt>@parent</tt>] stores the parent of <tt>@pool</tt>
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the pool
+  def svc_destroy(id)
+    svc_modify(id)
     check_destroy_preconditions
     @pool.destroy
     return "Pool was successfully deleted."
   end
 
   def check_destroy_preconditions
+  end
+
+  protected
+  def lookup(id, priv, use_parent_perms=false)
+    @pool = Pool.find(id)
+    @parent = @pool.parent
+    @current_pool_id = @pool.id if use_parent_perms
+    authorized!(priv, use_parent_perms ? @parent : @pool)
   end
 end

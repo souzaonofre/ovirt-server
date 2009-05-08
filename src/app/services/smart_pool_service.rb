@@ -22,23 +22,46 @@ module SmartPoolService
 
   include PoolService
 
-  def svc_create(pool_hash, other_args)
-    # from before_filter
-    @pool = SmartPool.new(pool_hash)
-    @parent = DirectoryPool.get_or_create_user_root(get_login_user)
-    authorized!(Privilege::MODIFY,@parent)
-
-    alert = "Smart Pool was successfully created."
-    @pool.create_with_parent(@parent)
-    return alert
+  # Load a new SmartPool for creating
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] loads a new SmartPool object into memory
+  # [<tt>@parent</tt>] stores the parent of <tt>@pool</tt> as specified by
+  #                    +parent_id+
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the pool
+  def svc_new(parent_id, attributes=nil)
+    @pool = SmartPool.new(attributes)
+    super(parent_id)
   end
 
-  # if item_class is nil, resource_ids is an array of [class, id] pairs
+  # Save a new SmartPool
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] the newly saved SmartPool
+  # [<tt>@parent</tt>] stores the parent of <tt>@pool</tt> as specified by
+  #                    +parent_id+
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the pool
+  def svc_create(pool_hash, other_args)
+    svc_new(nil, pool_hash)
+    @pool.create_with_parent(@parent)
+    return "Smart Pool was successfully created."
+  end
+
+  # Add or remove (depending on +item_action+) objects represneted by
+  # +resource_ids+ in the smart pool identified by +pool_id+. Item type
+  # is identified by +item_class+. If +item_class+ is nil, then
+  # +resource_ids+ is an array of [class, id] pairs.
+  #
+  # === Instance variables
+  # [<tt>@pool</tt>] the current SmartPool
+  # [<tt>@parent</tt>] the parent of <tt>@pool</tt>
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the current smart pool
+  # [<tt>Privilege::VIEW</tt>] for any item being added to this smart pool
   def svc_add_remove_items(pool_id, item_class, item_action, resource_ids)
-    # from before_filter
-    @pool = SmartPool.find(pool_id)
-    @parent = @pool.parent
-    authorized!(Privilege::MODIFY,@pool)
+    svc_modify(pool_id)
     unless [:add, :remove].include?(item_action)
       raise ActionError.new("Invalid action #{item_action}")
     end
