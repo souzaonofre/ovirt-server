@@ -22,12 +22,54 @@ module VmService
 
   include ApplicationService
 
-  def svc_show(vm_id)
-    # from before_filter
-    @vm = Vm.find(vm_id)
-    authorized!(Privilege::VIEW,@vm.vm_resource_pool)
+  # Load the Vm with +id+ for viewing
+  #
+  # === Instance variables
+  # [<tt>@vm</tt>] stores the Vm with +id+
+  # === Required permissions
+  # [<tt>Privilege::VIEW</tt>] on vm's VmResourcePool
+  def svc_show(id)
+    lookup(id,Privilege::VIEW)
   end
 
+  # Load the Vm with +id+ for editing
+  #
+  # === Instance variables
+  # [<tt>@vm</tt>] stores the Vm with +id+
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] on vm's VmResourcePool
+  def svc_modify(id)
+    lookup(id,Privilege::MODIFY)
+  end
+
+  # Load a new Vm for creating
+  #
+  # === Instance variables
+  # [<tt>@vm</tt>] loads a new Vm object into memory
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the vm's VmResourcePool as specified by
+  #                              +vm_resource_pool_id+
+  def svc_new(vm_resource_pool_id)
+    raise ActionError.new("VM Resource Pool is required.") unless vm_resource_pool_id
+
+    # random MAC
+    mac = [ 0x00, 0x16, 0x3e, rand(0x7f), rand(0xff), rand(0xff) ]
+    # random uuid
+    uuid = ["%02x"*4, "%02x"*2, "%02x"*2, "%02x"*2, "%02x"*6].join("-") %
+      Array.new(16) {|x| rand(0xff) }
+
+    @vm = Vm.new({:vm_resource_pool_id => vm_resource_pool_id,
+                  :vnic_mac_addr => mac.collect {|x| "%02x" % x}.join(":"),
+                  :uuid => uuid })
+    authorized!(Privilege::MODIFY, @vm.vm_resource_pool)
+  end
+
+  # Save a new Vm
+  #
+  # === Instance variables
+  # [<tt>@vm</tt>] the newly saved Vm
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the vm's VmResourcePool
   def svc_create(vm_hash, start_now)
     # from before_filter
     vm_hash[:state] = Vm::STATE_PENDING
@@ -59,9 +101,15 @@ module VmService
     return alert
   end
 
-  def svc_update(vm_id, vm_hash, start_now, restart_now)
+  # Update attributes for the Vm with +id+
+  #
+  # === Instance variables
+  # [<tt>@vm</tt>] stores the Vm with +id+
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the Vm's VmResourcePool
+  def svc_update(id, vm_hash, start_now, restart_now)
     # from before_filter
-    @vm = Vm.find(vm_id)
+    @vm = Vm.find(id)
     authorized!(Privilege::MODIFY, @vm.vm_resource_pool)
 
     #needs restart if certain fields are changed
@@ -119,9 +167,15 @@ module VmService
     return alert
   end
 
-  def svc_destroy(vm_id)
+  # Destroys for the Vm with +id+
+  #
+  # === Instance variables
+  # [<tt>@vm</tt>] stores the Vm with +id+
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the Vm's VmResourcePool
+  def svc_destroy(id)
     # from before_filter
-    @vm = Vm.find(vm_id)
+    @vm = Vm.find(id)
     authorized!(Privilege::MODIFY, @vm.vm_resource_pool)
 
     unless @vm.is_destroyable?
@@ -129,20 +183,34 @@ module VmService
     end
     destroy_cobbler_system(@vm)
     @vm.destroy
-    return "Virtual Machine wa ssuccessfully deleted."
+    return "Virtual Machine was successfully deleted."
   end
 
-  def svc_vm_action(vm_id, vm_action, action_args)
-    @vm = Vm.find(vm_id)
-    authorized!(Privilege::MODIFY, @vm.vm_resource_pool)
+  #  Queues action +vm_action+ for Vm with +id+
+  #
+  # === Instance variables
+  # [<tt>@vm</tt>] stores the Vm with +id+
+  # === Required permissions
+  # permission is action-specific as determined by
+  #   <tt>VmTask.action_privilege(@action)</tt>
+  def svc_vm_action(id, vm_action, action_args)
+    @vm = Vm.find(id)
+    authorized!(VmTask.action_privilege(vm_action),
+                VmTask.action_privilege_object(vm_action,@vm))
     unless @vm.queue_action(@user, vm_action, action_args)
       raise ActionError.new("#{vm_action} is an invalid action.")
     end
     return "#{vm_action} was successfully queued."
   end
 
-  def svc_cancel_queued_tasks(vm_id)
-    @vm = Vm.find(vm_id)
+  #  Cancels queued tasks for for Vm with +id+
+  #
+  # === Instance variables
+  # [<tt>@vm</tt>] stores the Vm with +id+
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the Vm's VmResourcePool
+  def svc_cancel_queued_tasks(id)
+    @vm = Vm.find(id)
     authorized!(Privilege::MODIFY, @vm.vm_resource_pool)
 
     Task.transaction do
@@ -151,6 +219,7 @@ module VmService
     return "Queued tasks were successfully canceled."
   end
 
+  protected
   def vm_provision
     if @vm.uses_cobbler?
       # spaces are invalid in the cobbler name
@@ -172,6 +241,12 @@ module VmService
       system = Cobbler::System.find_one(vm.cobbler_system_name)
       system.remove if system
     end
+  end
+
+  private
+  def lookup(id, priv)
+    @vm = Vm.find(id)
+    authorized!(priv,@vm.vm_resource_pool)
   end
 
 end

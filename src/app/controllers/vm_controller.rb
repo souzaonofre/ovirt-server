@@ -17,7 +17,6 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 require 'socket'
-require 'services/vm_service'
 
 class VmController < ApplicationController
   include VmService
@@ -25,8 +24,6 @@ class VmController < ApplicationController
   # GETs should be safe (see http://www.w3.org/2001/tag/doc/whenToUseGet.html)
   verify :method => :post, :only => [ :destroy, :create, :update ],
          :redirect_to => { :controller => 'dashboard' }
-
-  before_filter :pre_console, :only => [:console]
 
   def index
     @vms = Vm.find(:all,
@@ -52,7 +49,10 @@ class VmController < ApplicationController
   end
 
   def new
+    alert = svc_new(params[:vm_resource_pool_id])
+    _setup_provisioning_options
     @storage_tree = VmResourcePool.find(params[:vm_resource_pool_id]).get_hardware_pool.storage_tree.to_json
+    @networks = Network.find(:all).collect{ |net| [net.name, net.id] }
     render :layout => 'popup'
   end
 
@@ -63,6 +63,9 @@ class VmController < ApplicationController
   end
 
   def edit
+    svc_modify(params[:id])
+    _setup_provisioning_options
+    @networks = Network.find(:all).collect{ |net| [net.name, net.id] }
     @storage_tree = @vm.vm_resource_pool.get_hardware_pool.storage_tree(:vm_to_include => @vm).to_json
     render :layout => 'popup'
   end
@@ -74,37 +77,26 @@ class VmController < ApplicationController
     render :json => { :object => "vm", :success => true, :alert => alert  }
   end
 
-  #FIXME: we need permissions checks. user must have permission. Also state checks
-  # this should probably be implemented as an action on the containing VM pool once
-  # that service module is defined
   def delete
-    vm_ids_str = params[:vm_ids]
-    vm_ids = vm_ids_str.split(",").collect {|x| x.to_i}
-    failure_list = []
-    success = false
-    begin
-      Vm.transaction do
-        vms = Vm.find(:all, :conditions => "id in (#{vm_ids.join(', ')})")
-        vms.each do |vm|
-          if vm.is_destroyable?
-            destroy_cobbler_system(vm)
-            vm.destroy
-          else
-            failure_list << vm.description
-          end
-        end
+    vm_ids = params[:vm_ids].split(",")
+    successes = []
+    failures = {}
+    vm_ids.each do |vm_id|
+      begin
+        svc_destroy(vm_id)
+        successes << @vm
+      rescue PermissionError => perm_error
+        failures[@vm] = perm_error.message
+      rescue Exception => ex
+        failures[@vm] = ex.message
       end
-      if failure_list.empty?
-        success = true
-        alert = "Virtual Machines were successfully deleted."
-      else
-        alert = "The following Virtual Machines were not deleted (a VM must be stopped to delete it): "
-        alert+= failure_list.join(', ')
-      end
-    rescue
-      alert = "Error deleting virtual machines."
     end
-    render :json => { :object => "vm", :success => success, :alert => alert }
+    unless failures.empty?
+      raise PartialSuccessError.new("Delete failed for some VMs",
+                                    failures, successes)
+    end
+    render :json => { :object => "vm", :success => success,
+                      :alert => "VM Pools were successfully deleted." }
   end
 
   def destroy
@@ -142,6 +134,7 @@ class VmController < ApplicationController
   end
 
   def console
+    svc_modify(params[:id])
     @show_vnc_error = "Console is unavailable for VM #{@vm.description}" unless @vm.has_console
     if @vm.host.hostname.match("priv\.ovirt\.org$")
       @vnc_hostname =  IPSocket.getaddress(@vm.host.hostname)
@@ -172,40 +165,6 @@ class VmController < ApplicationController
     end
   end
 
-  def pre_new
-    unless params[:vm_resource_pool_id]
-      flash[:notice] = "VM Resource Pool is required."
-      redirect_to :controller => 'dashboard'
-    end
-
-    # random MAC
-    mac = [ 0x00, 0x16, 0x3e, rand(0x7f), rand(0xff), rand(0xff) ]
-    # random uuid
-    uuid = ["%02x" * 4, "%02x" * 2, "%02x" * 2, "%02x" * 2, "%02x" * 6].join("-") %
-      Array.new(16) {|x| rand(0xff) }
-    newargs = {
-      :vm_resource_pool_id => params[:vm_resource_pool_id],
-      :vnic_mac_addr => mac.collect {|x| "%02x" % x}.join(":"),
-      :uuid => uuid
-    }
-    @vm = Vm.new( newargs )
-    unless params[:vm_resource_pool_id]
-      @vm.vm_resource_pool = @vm_resource_pool
-    end
-    set_perms(@vm.vm_resource_pool)
-    @networks = Network.find(:all).collect{ |net| [net.name, net.id] }
-    _setup_provisioning_options
-  end
-  def pre_edit
-    @vm = Vm.find(params[:id])
-    set_perms(@vm.vm_resource_pool)
-    @networks = Network.find(:all).collect{ |net| [net.name, net.id] }
-    _setup_provisioning_options
-  end
-  def pre_console
-    pre_edit
-    authorize_user
-  end
   # FIXME: remove these when service transition is complete. these are here
   # to keep from running permissions checks and other setup steps twice
   def tmp_pre_update
