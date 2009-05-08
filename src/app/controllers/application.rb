@@ -32,24 +32,24 @@ class ApplicationController < ActionController::Base
 
   # FIXME: once service layer is complete, the following before_filters will be
   # removed as their functionality has been moved to the service layer
+  # pre_new
   # pre_create
-  # pre_edit will remain only for :edit, not :update or :destroy
+  # pre_edit
   # pre_show
-  # authorize_admin will remain only for :new, :edit
+  # authorize_admin
   before_filter :pre_new, :only => [:new]
   before_filter :pre_create, :only => [:create]
-  before_filter :pre_edit, :only => [:edit]
   # the following is to facilitate transition to service layer
-  before_filter :tmp_pre_update, :only => [:update, :destroy]
+  before_filter :tmp_pre_update, :only => [:edit, :update, :destroy]
   before_filter :pre_show, :only => [:show]
-  before_filter :authorize_admin, :only => [:new, :edit]
-  before_filter :tmp_authorize_admin, :only => [:create, :update, :destroy]
+  before_filter :tmp_authorize_admin, :only => [:new, :edit, :create, :update, :destroy]
   before_filter :is_logged_in, :get_help_section
 
   # General error handlers, must be in order from least specific
   # to most specific
   rescue_from Exception, :with => :handle_general_error
   rescue_from PermissionError, :with => :handle_perm_error
+  rescue_from ActionError, :with => :handle_action_error
   rescue_from PartialSuccessError, :with => :handle_partial_success_error
 
   def choose_layout
@@ -100,24 +100,20 @@ class ApplicationController < ActionController::Base
   def pre_show
   end
 
-  def authorize_view(msg=nil)
-    authorize_action(Privilege::VIEW,msg)
+  # These authorize_XXX methods should go away once we're fully converted to
+  # the service layer
+  def authorize_view
+    authorize_action(Privilege::VIEW)
   end
-  def authorize_user(msg=nil)
-    authorize_action(Privilege::VM_CONTROL,msg)
+  def authorize_user
+    authorize_action(Privilege::VM_CONTROL)
   end
-  def authorize_admin(msg=nil)
-    authorize_action(Privilege::MODIFY,msg)
+  def authorize_admin
+    authorize_action(Privilege::MODIFY)
   end
-  def authorize_action(privilege, msg=nil)
-    msg ||= 'You have insufficient privileges to perform action.'
-    unless authorized?(privilege)
-      handle_error(:message => msg,
-                   :title => "Access Denied", :status => :forbidden)
-      false
-    else
-      true
-    end
+  def authorize_action(privilege)
+    authorized!(privilege)
+    true
   end
 
   def handle_perm_error(error)
@@ -129,18 +125,26 @@ class ApplicationController < ActionController::Base
     failures_arr = error.failures.collect do |resource, reason|
       resource.display_name + ": " + reason
     end
+    @successes = error.successes
+    @failures = error.failures
     handle_error(:error => error, :status => :ok,
                  :message => error.message + ": " + failures_arr.join(", "),
                  :title => "Some actions failed")
   end
 
+  def handle_action_error(error)
+    handle_error(:error => error, :status => :conflict,
+                 :title => "Action Error")
+  end
+
   def handle_general_error(error)
+    flash[:errmsg] = error.message
     handle_error(:error => error, :status => :internal_server_error,
                  :title => "Internal Server Error")
   end
 
   def handle_error(hash)
-    log_error(hash[:error])
+    log_error(hash[:error]) if hash[:error]
     msg = hash[:message] || hash[:error].message
     title = hash[:title] || "Internal Server Error"
     status = hash[:status] || :internal_server_error
@@ -156,7 +160,9 @@ class ApplicationController < ActionController::Base
     @errmsg = msg
     @ajax = params[:ajax]
     @nolayout = params[:nolayout]
-    if @ajax
+    if @layout
+      render :layout => @layout
+    elsif @ajax
       render :template => 'layouts/popup-error', :layout => 'tabs-and-content'
     elsif @nolayout
       render :template => 'layouts/popup-error', :layout => 'help-and-content'
