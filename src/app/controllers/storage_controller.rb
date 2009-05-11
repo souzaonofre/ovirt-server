@@ -18,13 +18,10 @@
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
 class StorageController < ApplicationController
+  include StoragePoolService
 
   EQ_ATTRIBUTES = [ :ip_addr, :export_path, :target,
                     :hardware_pool_id ]
-
-  before_filter :pre_pool_admin, :only => [:refresh]
-  before_filter :pre_new2, :only => [:new2]
-  before_filter :pre_add, :only => [:add, :addstorage]
 
   def index
     list
@@ -55,106 +52,70 @@ class StorageController < ApplicationController
   end
 
   def show
-    @storage_pool = StoragePool.find(params[:id])
-    set_perms(@storage_pool.hardware_pool)
-    if authorize_view
-      respond_to do |format|
-        format.html { render :layout => 'selection' }
-        format.xml {
-          xml_txt = @storage_pool.to_xml(:include => :storage_volumes) do |xml|
-            xml.type @storage_pool.class.name
-          end
-          render :xml => xml_txt
-        }
-      end
+    svc_show(params[:id])
+    respond_to do |format|
+      format.html { render :layout => 'selection' }
+      format.xml {
+        xml_txt = @storage_pool.to_xml(:include => :storage_volumes) do |xml|
+          xml.type @storage_pool.class.name
+        end
+        render :xml => xml_txt
+      }
     end
   end
 
   def new
-  end
-
-  def new2
-    @storage_pools = @storage_pool.hardware_pool.storage_volumes
+    svc_load_hw_pool(params[:hardware_pool_id])
+    @storage_types = StoragePool::STORAGE_TYPE_PICKLIST
     render :layout => false
   end
 
-  def insert_refresh_task
-    @task = StorageTask.new({ :user        => @user,
-                              :task_target => @storage_pool,
-                              :action      => StorageTask::ACTION_REFRESH_POOL,
-                              :state       => Task::STATE_QUEUED})
-    @task.save!
+  def new2
+    svc_new(params[:hardware_pool_id], params[:storage_type])
+    render :layout => false
   end
 
   def refresh
-    begin
-      insert_refresh_task
-      storage_url = url_for(:controller => "storage", :action => "show", :id => @storage_pool)
-      flash[:notice] = 'Storage pool refresh was successfully scheduled.'
-    rescue
-      flash[:notice] = 'Error scheduling Storage pool refresh.'
-    end
-    redirect_to :action => 'show', :id => @storage_pool.id
+    alert = svc_refresh(params[:id])
+    render :json => { :object => "vm", :success => true, :alert => alert  }
   end
 
   def create
-    begin
-      StoragePool.transaction do
-        @storage_pool.save!
-        insert_refresh_task
-      end
-      respond_to do |format|
-        format.json { render :json => { :object => "storage_pool",
-            :success => true,
-            :alert => "Storage Pool was successfully created.",
-            :new_pool => @storage_pool.storage_tree_element({:filter_unavailable => false, :state => 'new'})} }
-        format.xml { render :xml => @storage_pool,
-            :status => :created,
-            :location => storage_pool_url(@storage_pool)
-        }
-      end
-    rescue => ex
-      # FIXME: need to distinguish pool vs. task save errors (but should mostly be pool)
-      respond_to do |format|
-        format.json {
-          json_hash = { :object => "storage_pool", :success => false,
-            :errors => @storage_pool.errors.localize_error_messages.to_a  }
-          json_hash[:message] = ex.message if json_hash[:errors].empty?
-          render :json => json_hash }
-        format.xml { render :xml => @storage_pool.errors,
-          :status => :unprocessable_entity }
-      end
+    pool = params[:storage_pool]
+    unless type = params[:storage_type]
+      type = pool.delete(:storage_type)
     end
+    alert = svc_create(type, pool)
+    respond_to do |format|
+      format.json { render :json => { :object => "storage_pool",
+          :success => true, :alert => alert,
+          :new_pool => @storage_pool.storage_tree_element({:filter_unavailable => false, :state => 'new'})} }
+      format.xml { render :xml => @storage_pool,
+        :status => :created,
+        :location => storage_pool_url(@storage_pool)
+      }
+     end
   end
 
   def edit
+    svc_modify(params[:id])
     render :layout => 'popup'
   end
 
   def update
-    begin
-      StoragePool.transaction do
-        @storage_pool.update_attributes!(params[:storage_pool])
-        insert_refresh_task
-      end
-      render :json => { :object => "storage_pool", :success => true,
-                        :alert => "Storage Pool was successfully modified." }
-    rescue
-      # FIXME: need to distinguish pool vs. task save errors (but should mostly be pool)
-      render :json => { :object => "storage_pool", :success => false,
-                        :errors => @storage_pool.errors.localize_error_messages.to_a  }
-    end
+    alert = svc_update(params[:id], params[:storage_pool])
+    render :json => { :object => "storage_pool", :success => true,
+                      :alert => alert }
   end
 
   def addstorage
+    svc_load_hw_pool(params[:hardware_pool_id])
+    @storage_types = StoragePool::STORAGE_TYPE_PICKLIST
     render :layout => 'popup'    
   end
 
   def add
-    render :layout => false
-  end
-
-  def new
+    svc_load_hw_pool(params[:hardware_pool_id])
     render :layout => false
   end
 
@@ -167,87 +128,41 @@ class StorageController < ApplicationController
   # in addition to the current pool (which is checked). We also need to fail
   # for storage that aren't currently empty
   def delete_pools
-    storage_pool_ids_str = params[:storage_pool_ids]
-    storage_pool_ids = storage_pool_ids_str.split(",").collect {|x| x.to_i}
-
-    begin
-      StoragePool.transaction do
-        storage = StoragePool.find(:all, :conditions => "id in (#{storage_pool_ids.join(', ')})")
-        storage.each do |storage_pool|
-          storage_pool.destroy
-        end
+    storage_pool_ids = params[:storage_pool_ids].split(",")
+    successes = []
+    failures = {}
+    storage_pool_ids.each do |storage_pool_id|
+      begin
+        svc_destroy(storage_pool_id)
+        successes << @storage_pool
+      rescue PermissionError => perm_error
+        failures[@storage_pool] = perm_error.message
+      rescue Exception => ex
+        failures[@storage_pool] = ex.message
       end
-      render :json => { :object => "storage_pool", :success => true,
-        :alert => "Storage Pools were successfully deleted." }
-    rescue
-      render :json => { :object => "storage_pool", :success => true,
-        :alert => "Error deleting storage pools." }
     end
+    unless failures.empty?
+      raise PartialSuccessError.new("Delete failed for some Storage Pools",
+                                    failures, successes)
+    end
+    render :json => { :object => "storage_pool", :success => true,
+                      :alert => "Storage Pools were successfully deleted." }
   end
 
   def destroy
-    unless @storage_pool.movable?
-      @error = "Cannot delete storage with associated vms"
-      respond_to do |format|
-        format.json { render :json => { :object => "storage_pool",
-            :success => false, :alert => @error } }
-        format.xml { render :template => "errors/simple", :layout => false,
-          :status => :forbidden }
-      end
-      return
-    end
-
-    pool = @storage_pool.hardware_pool
-    if @storage_pool.destroy
-      alert="Storage Pool was successfully deleted."
-      success=true
-    else
-      alert="Failed to delete storage pool."
-      success=false
-    end
+    alert = svc_destroy(params[:id])
     respond_to do |format|
       format.json { render :json => { :object => "storage_pool",
-          :success => success, :alert => alert } }
-      format.xml { head(success ? :ok : :method_not_allowed) }
+          :success => true, :alert => alert } }
+      format.xml { head(:ok) }
     end
   end
 
-  def pre_new
-    @hardware_pool = HardwarePool.find(params[:hardware_pool_id])
-    set_perms(@hardware_pool)
-    authorize_admin
-    @storage_pools = @hardware_pool.storage_volumes
-    @storage_types = StoragePool::STORAGE_TYPE_PICKLIST
+  # FIXME: remove these when service transition is complete. these are here
+  # to keep from running permissions checks and other setup steps twice
+  def tmp_pre_update
   end
-
-  def pre_add
-    pre_new
-  end
-
-  def pre_new2
-    new_params = { :hardware_pool_id => params[:hardware_pool_id]}
-    if (params[:storage_type] == "iSCSI")
-      new_params[:port] = 3260
-    end
-    @storage_pool = StoragePool.factory(params[:storage_type], new_params)
-    set_perms(@storage_pool.hardware_pool)
-    authorize_admin
-  end
-  def pre_create
-    pool = params[:storage_pool]
-    unless type = params[:storage_type]
-      type = pool.delete(:storage_type)
-    end
-    @storage_pool = StoragePool.factory(type, pool)
-    set_perms(@storage_pool.hardware_pool)
-  end
-  def pre_edit
-    @storage_pool = StoragePool.find(params[:id])
-    set_perms(@storage_pool.hardware_pool)
-  end
-  def pre_pool_admin
-    pre_edit
-    authorize_admin
+  def tmp_authorize_admin
   end
 
 end
