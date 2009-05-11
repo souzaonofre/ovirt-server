@@ -43,26 +43,15 @@ class StorageController < ApplicationController
          :redirect_to => { :action => :list }
 
   def list
-    @attach_to_pool=params[:attach_to_pool]
-    if @attach_to_pool
-      pool = HardwarePool.find(@attach_to_pool)
-      set_perms(pool)
-      if authorize_view
-        conditions = "hardware_pool_id is null"
-        conditions += " or hardware_pool_id=#{pool.parent_id}" if pool.parent
-        @storage_pools = StoragePool.find(:all, :conditions => conditions)
-      end
-    else
-      #no permissions here yet -- do we disable raw volume list
-      conditions = []
-      EQ_ATTRIBUTES.each { |attr|
-        conditions << "#{attr} = :#{attr}" if params[attr]
-      }
+    #no permissions here yet -- do we disable raw volume list
+    conditions = []
+    EQ_ATTRIBUTES.each { |attr|
+      conditions << "#{attr} = :#{attr}" if params[attr]
+    }
 
-      @storage_pools = StoragePool.find(:all,
+    @storage_pools = StoragePool.find(:all,
               :conditions => [conditions.join(" and "), params],
               :order => "id")
-    end
   end
 
   def show
