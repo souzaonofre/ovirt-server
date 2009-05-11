@@ -18,78 +18,45 @@
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
 class QuotaController < ApplicationController
+  include QuotaService
   # GETs should be safe (see http://www.w3.org/2001/tag/doc/whenToUseGet.html)
   verify :method => :post, :only => [ :destroy, :create, :update ],
          :redirect_to => { :controller => 'dashboard' }
 
-  def redirect_to_parent
-    redirect_to :controller => @quota.pool.get_controller, :action => 'show', :id => @quota.pool
-  end
-
   def show
-    @quota = Quota.find(params[:id])
-    authorize_view
+    svc_show(params[:id])
   end
 
   def new
+    svc_new(params[:pool_id])
     render :layout => 'popup'    
   end
 
   def create
-    begin
-      @quota.save!
-      render :json => { :object => "quota", :success => true, 
-                        :alert => "Quota was successfully created." }
-    rescue
-      render :json => { :object => "quota", :success => false, 
-                        :errors => @quota.errors.localize_error_messages.to_a}
-    end
+    alert = svc_create(params[:quota])
+    render :json => { :object => "quota", :success => true, :alert => alert }
   end
 
   def edit
+    svc_modify(params[:id])
     render :layout => 'popup'    
   end
 
   def update
-    begin
-      @quota.update_attributes!(params[:quota])
-      render :json => { :object => "quota", :success => true, 
-        :alert => "Quota was successfully updated." }
-    rescue
-      render :json => { :object => "quota", :success => false, 
-                   :errors => @quota.errors.localize_error_messages.to_a,
-                   :alert => $!.to_s}
-    end
+    alert = svc_update(params[:id], params[:quota])
+    render :json => { :object => "quota", :success => true, :alert => alert }
   end
 
   def destroy
-    pool = @quota.pool
-    if @quota.destroy
-      alert="Quota was successfully deleted."
-      success=true
-    else
-      alert="Failed to delete quota."
-      success=false
-    end
-    render :json => { :object => "quota", :success => success, :alert => alert }
+    alert = svc_destroy(params[:id])
+    render :json => { :object => "quota", :success => true, :alert => alert }
   end
 
-  protected
-  def pre_new
-    @quota = Quota.new( { :pool_id => params[:pool_id]})
-    set_perms(@quota.pool)
+  # FIXME: remove these when service transition is complete. these are here
+  # to keep from running permissions checks and other setup steps twice
+  def tmp_pre_update
   end
-  def pre_create
-    @quota = Quota.new(params[:quota])
-    set_perms(@quota.pool)
-  end
-  def pre_show
-    @quota = Quota.find(params[:id])
-    set_perms(@quota.pool)
-  end
-  def pre_edit
-    @quota = Quota.find(params[:id])
-    set_perms(@quota.pool)
+  def tmp_authorize_admin
   end
 
 end
