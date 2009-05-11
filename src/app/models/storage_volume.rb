@@ -166,6 +166,10 @@ class StorageVolume < ActiveRecord::Base
     return_hash
   end
 
+  def permission_obj
+    storage_pool.hardware_pool
+  end
+
   def movable?
      if vms.size > 0 or
          (not lvm_storage_pool.nil? and not lvm_storage_pool.movable?)
