@@ -37,6 +37,15 @@ class VmController < ApplicationController
       end
   end
 
+  def terminal
+    # optionally add rows and columns params to url here
+    # eg ?param=vmname&rows=30&columns=100
+    @vm = Vm.find(params[:id])
+    redirect_to "https://" + params[:host] +
+                "/terminal/" + @vm.description +
+                "?param=" + @vm.description
+  end
+
   def show
     svc_show(params[:id])
     @actions = @vm.get_action_hash(@user)

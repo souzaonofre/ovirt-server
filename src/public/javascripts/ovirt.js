@@ -381,3 +381,16 @@ var VmCreator = {
       VmCreator.clickCheckboxes();
   }
 }
+
+function get_server_from_url()
+{
+   var regexS = "https.*"
+   var regex  = new RegExp(regexS);
+   var results = regex.exec( window.location.href );
+   var start = 8;
+   if(results == null){
+     start = 7;
+   }
+   var end = window.location.href.indexOf('/', 8) - start;
+   return window.location.href.substr(start, end);
+}
