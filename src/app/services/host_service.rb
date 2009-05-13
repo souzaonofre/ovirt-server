@@ -103,8 +103,7 @@ module HostService
     Host.transaction do
       task = HostTask.new({ :user        => get_login_user,
                             :task_target => @host,
-                            :action      => HostTask::ACTION_CLEAR_VMS,
-                            :state       => Task::STATE_QUEUED})
+                            :action      => HostTask::ACTION_CLEAR_VMS})
       task.save!
       @host.is_disabled = true
       @host.save!

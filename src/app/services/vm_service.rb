@@ -82,15 +82,13 @@ module VmService
       vm_provision
       @task = VmTask.new({ :user        => @user,
                            :task_target => @vm,
-                           :action      => VmTask::ACTION_CREATE_VM,
-                           :state       => Task::STATE_QUEUED})
+                           :action      => VmTask::ACTION_CREATE_VM})
       @task.save!
       if start_now
         if @vm.get_action_list.include?(VmTask::ACTION_START_VM)
           @task = VmTask.new({ :user        => @user,
                                :task_target => @vm,
-                               :action      => VmTask::ACTION_START_VM,
-                               :state       => Task::STATE_QUEUED})
+                               :action      => VmTask::ACTION_START_VM})
           @task.save!
           alert += " VM Start action queued."
         else
@@ -139,8 +137,7 @@ module VmService
         if @vm.get_action_list.include?(VmTask::ACTION_START_VM)
           @task = VmTask.new({ :user        => @user,
                                :task_target => @vm,
-                               :action      => VmTask::ACTION_START_VM,
-                               :state       => Task::STATE_QUEUED})
+                               :action      => VmTask::ACTION_START_VM})
           @task.save!
           alert += " VM Start action queued."
         else
@@ -150,13 +147,11 @@ module VmService
         if @vm.get_action_list.include?(VmTask::ACTION_SHUTDOWN_VM)
           @task = VmTask.new({ :user        => @user,
                                :task_target => @vm,
-                               :action      => VmTask::ACTION_SHUTDOWN_VM,
-                               :state       => Task::STATE_QUEUED})
+                               :action      => VmTask::ACTION_SHUTDOWN_VM})
           @task.save!
           @task = VmTask.new({ :user    => @user,
                                :task_target => @vm,
-                               :action  => VmTask::ACTION_START_VM,
-                               :state   => Task::STATE_QUEUED})
+                               :action  => VmTask::ACTION_START_VM})
           @task.save!
           alert += " VM Restart action queued."
         else

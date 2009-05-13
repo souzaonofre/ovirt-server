@@ -98,8 +98,7 @@ module StorageVolumeService
       @storage_volume.save!
       @task = StorageVolumeTask.new({ :user        => @user,
                                       :task_target => @storage_volume,
-                      :action      => StorageVolumeTask::ACTION_CREATE_VOLUME,
-                                      :state       => Task::STATE_QUEUED})
+                      :action      => StorageVolumeTask::ACTION_CREATE_VOLUME})
         @task.save!
     end
     return "Storage Volume was successfully created."
@@ -128,8 +127,7 @@ module StorageVolumeService
       @storage_volume.save!
       @task = StorageVolumeTask.new({ :user        => @user,
                                       :task_target => @storage_volume,
-                       :action      => StorageVolumeTask::ACTION_DELETE_VOLUME,
-                                      :state       => Task::STATE_QUEUED})
+                       :action      => StorageVolumeTask::ACTION_DELETE_VOLUME})
       @task.save!
     end
     return "Storage Volume #{name} deletion was successfully queued."

@@ -141,8 +141,7 @@ module StoragePoolService
   def insert_refresh_task
     @task = StorageTask.new({ :user        => @user,
                               :task_target => @storage_pool,
-                              :action      => StorageTask::ACTION_REFRESH_POOL,
-                              :state       => Task::STATE_QUEUED})
+                              :action      => StorageTask::ACTION_REFRESH_POOL})
     @task.save!
   end
 

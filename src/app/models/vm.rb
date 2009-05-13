@@ -301,8 +301,7 @@ class Vm < ActiveRecord::Base
     task = VmTask.new({ :user        => user,
                         :task_target => self,
                         :action      => action,
-                        :args        => data,
-                        :state       => Task::STATE_QUEUED})
+                        :args        => data})
     task.save!
     return true
   end

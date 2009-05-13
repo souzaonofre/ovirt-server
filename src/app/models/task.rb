@@ -69,6 +69,11 @@ class Task < ActiveRecord::Base
                          ["Canceled", Task::STATE_CANCELED, "break"],
                          ["All States", ""]]
 
+  def initialize(params)
+    super
+    self.state = STATE_QUEUED unless self.state
+  end
+
   def cancel
     self[:state] = STATE_CANCELED
     save!
