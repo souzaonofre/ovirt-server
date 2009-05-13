@@ -1,0 +1,166 @@
+/* ------ General Layout ------ */
+
+.toolbar {text-align:left;}
+
+.current, .toolbar a:hover {
+  border-bottom: 5px solid #5599B8;
+}
+
+.toolbar a {
+  text-decoration: none;
+}
+
+#nav {height:1em;padding-top:1ex;}
+
+#nav a {display: inline-block;}
+
+#head {height:50px;}
+
+#login-box {
+  text-align:right;
+  /*
+    TODO: put this back in with a real logo when we have one.
+        background: url('../../images/logo_cumulus.png') left top no-repeat;
+  */
+}
+
+#content {margin-left:18px;}
+
+#content table{width:100%;}
+
+#content table tr.odd {background:#eef2f2;}
+
+#content table tr:hover {background: #729FCF; color: #FFFFFF;}
+
+#content table th, #content table td {
+  border:1px solid #AAAAAA;
+  padding:0;
+  text-align:left;
+}
+
+#content table th {background-color: #F0F0F0;}
+
+#content table div {
+  padding: 0.4ex;
+}
+
+#content table th a {
+  display: block;
+  text-decoration: none;
+}
+
+.sortup {
+  background: #F0F0F0 url('../../images/Sort_up_11.png') top center no-repeat !important;
+}
+
+.sortdown {
+  background: #F0F0F0 url('../../images/Sort_down_11.png') top center no-repeat !important;
+}
+
+.sortable:hover {background-color: #DDDDDD !important;}
+
+.selected {background: #337ACC !important; color: #FFFFFF;}
+
+.center {text-align:center;}
+
+.pagination {padding-top: 1ex;}
+
+#list-view {}
+
+#detail-view {
+  border-top: 3px solid #AAAAAA;
+  margin-top: 2ex;
+}
+
+#graph {
+  border: 1px solid #AAAAAA;
+  margin-bottom: 1.5ex;
+  height: 15ex;
+}
+
+#submit_for_list {
+  float: right;
+  background: none;
+  border: 0;
+  color: #337ACC;
+  cursor: pointer;
+}
+
+#detail_header {
+  background-color: #F0F0F0;
+  height: 10ex;
+  margin-bottom: 1.5ex;
+}
+
+/* ----- Backgrounds for states ----- */
+.state-container {
+  margin-left:5px;
+  text-indent:10px;
+}
+
+.task-canceled {background:url(../../images/icon-canceled-11px.png) left center no-repeat;}
+.task-failed {background:url(../../images/icon-failed-11px.png) left center no-repeat;}
+.task-finished {background:url(../../images/icon-finished-11px.png) left center no-repeat;}
+.task-paused {background:url(../../images/icon-paused-11px.png) left center no-repeat;}
+.task-queued {background:url(../../images/icon-queued-11px.png) left center no-repeat;}
+.task-running {background:url(../../images/icon-running-11px.png) left center no-repeat;}
+.instance-unreachable {background:url(../../images/icon_unknown_11px.png) left center no-repeat;}
+.instance-stopped {background:url(../../images/icon_stop_11px.png) left center no-repeat;}
+.instance-suspended {background:url(../../images/icon_suspend_11px.png) left center no-repeat;}
+.instance-saved {background:url(../../images/icon_save_11px.png) left center no-repeat;}
+.instance-create_failed {background:url(../../images/icon_failed_11px.png) left center no-repeat;}
+.instance-invalid {background:url(../../images/icon_warning_11px.png) left center no-repeat;}
+.instance-pending {background:url(../../images/icon_queued_11px.png) left center no-repeat;}
+.instance-running {background:url(../../images/icon_start_11px.png) left center no-repeat;}
+.instance-creating {background:url(../../images/icon_startup_11px.png) left center no-repeat;}
+
+
+/*  ----- Toolbar Navigation --------  */
+#toolbar_nav {
+  background: #F0F0F0;
+}
+
+#toolbar_nav img {
+  margin: 0;
+}
+
+#toolbar_nav ul{
+  list-style: none;
+}
+
+#toolbar_nav li {
+  display: inline-block;
+  position: relative;
+  color: #666666;
+  padding: 0 1ex;
+}
+#toolbar_nav li:hover {
+  background: #337ACC;
+  color: #FFFFFF;
+  cursor: pointer;
+}
+
+#toolbar_nav li.current { /* This is not really needed right now, but will be useful when we add filters. */
+  background: #4B95B8;
+}
+
+#toolbar_nav li ul {
+  display: none;
+  position: absolute;
+  top: 1em;
+  left: 0;
+  background: #F0F0F0;
+}
+
+#toolbar_nav li ul li {
+  display: block;
+  white-space: nowrap;
+  padding-right: 1ex;
+}
+
+#toolbar_nav li > ul {
+  top: auto;
+  left: auto;
+}
+
+#toolbar_nav li:hover ul {display: block;}

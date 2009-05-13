@@ -1,0 +1,34 @@
+<%=  hidden_field_tag 'page', params[:page] %>
+<%=  hidden_field_tag 'sort', params[:sort] %>
+<table>
+  <thead>
+    <th scope="col"><div>&nbsp;</div></th>
+    <th scope="col">
+      <div class="sortable <%= sort_td_class_helper "description" %>">
+        <%= sort_link_helper "Instance", "description" %>
+      </div>
+    </th>
+    <th scope="col" class="sortable <%= sort_td_class_helper "provisioning" %>">
+      <div><%= sort_link_helper "Profile", "provisioning" %></div>
+    </th>
+    <th scope="col" class="sortable <%= sort_td_class_helper "state" %>">
+      <div><%= sort_link_helper "State", "state" %></div>
+    </th>
+    <th scope="col"><div>IP Address</div></th>
+    <th scope="col"><div>Load</div></th>
+  </thead>
+  <tbody>
+    <%  @vms.each { |vm| %>
+      <% checked = (params[:ids] != nil && params[:ids].include?(vm.id.to_s)) ? 'checked' : nil %>
+      <tr class="<%= cycle("even", "odd") -%><%if checked%> selected<%end%>" >
+        <td class="center"><div><%= check_box_tag "ids[]", "#{vm.id}", checked -%></div></td>
+        <td><div><%= vm.description %></div></td>
+        <td><div><%= vm.provisioning %></div></td> <!-- TODO: possibly add default output value for this? -->
+        <td><div class="state-container instance-<%= vm.state %>"><%= vm.state.capitalize %></div></td>
+        <td><div>N/A</div></td>
+        <td><div>N/A</div></td>
+      </tr>
+    <%  } %>
+  </tbody>
+</table>
+<%= will_paginate @vms, :sort => params[:sort] %>

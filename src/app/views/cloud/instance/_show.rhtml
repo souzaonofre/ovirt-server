@@ -1,0 +1,47 @@
+  <div>
+    <div id="detail_header">
+      <%= submit_tag 'Show Selected', :id => 'submit_for_list', :name => 'submit_for_list' %>
+      </form>
+      <% if @vm_details %>
+        <h3>
+        <% if @vm_details.size == 1 %>
+          <%=@vm_details[0].description%>
+        <% else %>
+          <%= @vm_details.size %> instances selected
+        <% end %>
+        </h3>
+      <% end %>
+    </div>
+<% if @vm_details %>
+    <div id="graph">Placeholder for graph widget</div>
+    <table>
+      <thead>
+        <th scope="col">
+          <div class="sortable <%= sort_td_class_helper "action", :task_order %>">
+            <%= sort_link_helper "Task", "action", :task_order %>
+          </div>
+        </th>
+        <th scope="col" class="sortable <%= sort_td_class_helper "state", :task_order %>">
+          <div><%= sort_link_helper "State", "state", :task_order %></div>
+        </th>
+        <th scope="col" class="sortable <%= sort_td_class_helper "vms.description", :task_order %>">
+          <div><%= sort_link_helper "Instance", "vms.description", :task_order %></div>
+        </th>
+        <th scope="col" class="sortable <%= sort_td_class_helper "time_started", :task_order %>">
+          <div><%= sort_link_helper "Started", "time_started", :task_order %></div>
+        </th>
+      </thead>
+      <tbody>
+        <%@tasks.each { |task| %>
+          <tr class="<%= cycle("even", "odd") -%>">
+            <td><div><%= task.action %></div></td>
+            <td><div class="state-container task-<%= task.state %>"><%= task.state.capitalize %></div></td>
+            <td><div><%= task.vm.description %></div></td>
+            <td><div><%= task.created_at %> </div></td>
+          </tr>
+        <%  } %>
+      </tbody>
+    </table>
+    <%= will_paginate @tasks, :param_name => 'task_page' %>
+<% end %>
+  </div>
