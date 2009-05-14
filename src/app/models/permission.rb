@@ -50,7 +50,10 @@ class Permission < ActiveRecord::Base
   def grid_id
     id.to_s + "_" + (is_primary? ? "1" : "0")
   end
+  # only update role for primary permissions, return false (and do nothing)
+  # for inherited permissions
   def update_role(new_role)
+    return false unless is_primary?
     self.transaction do
       self.role_id = new_role
       self.save!
@@ -59,6 +62,7 @@ class Permission < ActiveRecord::Base
         permission.save!
       end
     end
+    true
   end
   def save_with_new_children
     self.transaction do
