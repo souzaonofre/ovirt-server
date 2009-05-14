@@ -104,8 +104,8 @@ class VmController < ApplicationController
       raise PartialSuccessError.new("Delete failed for some VMs",
                                     failures, successes)
     end
-    render :json => { :object => "vm", :success => success,
-                      :alert => "VM Pools were successfully deleted." }
+    render :json => { :object => "vm", :success => true,
+                      :alert => "Virtual Machines were successfully deleted." }
   end
 
   def destroy

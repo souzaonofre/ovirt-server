@@ -90,7 +90,7 @@ class ResourcesController < PoolController
       raise PartialSuccessError.new("Delete failed for some VM Pools",
                                     failures, successes)
     end
-    render :json => { :object => "vm_resource_pool", :success => success,
+    render :json => { :object => "vm_resource_pool", :success => true,
                       :alert => "VM Pools were successfully deleted." }
   end
 
