@@ -21,7 +21,7 @@ class TaskController < ApplicationController
   include TaskService
 
   def show
-    svc_show(params[:id]
+    svc_show(params[:id])
   end
 
 end
