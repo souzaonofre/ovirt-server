@@ -123,7 +123,11 @@ class ApplicationController < ActionController::Base
 
   def handle_partial_success_error(error)
     failures_arr = error.failures.collect do |resource, reason|
-      resource.display_name + ": " + reason
+      if resource
+        resource.display_name + ": " + reason
+      else
+        reason
+      end
     end
     @successes = error.successes
     @failures = error.failures
