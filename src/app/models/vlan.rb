@@ -21,4 +21,9 @@ class Vlan < Network
 
   validates_presence_of :number,
     :message => 'A number must be specified.'
+
+  def is_destroyable?
+    bondings.empty?
+  end
+
 end

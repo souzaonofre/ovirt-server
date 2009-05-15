@@ -31,4 +31,16 @@ class Network < ActiveRecord::Base
   validates_presence_of :boot_type_id,
     :message => 'A boot type must be specified.'
 
+  def self.factory(params = {})
+    case params[:type]
+    when 'PhysicalNetwork'
+      return PhysicalNetwork.new(params)
+    when 'Vlan'
+      return Vlan.new(params)
+    else
+      raise ArgumentError("Invalid type #{params[:type]}")
+    end
+  end
+
+
 end

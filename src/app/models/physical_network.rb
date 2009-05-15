@@ -18,4 +18,8 @@
 
 class PhysicalNetwork < Network
    has_many :nics
+
+  def is_destroyable?
+    nics.empty?
+  end
 end
