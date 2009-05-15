@@ -52,15 +52,9 @@ module VmService
   def svc_new(vm_resource_pool_id)
     raise ActionError.new("VM Resource Pool is required.") unless vm_resource_pool_id
 
-    # random MAC
-    mac = [ 0x00, 0x16, 0x3e, rand(0x7f), rand(0xff), rand(0xff) ]
-    # random uuid
-    uuid = ["%02x"*4, "%02x"*2, "%02x"*2, "%02x"*2, "%02x"*6].join("-") %
-      Array.new(16) {|x| rand(0xff) }
-
-    @vm = Vm.new({:vm_resource_pool_id => vm_resource_pool_id,
-                  :vnic_mac_addr => mac.collect {|x| "%02x" % x}.join(":"),
-                  :uuid => uuid })
+    new_vm_hash = {:vm_resource_pool_id => vm_resource_pool_id}
+    default_mac_and_uuid(new_vm_hash)
+    @vm = Vm.new(new_vm_hash)
     authorized!(Privilege::MODIFY, @vm.vm_resource_pool)
   end
 
@@ -71,6 +65,7 @@ module VmService
   # === Required permissions
   # [<tt>Privilege::MODIFY</tt>] for the vm's VmResourcePool
   def svc_create(vm_hash, start_now)
+    default_mac_and_uuid(vm_hash)
     vm_hash[:state] = Vm::STATE_PENDING
     @vm = Vm.new(vm_hash)
     authorized!(Privilege::MODIFY,@vm.vm_resource_pool)
@@ -248,6 +243,18 @@ module VmService
   def lookup(id, priv)
     @vm = Vm.find(id)
     authorized!(priv,@vm.vm_resource_pool)
+  end
+
+  def default_mac_and_uuid(vm_hash)
+    unless vm_hash[:uuid]
+      vm_hash[:uuid] = ["%02x"*4, "%02x"*2, "%02x"*2,
+                        "%02x"*2, "%02x"*6].join("-") %
+        Array.new(16) {|x| rand(0xff) }
+    end
+    unless vm_hash[:vnic_mac_addr]
+      vm_hash[:vnic_mac_addr] = [ 0x00, 0x16, 0x3e, rand(0x7f), rand(0xff),
+                                 rand(0xff) ].collect {|x| "%02x" % x}.join(":")
+    end
   end
 
 end
