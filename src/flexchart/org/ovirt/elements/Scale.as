@@ -26,6 +26,7 @@ package org.ovirt.elements {
   import mx.events.FlexEvent;
   import mx.events.ResizeEvent;
   import mx.controls.Label;
+  import org.ovirt.Constants;
 
   public class Scale extends Box {
 
@@ -44,10 +45,12 @@ package org.ovirt.elements {
       addEventListener(FlexEvent.UPDATE_COMPLETE,myResize);
 
       maxLabel = new Label();
+      maxLabel.setStyle("color",Constants.labelTextColor);
       this.addChild(maxLabel);
       maxLabel.setVisible(true);
 
       midLabel = new Label();
+      midLabel.setStyle("color",Constants.labelTextColor);
       this.addChild(midLabel);
       midLabel.setVisible(true);
 
@@ -67,11 +70,11 @@ package org.ovirt.elements {
 
     private function myResize(event:Event):void {
 
-      this.height = parent.height * .90 * -1;
+      this.height = parent.height * Constants.elementPercentHeight * -1;
       this.y = parent.height;
       graphics.clear();
-      graphics.beginFill(0x000000);
-      graphics.lineStyle(1);
+      graphics.beginFill(Constants.axisColor);
+      graphics.lineStyle(1,Constants.axisColor);
 
       graphics.moveTo(width - 1,-1);
       graphics.lineTo(width - 1,height);

@@ -61,6 +61,5 @@ package org.ovirt.data {
     protected function getUrl(dto:FlexchartDataTransferObject):String {
       return null;
     }
-
   }
 }

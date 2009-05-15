@@ -24,5 +24,22 @@ package org.ovirt {
     public static var height:int = 297;
     public static var barSpacing:int = 2;
     public static var labelHeight:int = 20;
+    public static var summaryBarColor:String = "0x2875c1";
+    public static var summaryBarLitColor:String = "0x369aff";
+    public static var hostsBarColor:String = "0x9fd100";
+    public static var hostsBarLitColor:String = "0xc4ff00";
+    public static var elementPercentHeight:Number = .98;
+    public static var timeFieldWidth:int = 42;
+    public static var labelTextColor:String = "0x666666";
+    public static var axisColor:Number = 0xbbccdd;
+    public static var axisColorString:String = "0xbbccdd";
+
+    public static function setWidth(w:int):void {
+      width = w;
+    }
+    public static function setHeight(h:int):void {
+      height = h;
+    }
+
   }
 }
