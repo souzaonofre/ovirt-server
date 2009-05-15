@@ -135,10 +135,7 @@ class VmController < ApplicationController
   end
 
   def migrate
-    @vm = Vm.find(params[:id])
-    @current_pool_id=@vm.vm_resource_pool.id
-    set_perms(@vm.get_hardware_pool)
-    authorize_admin
+    svc_get_for_migrate(params[:id])
     render :layout => 'popup'
   end
 
@@ -173,12 +170,4 @@ class VmController < ApplicationController
       #if cobbler doesn't respond/is misconfigured/etc just don't add profiles
     end
   end
-
-  # FIXME: remove these when service transition is complete. these are here
-  # to keep from running permissions checks and other setup steps twice
-  def tmp_pre_update
-  end
-  def tmp_authorize_admin
-  end
-
 end

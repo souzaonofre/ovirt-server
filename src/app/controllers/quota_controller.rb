@@ -51,12 +51,4 @@ class QuotaController < ApplicationController
     alert = svc_destroy(params[:id])
     render :json => { :object => "quota", :success => true, :alert => alert }
   end
-
-  # FIXME: remove these when service transition is complete. these are here
-  # to keep from running permissions checks and other setup steps twice
-  def tmp_pre_update
-  end
-  def tmp_authorize_admin
-  end
-
 end

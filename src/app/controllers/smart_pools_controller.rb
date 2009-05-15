@@ -142,7 +142,7 @@ class SmartPoolsController < PoolController
     class_and_ids = class_and_ids_str.split(",").collect do |class_and_id_str|
       class_and_id = class_and_id_str.split("_")
       class_and_id[0] = class_and_id[0].constantize
-      class_and_id[1] = class_and_id[1].to_a
+      class_and_id
     end
 
     alert = svc_add_remove_items(params[:id], nil, :add, class_and_ids)

@@ -96,7 +96,8 @@ module SmartPoolService
       raise PartialSuccessError.new("#{item_action.to_s} #{item_class.table_name.humanize if item_class} only partially successful",
                                     failed_resources, successful_resources)
     end
-    return "#{item_action.to_s} #{item_class.table_name.humanize} successful."
+    return "#{item_action.to_s} #{item_class.nil? ? 'items' :
+                                  item_class.table_name.humanize} successful."
   end
 
 end

@@ -73,7 +73,6 @@ module VmResourcePoolService
   # permission is action-specific as determined by
   #   <tt>VmTask.action_privilege(@action)</tt>
   def svc_vm_actions(pool_id, vm_action, vm_ids)
-    # from before_filter
     @pool = VmResourcePool.find(pool_id)
     @parent = @pool.parent
     @action = vm_action

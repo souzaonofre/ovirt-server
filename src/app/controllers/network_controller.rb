@@ -172,13 +172,4 @@ class NetworkController < ApplicationController
     alert = svc_destroy_bonding(params[:id])
     render :json => {:object => "bonding", :success => true, :alert => alert}
   end
-
-  protected
-  # FIXME: remove these when service transition is complete. these are here
-  # to keep from running permissions checks and other setup steps twice
-  def tmp_pre_update
-  end
-  def tmp_authorize_admin
-  end
-
 end

@@ -56,43 +56,9 @@ class HostController < ApplicationController
   def snapshot_graph
   end
 
-  def addhost
-    # FIXME: This probably should go into PoolService.svc_modify,
-    # so that we have permission checks in only one place
-
-    # Old pre_addhost
-    @pool = Pool.find(params[:hardware_pool_id])
-    @parent = @pool.parent
-    set_perms(@pool)
-    authorize_admin
-    # Old addhost
-    @hardware_pool = Pool.find(params[:hardware_pool_id])
-    render :layout => 'popup'
-  end
-
   def add_to_smart_pool
     @pool = SmartPool.find(params[:smart_pool_id])
     render :layout => 'popup'
-  end
-
-  # FIXME: We implement the standard controller actions, but catch
-  # them in filters and kick out friendly warnings that you can't
-  # perform them on hosts. Tat's overkill - the only way for a user
-  # to get to these actions is with URL surgery or from a bug in the
-  # application, both of which deserve a noisy error
-  def new
-  end
-
-  def create
-  end
-
-  def edit
-  end
-
-  def update
-  end
-
-  def destroy
   end
 
   def host_action
@@ -143,26 +109,5 @@ class HostController < ApplicationController
     bondings = @host.bondings
     render :json => bondings.collect{ |x| {:id => x.id, :name => x.name} }
   end
-
-  private
-  #filter methods
-  def pre_new
-    flash[:notice] = 'Hosts may not be edited via the web UI'
-    redirect_to :controller => 'hardware', :action => 'show', :id => params[:hardware_pool_id]
-  end
-  def pre_create
-    flash[:notice] = 'Hosts may not be edited via the web UI'
-    redirect_to :controller => 'dashboard'
-  end
-  def pre_edit
-    @host = Host.find(params[:id])
-    flash[:notice] = 'Hosts may not be edited via the web UI'
-    redirect_to :action=> 'show', :id => @host
-  end
-  def pre_show
-    @host = Host.find(params[:id])
-    set_perms(@host.hardware_pool)
-  end
-
 
 end

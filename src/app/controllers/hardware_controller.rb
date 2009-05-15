@@ -57,18 +57,13 @@ class HardwareController < PoolController
   end
 
   def json_view_tree
-    json_tree_internal(Privilege::VIEW, :select_hardware_and_vm_pools)
+    json_tree_internal(:svc_show, :select_hardware_and_vm_pools)
   end
   def json_move_tree
-    json_tree_internal(Privilege::MODIFY, :select_hardware_pools)
+    json_tree_internal(:svc_modify, :select_hardware_pools)
   end
-  def json_tree_internal(privilege, filter_method)
-    id = params[:id]
-    if id
-      @pool = Pool.find(id)
-      set_perms(@pool)
-      return unless authorize_action(privilege)
-    end
+  def json_tree_internal(perm_method, filter_method)
+    self.send(perm_method, params[:id]) if params[:id]
     if @pool
       pools = @pool.children
       open_list = []
@@ -228,6 +223,11 @@ class HardwareController < PoolController
   end
 
   def removestorage
+    svc_modify(params[:id])
+    render :layout => 'popup'
+  end
+
+  def addhost
     svc_modify(params[:id])
     render :layout => 'popup'
   end

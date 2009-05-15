@@ -55,7 +55,6 @@ module PoolService
   # === Required permissions
   # [<tt>Privilege::MODIFY</tt>] for the pool
   def svc_update(id, pool_hash)
-    # from before_filter
     svc_modify(id)
     Pool.transaction do
       additional_update_actions(@pool, pool_hash)

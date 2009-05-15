@@ -30,19 +30,6 @@ class ApplicationController < ActionController::Base
   init_gettext "ovirt"
   layout :choose_layout
 
-  # FIXME: once service layer is complete, the following before_filters will be
-  # removed as their functionality has been moved to the service layer
-  # pre_new
-  # pre_create
-  # pre_edit
-  # pre_show
-  # authorize_admin
-  before_filter :pre_new, :only => [:new]
-  before_filter :pre_create, :only => [:create]
-  # the following is to facilitate transition to service layer
-  before_filter :tmp_pre_update, :only => [:edit, :update, :destroy]
-  before_filter :pre_show, :only => [:show]
-  before_filter :tmp_authorize_admin, :only => [:new, :edit, :create, :update, :destroy]
   before_filter :is_logged_in, :get_help_section
 
   # General error handlers, must be in order from least specific
@@ -82,39 +69,6 @@ class ApplicationController < ActionController::Base
 
   protected
   # permissions checking
-
-  def pre_new
-  end
-  def pre_edit
-  end
-
-  # FIXME: remove these when service layer transition is complete
-  def tmp_pre_update
-    pre_edit
-  end
-  def tmp_authorize_admin
-    authorize_admin
-  end
-  def pre_create
-  end
-  def pre_show
-  end
-
-  # These authorize_XXX methods should go away once we're fully converted to
-  # the service layer
-  def authorize_view
-    authorize_action(Privilege::VIEW)
-  end
-  def authorize_user
-    authorize_action(Privilege::VM_CONTROL)
-  end
-  def authorize_admin
-    authorize_action(Privilege::MODIFY)
-  end
-  def authorize_action(privilege)
-    authorized!(privilege)
-    true
-  end
 
   def handle_perm_error(error)
     handle_error(:error => error, :status => :forbidden,

@@ -71,7 +71,6 @@ module VmService
   # === Required permissions
   # [<tt>Privilege::MODIFY</tt>] for the vm's VmResourcePool
   def svc_create(vm_hash, start_now)
-    # from before_filter
     vm_hash[:state] = Vm::STATE_PENDING
     @vm = Vm.new(vm_hash)
     authorized!(Privilege::MODIFY,@vm.vm_resource_pool)
@@ -106,9 +105,7 @@ module VmService
   # === Required permissions
   # [<tt>Privilege::MODIFY</tt>] for the Vm's VmResourcePool
   def svc_update(id, vm_hash, start_now, restart_now)
-    # from before_filter
-    @vm = Vm.find(id)
-    authorized!(Privilege::MODIFY, @vm.vm_resource_pool)
+    lookup(id,Privilege::MODIFY)
 
     #needs restart if certain fields are changed
     # (since those will only take effect the next startup)
@@ -169,9 +166,7 @@ module VmService
   # === Required permissions
   # [<tt>Privilege::MODIFY</tt>] for the Vm's VmResourcePool
   def svc_destroy(id)
-    # from before_filter
-    @vm = Vm.find(id)
-    authorized!(Privilege::MODIFY, @vm.vm_resource_pool)
+    lookup(id,Privilege::MODIFY)
 
     unless @vm.is_destroyable?
       raise ActionError.new("Virtual Machine must be stopped to delete it")
@@ -205,13 +200,24 @@ module VmService
   # === Required permissions
   # [<tt>Privilege::MODIFY</tt>] for the Vm's VmResourcePool
   def svc_cancel_queued_tasks(id)
-    @vm = Vm.find(id)
-    authorized!(Privilege::MODIFY, @vm.vm_resource_pool)
+    lookup(id,Privilege::MODIFY)
 
     Task.transaction do
       @vm.tasks.queued.each { |task| task.cancel}
     end
     return "Queued tasks were successfully canceled."
+  end
+
+  #  Retrieves the Vm with id +id+ and checks permissions for migrate
+  #
+  # === Instance variables
+  # [<tt>@vm</tt>] stores the Vm with +id+
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the Vm's HardwarePool
+  def svc_get_for_migrate(id)
+    @vm = Vm.find(id)
+    @current_pool_id=@vm.vm_resource_pool.id
+    authorized!(Privilege::MODIFY, @vm.get_hardware_pool)
   end
 
   protected

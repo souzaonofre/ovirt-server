@@ -90,7 +90,6 @@ module HardwarePoolService
     svc_move_items_internal(pool_id, StoragePool, storage_pool_ids, target_pool_id)
   end
   def svc_move_items_internal(pool_id, item_class, resource_ids, target_pool_id)
-    # from before_filter
     target_pool = Pool.find(target_pool_id)
     authorized!(Privilege::MODIFY,target_pool)
     lookup(pool_id, Privilege::MODIFY)

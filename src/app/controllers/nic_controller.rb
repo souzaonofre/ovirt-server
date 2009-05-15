@@ -26,32 +26,4 @@ class NicController < ApplicationController
   def show
     svc_show(params[:id])
   end
-
-  def new
-    raise ActionError.new("Network Interfaces may not be edited via the web UI")
-  end
-
-  def create
-    raise ActionError.new("Network Interfaces may not be edited via the web UI")
-  end
-
-  def edit
-    raise ActionError.new("Network Interfaces may not be edited via the web UI")
-  end
-
-  def update
-    raise ActionError.new("Network Interfaces may not be edited via the web UI")
-  end
-
-  def destroy
-    raise ActionError.new("Network Interfaces may not be edited via the web UI")
-  end
-
-  # FIXME: remove these when service transition is complete. these are here
-  # to keep from running permissions checks and other setup steps twice
-  def tmp_pre_update
-  end
-  def tmp_authorize_admin
-  end
-
 end
