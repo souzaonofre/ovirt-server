@@ -59,47 +59,6 @@ class HostControllerTest < Test::Unit::TestCase
     assert assigns(:host).valid?
   end
 
-  def test_new
-    get :new, :hardware_pool_id => pools(:default).id
-
-    assert_response :redirect
-    assert_redirected_to :controller => 'hardware', :action => 'show', :id => pools(:default).id
-  end
-
-  def test_create
-    num_hosts = Host.count
-
-    post :create, :host => {}
-
-    assert_response :redirect
-    assert_redirected_to :controller => 'dashboard'
-
-    assert_equal num_hosts, Host.count
-  end
-
-  def test_edit
-    get :edit, :id => @host_id
-
-    assert_response :redirect
-    assert_redirected_to :action => 'show', :id => @host_id
-
-    assert_not_nil assigns(:host)
-    assert assigns(:host).valid?
-  end
-
-  def test_update
-    post :update, :id => @host_id
-    assert_response :redirect
-    assert_redirected_to :action => 'show', :id => @host_id
-  end
-
-  def test_destroy
-    #FIXME: this controller method does nothing, do we even need it or a test?
-    post :destroy, :id => @host_id
-    assert_response :redirect
-    assert_redirected_to :action => 'show', :id => @host_id
-  end
-
   def test_disable_host
     post :host_action, :action_type => 'disable', :id => @host_id
     assert_response :success

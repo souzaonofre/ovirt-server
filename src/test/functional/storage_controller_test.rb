@@ -67,7 +67,7 @@ class StorageControllerTest < Test::Unit::TestCase
     assert_response :success
     assert_template 'new'
 
-    assert_not_nil assigns(:storage_pools)
+    assert_not_nil assigns(:storage_types)
   end
 
   def test_create_storage_controller
@@ -107,7 +107,7 @@ class StorageControllerTest < Test::Unit::TestCase
     xml_http_request :post, :destroy, :id => storage_pools(:corp_com_dev_nfs_ovirtnfs).id, :format => "json"
     assert_response :success
     json = ActiveSupport::JSON.decode(@response.body)
-    assert_equal 'You do not have permission to create or modify this item ', json['alert']
+    assert_equal 'You have insufficient privileges to perform action.', json['alert']
   end
 
   #FIXME: write the code to make this a real test!

@@ -43,12 +43,4 @@ class NicControllerTest < Test::Unit::TestCase
     assert_not_nil assigns(:nic)
     assert assigns(:nic).valid?
   end
-
-  def test_new
-    get :new, :host_id => pools(:default).id
-
-    assert_response :redirect
-    assert_redirected_to :controller => 'host', :action => 'show', :id => pools(:default).id
-
-  end
 end

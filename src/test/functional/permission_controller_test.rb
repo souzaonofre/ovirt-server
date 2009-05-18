@@ -64,16 +64,17 @@ class PermissionControllerTest < Test::Unit::TestCase
 
   def test_destroy
     post :destroy, :id => @permission_id
-    assert_response :redirect
-    assert_redirected_to :controller => 'hardware', :action => 'show', :id => pools(:default).id
-    assert_equal "<strong>ovirtadmin</strong> permissions were revoked successfully" , flash[:notice]
+
+    assert_response :success
+    json = ActiveSupport::JSON.decode(@response.body)
+    assert_equal "Permission record was successfully deleted.", json['alert']
   end
 
   def test_no_perms_to_destroy
-    post :destroy, :id => permissions(:ovirtadmin_corp_com_qa_pool).id
-    assert_response :redirect
-    assert_redirected_to :controller => 'hardware', :action => 'show', :id => pools(:corp_com_qa).id
-    assert_equal "You do not have permission to delete this permission record" , flash[:notice]
+    post :destroy, :id => permissions(:ovirtadmin_corp_com_qa_pool).id, :format => "json"
+    assert_response :success
+    json = ActiveSupport::JSON.decode(@response.body)
+    assert_equal 'You have insufficient privileges to perform action.', json['alert']
   end
 
   #FIXME: write the code to make this a real test!
