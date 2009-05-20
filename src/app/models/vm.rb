@@ -51,7 +51,7 @@ class Vm < ActiveRecord::Base
   validates_format_of :uuid,
      :with => %r([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})
 
-  FORWARD_VNC_PORT_START = 5900
+  FORWARD_VNC_PORT_START = 5901
 
   validates_numericality_of :forward_vnc_port,
     :message => 'must be >= ' + FORWARD_VNC_PORT_START.to_s,
