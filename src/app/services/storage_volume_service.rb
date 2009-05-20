@@ -48,37 +48,45 @@ module StorageVolumeService
   # === Instance variables
   # [<tt>@storage_volume</tt>] loads a new StorageVolume object into memory
   # [<tt>@storage_pool</tt>] Storage pool containing <tt>@storage_volume</tt>
-  # [<tt>@source_volume</tt>] Storage volume containing the LVM
-  #                           <tt>@storage_pool</tt> if storage type is LVM
   # === Required permissions
   # [<tt>Privilege::MODIFY</tt>] for the storage volume's HardwarePool
-  def svc_new(storage_pool_id, source_volume_id)
-    if storage_pool_id
-      @storage_pool = StoragePool.find(storage_pool_id)
-      unless @storage_pool.user_subdividable
-        raise ActionError.new("Unsupported action for " +
-                              "#{@storage_pool.get_type_label} volumes.")
-      end
-    else
-      @source_volume = StorageVolume.find(source_volume_id)
-      @storage_pool = @source_volume.storage_pool
-      unless @source_volume.supports_lvm_subdivision
-        raise ActionError.new("LVM is not supported for this storage volume")
-      end
+  def svc_new(storage_pool_id)
+    @storage_pool = StoragePool.find(storage_pool_id)
+    unless @storage_pool.user_subdividable
+      raise ActionError.new("Unsupported action for " +
+                            "#{@storage_pool.get_type_label} volumes.")
     end
     authorized!(Privilege::MODIFY,@storage_pool.hardware_pool)
+    @storage_volume = StorageVolume.factory(@storage_pool.get_type_label,
+                                            { :storage_pool_id =>
+                                              @storage_pool.id})
+  end
 
-    if source_volume_id
-      @storage_pool = @source_volume.lvm_storage_pool
-      unless @storage_pool
-        # FIXME: what should we do about VG/LV names?
-        # for now auto-create VG name as ovirt_vg_#{@source_volume.id}
-        new_params = { :vg_name => "ovirt_vg_#{@source_volume.id}",
-          :hardware_pool_id => @source_volume.storage_pool.hardware_pool_id}
-        @storage_pool = StoragePool.factory(StoragePool::LVM, new_params)
-        @storage_pool.source_volumes << @source_volume
-        @storage_pool.save!
-      end
+  # Load a new LvmStorageVolume for creating
+  #
+  # === Instance variables
+  # [<tt>@storage_volume</tt>] loads a new StorageVolume object into memory
+  # [<tt>@storage_pool</tt>] Storage pool containing <tt>@storage_volume</tt>
+  # [<tt>@source_volume</tt>] Storage volume containing the LVM
+  #                           <tt>@storage_pool</tt>
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] for the storage volume's HardwarePool
+  def svc_new_lv(source_volume_id)
+    @source_volume = StorageVolume.find(source_volume_id)
+    unless @source_volume.supports_lvm_subdivision
+      raise ActionError.new("LVM is not supported for this storage volume")
+    end
+    authorized!(Privilege::MODIFY,@source_volume.storage_pool.hardware_pool)
+
+    @storage_pool = @source_volume.lvm_storage_pool
+    unless @storage_pool
+      # FIXME: what should we do about VG/LV names?
+      # for now auto-create VG name as ovirt_vg_#{@source_volume.id}
+      new_params = { :vg_name => "ovirt_vg_#{@source_volume.id}",
+        :hardware_pool_id => @source_volume.storage_pool.hardware_pool_id}
+      @storage_pool = StoragePool.factory(StoragePool::LVM, new_params)
+      @storage_pool.source_volumes << @source_volume
+      @storage_pool.save!
     end
     @storage_volume = StorageVolume.factory(@storage_pool.get_type_label,
                                             { :storage_pool_id =>

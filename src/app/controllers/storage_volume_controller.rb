@@ -21,7 +21,11 @@ class StorageVolumeController < ApplicationController
   include StorageVolumeService
 
   def new
-    svc_new(params[:storage_pool_id], params[:source_volume_id])
+    if params[:storage_pool_id]
+      svc_new(params[:storage_pool_id])
+    else
+      svc_new_lv(params[:source_volume_id])
+    end
     @return_to_workflow = params[:return_to_workflow] || false
     render :layout => 'popup'
   end
