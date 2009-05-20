@@ -214,10 +214,11 @@ class OvirtAgent < Qmf::AgentHandler
   # This method is called when a console does a search for a specific
   # object.  It should use query_response() to return the matching objects
   # and then query_complete() when done.
-  def get_query(context, query)
+  def get_query(context, query, user_id)
 
     begin
       puts "Query: context=#{context} class=#{query.class_name} object_id=#{query.object_id}"
+      puts "User ID: #{user_id}"
 
       if query.object_id != nil
         object_num_low = query.object_id.object_num_low
@@ -269,12 +270,13 @@ class OvirtAgent < Qmf::AgentHandler
 
 
   # This is called when an incoming method is requested of an object.
-  def method_call(context, name, object_id, args)
+  def method_call(context, name, object_id, args, user_id)
     begin
       object_num_low = object_id.object_num_low
       object_num_high = object_id.object_num_high
 
       puts "Method: context=#{context} method=#{name} object_num=#{object_num_low},#{object_num_high} args=#{args}"
+      puts "User ID: #{user_id}"
       cls = @table_id_map[object_num_high]
       cls.implement_method_call(context, name, object_num_low, args)
     rescue Exception => ex
