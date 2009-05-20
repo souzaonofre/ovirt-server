@@ -5,7 +5,11 @@ $: << File.join(File.dirname(__FILE__), "./dutils")
 require "rubygems"
 require "qpid"
 
-srv = "amqp://mc.mains.net"
+if ARGV.size == 1
+  srv = ARGV[0]
+else
+  srv = "amqp://localhost"
+end
 
 puts "Connecting to #{srv}.."
 s = Qpid::Qmf::Session.new()
@@ -36,5 +40,3 @@ while true:
     puts '----------------------------'
     sleep(5)
 end
-
-
