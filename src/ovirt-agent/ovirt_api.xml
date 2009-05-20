@@ -1,0 +1,218 @@
+<schema package="org.ovirt.ovirt">
+  <!-- This is an object model of the Ovirt API for QMF.
+       access: Access mode: RC = Read/Create, RO = read only (settable only by agent implementing class), RW = read/write.
+       dir: Direction of argument: I = in, O = out, IO = in/out.
+  -->
+
+  <class name="Ovirt">
+    <property name="version" type="sstr" access="RC" desc="Ovirt version string"/>
+
+    <method name="create_vm_def" desc="Define a new virtual machine definition.">
+      <arg name="description" dir="I" type="sstr" desc="Description of new VM definition."/>
+      <!-- What is the use case for being able to set the UUID? -->
+      <arg name="num_cpus" dir="I" type="uint32" desc="Number of virtual CPUs to allocate."/>
+      <arg name="memory" dir="I" type="uint64" desc="Amount of memory to allocate in KB."/>
+      <arg name="UUID" dir="I" type="sstr" desc="UUID of VM.  Will be assigned if left empty."/>
+      <arg name="vnic_mac" dir="I" type="sstr" desc="MAC address of virtual NIC.  Will be assigned if left empty."/>
+
+      <arg name="vm" dir="O" type="objId" references="VmDef" desc="Newly created domain object"/>
+    </method>
+
+    <method name="create_nfs_pool_def" desc="Define new nfs storage pool definition">
+      <arg name="name" type="sstr" desc="Description/name of the pool."/>
+      <arg name="server_ip" type="sstr" desc="IP Address of NFS server."/>
+      <arg name="export_path" type="lstr" desc="Path of export on NFS server."/>
+
+      <arg name="pool" dir="O" type="objId" references="PoolDef" desc="Newly created pool object"/>
+    </method>
+
+    <method name="create_iscsi_pool_def" desc="Define new iscsi storage pool definition">
+      <arg name="name" type="sstr" desc="Description/name of the pool."/>
+      <arg name="server_ip" type="sstr" desc="IP Address of NFS server."/>
+      <arg name="server_port" type="uint32" desc="iSCSI server port."/>
+      <arg name="target" type="lstr" desc="iSCSI target."/>
+
+      <arg name="pool" dir="O" type="objId" references="PoolDef" desc="Newly created pool object"/>
+    </method>
+  </class>
+
+  <class name="VmDef">
+    <property name="description" type="sstr" access="RW" desc="VM description/name"/>
+    <property name="num_vcpus_allocated" type="uint32" access="RW" desc="Number of virtual CPUs to allocate to VM"/>
+    <property name="memory_allocated" type="uint64" access="RW" desc="Amount of memory to allocate for VM in KB."/>
+    <property name="mac" type="sstr" access="RC" desc="VM virtual network card MAC Address"/>
+    <property name="uuid" type="sstr" access="RC" desc="VM UUID"/>
+    <property name="provisioning" type="lstr" access="RW" desc="Cobbler profile or image to use on boot, or empty."/>
+
+    <property name="needs_restart" type="bool" access="R" desc="Flag specifies if changes to object properties require that this VM be restarted for changes to take effect."/>
+
+    <property name="state" type="sstr" access="R" desc="Current state of the VM instance, or can be queried directly from instance."/>
+
+    <property name="node" type="objId" references="NodeDef" access="R" desc="Object reference pointing to host this VM is running on, if it is running."/>
+    <property name="instance" type="objId" references="Domain" access="R" desc="Object reference pointing to the libvirt 'domain' object."/>
+
+    <method name="delete" desc="Delete this VM definition.">
+    </method>
+
+    <method name="migrate" desc="Queue a migration event for this VMs instance"/>
+      <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
+    </method>
+
+    <method name="start" desc="Queue a start event for this VMs instance"/>
+      <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
+    </method>
+
+    <method name="shutdown" desc="Queue a shutdown event for this VMs instance"/>
+      <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
+    </method>
+
+    <method name="poweroff" desc="Queue a poweroff event for this VMs instance"/>
+      <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
+    </method>
+
+    <method name="suspend" desc="Queue a suspend event for this VMs instance"/>
+      <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
+    </method>
+
+    <method name="resume" desc="Queue a resume event for this VMs instance"/>
+      <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
+    </method>
+  </class>
+
+  <!-- Should this be a Host or Node def?  Should get our terms straight. -->
+  <class name="NodeDef">
+    <property name="name" type="sstr" access="RC" desc="Host name"/>
+    <property name="uuid" type="sstr" access="RC" desc="UUID of this node definition"/>
+    <property name="cpus" type="uint32" access="RC" desc="Number of CPUs on this node."/>
+    <property name="cpu_speed" type="sstr" access="RC" desc="Speed of CPUs on this node."/>
+    <property name="architecture" type="sstr" access="RC" desc="Architecture of this node."/>
+    <property name="memory" type="uint64" access="RC" desc="Amount of RAM on this machine in KB."/>
+    <property name="available" type="bool" access="R" desc="See if node is currently available for use."/>
+
+    <property name="enabled" type="bool" access="RW" desc="Set enabled/disabled for this host."/>
+
+    <property name="instance" type="objId" references="Node" access="R" desc="Object reference pointing to the libvirt 'Node' object."/>
+
+    <method name="delete" desc="Delete this host from the records.">
+    </method>
+  </class>
+
+  <class name="PoolDef">
+    <!-- FIXME: 'name' is not part of the model schema at this time. -->
+    <property name="name" type="sstr" access="RC" desc="Name of pool."/>
+    <!-- FIXME: 'uuid' is not part of the model schema at this time.
+         However, I actually think both of these should go in the database
+         if that will work as it allows you to track libvirt pools to pool
+         definitions. -->
+    <property name="uuid" type="sstr" access="RC" desc="Pool UUID."/>
+
+    <property name="impl" type="objId" access="RC" desc="References an NFSPoolImpl or ISCSIPoolImpl."/>
+    <property name="type" type="sstr" access="RC" desc="The type of storage pool, currently 'nfs' or 'iscsi'."/>
+
+    <property name="state" type="sstr" access="R" desc="State of storage pool."/>
+
+    <method name="rescan" desc="Rescan the pool using a valid node to determine volume information.">
+      <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
+    </method>
+
+    <!-- FIXME: This is different from the WUI in that it just deletes the info from the database.  However I think it is
+         correct to have a task to do this. -->
+    <method name="delete" desc="Delete this pool.  A new task is issued to ensure there are no references to this Pool in use.">
+      <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
+    </method>
+  </class>
+
+  <class name="NFSPoolImpl">
+    <property name="server_ip" type="sstr" access="RC" desc="IP Address of NFS server."/>
+    <property name="export_path" type="lstr" access="RC" desc="Path of export on NFS server."/>
+
+    <property name="pool" references='PoolDev' type="objId" access="RC" desc="References parent PoolDef object."/>
+
+    <method name="create_volume" desc="Create a new NFS volume.">
+      <arg name="filename" type="lstr" dir="I" desc="File name to back volume."/>
+      <arg name="size" type="uint64" dir="I" desc="Size of new volume in KB."/>
+
+      <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
+      <arg name="volume" dir="O" type="objId" references="VolumeDef" desc="New Volume object.  Note that the state will be pending_setup on creation and the task must complete before it is ready for use."/>
+    </method>
+  </class>
+
+  <class name="ISCSIPoolImpl">
+    <property name="server_ip" type="sstr" access="RC" desc="IP Address of iSCSI server."/>
+    <property name="server_port" type="uint32" access="RC" desc="Port on iSCSI server."/>
+    <property name="target" type="lstr" access="RC" desc="iSCSI target."/>
+
+    <property name="pool" references='PoolDev' type="objId" access="RC" desc="References parent PoolDef object."/>
+
+    <method name="create_volume" desc="Create a new iSCSI volume.">
+      <arg name="name" type="lstr" dir="I" desc="Name of volume."/>
+      <arg name="size" type="uint64" dir="I" desc="Size of new volume in KB."/>
+
+      <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
+      <arg name="volume" dir="O" type="objId" references="VolumeDef" desc="New Volume object.  Note that the state will be pending_setup on creation and the task must complete before it is ready for use."/>
+    </method>
+  </class>
+
+  <class name="VolumeDef">
+    <!-- FIXME: name and key are also not in the WUI model but should be. -->
+    <property name="name" type="lstr" access="RC" desc="The name of this volume, unique to this pool."/>
+    <property name="key" type="lstr" access="RC" desc="The unique identifier of this volume."/>
+
+    <property name="impl" type="objId" access="RC" desc="References an NFSVolumeImpl or ISCSIVolumeImpl."/>
+    <property name="type" type="sstr" access="RC" desc="The type of volume, currently 'nfs' or 'iscsi'."/>
+    <property name="vm" type="objId" references="VmDef" access="RW" desc="Attach this volume to a specific VM."/>
+
+    <method name="delete" desc="Delete this volume.  A new task is issued to ensure there are no references to this volume in use.">
+      <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
+    </method>
+  </class>
+
+  <class name="NFSVolumeImpl">
+    <property name="filename" type="lstr" access="RC" desc="File name on NFS mount"/>
+    <property name="path" type="lstr" access="RC" desc="Full path of NFS file."/>
+    <property name="state" type="sstr" access="R" desc="State of NFS volume."/>
+
+    <property name="volume" type="objId" references="VolumeDef" access="RC" desc="The volume this implementation belongs to."/>
+    <property name="pool" type="objId" references="PoolDef" access="RC" desc="The pool this volume implementation belongs to."/>
+  </class>
+
+  <class name="ISCSIVolumeImpl">
+    <!-- FIXME Have to figure these out better -->
+    <property name="name" type="lstr" access="RC" desc="iSCSI volume name."/>
+
+    <property name="volume" type="objId" references="VolumeDef" access="RC" desc="The volume this implementation belongs to."/>
+    <property name="pool" type="objId" references="PoolDef" access="RC" desc="The pool this volume implementation belongs to."/>
+  </class>
+
+
+  <class name="Task">
+    <property name="task_id" type="uint64" access="RC" desc="ID of this task"/>
+    <property name="description" type="sstr" access="RC" desc="The type of task this is implementing"/>
+    <property name="state" type="sstr" access="R" desc="The state of this task, 'queued', 'running', 'completed', 'failed'."/>
+    <property name="completed" type="bool" access="R" desc="Convenient way to check if task is completed."/>
+    <property name="error" type="bool" access="R" desc="Convenient way to check if there was an error."/>
+    <property name="message" type="lstr" access="R" desc="Information about task processing; failure information etc."/>
+
+    <property name="impl" type="objId" access="RC" desc="References the task specific implementation dependent on type."/>
+
+    <method name="cancel" desc="Cancel this task."/>
+    <method name="wait_for_completion" desc="Method that just sits and waits for this task to complete.  Can also be used with an async call to recieve an event when it is completed."/>
+  </class>
+
+  <class name="VmTaskImpl">
+    <property name="task" type="objId" references="Task" access="RC" desc="Reference to the task this implementation is for."/>
+    <property name="vm_def" type="objId" references="VmDef" access="RC" desc="Reference to VM this action is being performed for."/>
+  </class>
+
+  <class name="PoolTaskImpl">
+    <property name="task" type="objId" references="Task" access="RC" desc="Reference to the task this implementation is for."/>
+    <property name="pool_def" type="objId" references="PoolDef" access="RC" desc="Reference to pool definition this action is being performed for."/>
+  </class>
+
+  <class name="VolumeTaskImpl">
+    <property name="task" type="objId" references="Task" access="RC" desc="Reference to the task this implementation is for."/>
+    <property name="volume_def" type="objId" access="R" desc="Reference to volume definition this action is being performed for."/>
+  </class>
+
+</schema>
+
