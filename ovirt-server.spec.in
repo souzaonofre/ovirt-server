@@ -104,6 +104,7 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-mongrel-rails.sysconf %{buildroot}%{_sysconfdir}/sysconfig/ovirt-mongrel-rails
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-rails.sysconf %{buildroot}%{_sysconfdir}/sysconfig/ovirt-rails
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-taskomatic %{buildroot}%{_initrddir}
+%{__install} -Dp -m0755 %{pbuild}/conf/ovirt-vnc-proxy %{buildroot}%{_initrddir}
 
 # copy over all of the src directory...
 %{__cp} -a %{pbuild}/src/* %{buildroot}%{app_root}
@@ -180,6 +181,7 @@ fi
 %daemon_chkconfig_post -d ovirt-host-collect
 %daemon_chkconfig_post -d ovirt-mongrel-rails
 %daemon_chkconfig_post -d ovirt-taskomatic
+%daemon_chkconfig_post -d ovirt-vnc-proxy
 
 %preun
 if [ "$1" = 0 ] ; then
@@ -188,11 +190,13 @@ if [ "$1" = 0 ] ; then
   /sbin/service ovirt-host-collect stop > /dev/null 2>&1
   /sbin/service ovirt-mongrel-rails stop > /dev/null 2>&1
   /sbin/service ovirt-taskomatic stop > /dev/null 2>&1
+  /sbin/service ovirt-vnc-proxy stop > /dev/null 2>&1
   /sbin/chkconfig --del ovirt-host-browser
   /sbin/chkconfig --del ovirt-db-omatic
   /sbin/chkconfig --del ovirt-host-collect
   /sbin/chkconfig --del ovirt-mongrel-rails
   /sbin/chkconfig --del ovirt-taskomatic
+  /sbin/chkconfig --del ovirt-vnc-proxy
 fi
 
 %files
@@ -206,6 +210,7 @@ fi
 %{_initrddir}/ovirt-host-collect
 %{_initrddir}/ovirt-mongrel-rails
 %{_initrddir}/ovirt-taskomatic
+%{_initrddir}/ovirt-vnc-proxy
 %{_sysconfdir}/cron.d/%{name}
 %config(noreplace) %{_sysconfdir}/sysconfig/ovirt-mongrel-rails
 %config(noreplace) %{_sysconfdir}/sysconfig/ovirt-rails
