@@ -51,7 +51,7 @@ class PermissionController < ApplicationController
         successes << @permission
       # PermissionError and ActionError are expected
       rescue Exception => ex
-        failures[@permission.nil? permission_id : @permission] = ex.message
+        failures[@permission.nil? ? permission_id : @permission] = ex.message
       end
     end
     unless failures.empty?
@@ -72,9 +72,7 @@ class PermissionController < ApplicationController
         successes << @permission
       # PermissionError expected
       rescue Exception => ex
-        failures[@permission.nil? permission_id : @permission] = ex.message
-      rescue Exception => ex
-        failures[@permission] = ex.message
+        failures[@permission.nil? ? permission_id : @permission] = ex.message
       end
     end
     unless failures.empty?

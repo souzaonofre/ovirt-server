@@ -135,10 +135,10 @@ class StorageController < ApplicationController
       begin
         svc_destroy(storage_pool_id)
         successes << @storage_pool
-      rescue PermissionError => perm_error
-        failures[@storage_pool] = perm_error.message
+      # PermissionError expected
       rescue Exception => ex
-        failures[@storage_pool] = ex.message
+        failures[@storage_pool.nil? ? storage_pool_id :
+                 @storage_pool] = ex.message
       end
     end
     unless failures.empty?

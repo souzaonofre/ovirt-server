@@ -94,10 +94,9 @@ class VmController < ApplicationController
       begin
         svc_destroy(vm_id)
         successes << @vm
-      rescue PermissionError => perm_error
-        failures[@vm] = perm_error.message
+      # PermissionError expected
       rescue Exception => ex
-        failures[@vm] = ex.message
+        failures[@vm.nil? ? vm_id : @vm] = ex.message
       end
     end
     unless failures.empty?

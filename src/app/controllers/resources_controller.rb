@@ -80,10 +80,9 @@ class ResourcesController < PoolController
       begin
         svc_destroy(pool_id)
         successes << @pool
-      rescue PermissionError => perm_error
-        failures[@pool] = perm_error.message
+      # PermissionError expected
       rescue Exception => ex
-        failures[@pool] = ex.message
+        failures[@pool.nil? ? pool_id : @pool] = ex.message
       end
     end
     unless failures.empty?

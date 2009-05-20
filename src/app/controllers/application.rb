@@ -77,7 +77,7 @@ class ApplicationController < ActionController::Base
 
   def handle_partial_success_error(error)
     failures_arr = error.failures.collect do |resource, reason|
-      if resource
+      if resource.respond_to?(:display_name)
         resource.display_name + ": " + reason
       else
         reason

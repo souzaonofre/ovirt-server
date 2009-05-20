@@ -81,7 +81,7 @@ class NetworkController < ApplicationController
         successes << @network
       # PermissionError and ActionError are expected
       rescue Exception => ex
-        failures[@network.nil? network_id : @network] = ex.message
+        failures[@network.nil? ? network_id : @network] = ex.message
       end
     end
     unless failures.empty?
