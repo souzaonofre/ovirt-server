@@ -173,7 +173,7 @@ end
 
 class OvirtAgent < Qmf::AgentHandler
 
-  def initialize
+  def initialize(host)
 
     ensure_credentials
 
@@ -194,7 +194,8 @@ class OvirtAgent < Qmf::AgentHandler
     #@settings.port = port
     #@settings.mechanism = 'GSSAPI'
 
-    @settings.host = 'mc.mains.net'
+    @settings.host = host
+    @logger.info "Connect to broker on #{@settings.host}"
 
     @connection = Qmf::Connection.new(@settings)
     @agent = Qmf::Agent.new(self)
@@ -309,8 +310,10 @@ class OvirtAgent < Qmf::AgentHandler
   end
 end
 
-
-ovirt_agent = OvirtAgent.new
+if ARGV.size == 1
+  broker = ARGV[0]
+else
+  broker = "localhost"
+end
+ovirt_agent = OvirtAgent.new(broker)
 ovirt_agent.mainloop
-
-
