@@ -127,18 +127,37 @@
 }
 
 /***  the no grid items block ***/
-.no-grid-items{
+.no-grid-items {
     padding: 45px;
     margin: 50px;
     height: 150px;
     border: 1px solid #c9e7f7;
     vertical-align: middle;
 }
-.no-grid-items-text {
+
+.no-grid-items img{
+	float:left;
+}
+
+.no-grid-items-text{
   float: left;
-  padding-top: 35px;
   padding-left: 20px;
 }
+
+.no-grid-items-text h2{
+	margin: 0.8em 0 0;
+	font-family: Arial, sans-serif;
+}
+
+.no-grid-items-text p{
+	color:#999999;
+}
+
+.no-grid-items-button{
+	margin: 2.5em 0 0 0;
+}
+
+
 
 /***************************
  *      Graphing Style

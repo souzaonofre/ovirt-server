@@ -62,12 +62,11 @@
 <% else %>
    <div class="data_section">
        <div class="no-grid-items">
-          <%= image_tag 'no-grid-items.png', :style => 'float: left;' %>
-
+          <img src="images/jumbo_pools.png" alt="pools" width="145" height="145">
           <div class="no-grid-items-text">
-            No pools found in this pool. <br/><br/>
-            <%= image_tag "icon_add_pools.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;
-            <a href="<%= url_for :controller => 'smart_pools', :action => 'add_pool_dialog', :id => @pool %>" rel="facebox[.bolder]">Add first pool to this smart pool</a>
+            <h2>There are no pools in this pool.</h2>
+            <p>Pools associated with this smart pool will be listed here.</p>
+            <div class="no-grid-items-button"><div class="button_left_blue" /><div class="button_middle_blue"><a href="<%= url_for :controller => 'smart_pools', :action => 'add_pool_dialog', :id => @pool %>" rel="facebox[.bolder]"><img src="images/icon_plusbutton.png" alt="Add" style="margin: 5px 2px 0 -5px">Add Pools</a></div><div class="button_right_blue" /></div>
           </div>
        </div>
    </div>

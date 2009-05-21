@@ -109,14 +109,11 @@
 <% else %>
    <div class="data_section">
        <div class="no-grid-items">
-          <%= image_tag 'no-grid-items.png', :style => 'float: left;' %>
-
+          <img src="images/jumbo_hosts.png" alt="hosts" width="145" height="145">
           <div class="no-grid-items-text">
-            No hosts found in this pool. <br/><br/>
-            <%if @can_modify -%>
-              <%= image_tag "icon_add_host.png", :style=>"vertical-align:middle;" %>&nbsp;&nbsp;
-              <a href="<%= url_for :controller => 'hardware', :action => 'addhost', :id => @pool %>" rel="facebox[.bolder]">Add first host to this hardware pool</a>
-            <% end -%>
+            <h2>There are no hosts in this pool.</h2>
+            <p>Hosts belonging to this hardware pool will be listed here.</p>
+            <div class="no-grid-items-button"><div class="button_left_blue" /><div class="button_middle_blue"><a href="<%= url_for :controller => 'hardware', :action => 'addhost', :id => @pool %>" rel="facebox[.bolder]"><img src="images/icon_plusbutton.png" alt="Add" style="margin: 5px 2px 0 -5px">Add Hosts</a></div><div class="button_right_blue" /></div>
           </div>
        </div>
    </div>
