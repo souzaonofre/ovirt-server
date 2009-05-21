@@ -43,7 +43,7 @@ class VmController < ApplicationController
     @vm = Vm.find(params[:id])
     redirect_to "https://" + params[:host] +
                 "/terminal/" + @vm.description +
-                "?param=" + @vm.description
+                "/?param=" + @vm.description
   end
 
   def show
