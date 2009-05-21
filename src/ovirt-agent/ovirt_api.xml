@@ -54,27 +54,27 @@
     <method name="delete" desc="Delete this VM definition.">
     </method>
 
-    <method name="migrate" desc="Queue a migration event for this VMs instance"/>
+    <method name="migrate" desc="Queue a migration event for this VMs instance">
       <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
     </method>
 
-    <method name="start" desc="Queue a start event for this VMs instance"/>
+    <method name="start" desc="Queue a start event for this VMs instance">
       <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
     </method>
 
-    <method name="shutdown" desc="Queue a shutdown event for this VMs instance"/>
+    <method name="shutdown" desc="Queue a shutdown event for this VMs instance">
       <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
     </method>
 
-    <method name="poweroff" desc="Queue a poweroff event for this VMs instance"/>
+    <method name="poweroff" desc="Queue a poweroff event for this VMs instance">
       <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
     </method>
 
-    <method name="suspend" desc="Queue a suspend event for this VMs instance"/>
+    <method name="suspend" desc="Queue a suspend event for this VMs instance">
       <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
     </method>
 
-    <method name="resume" desc="Queue a resume event for this VMs instance"/>
+    <method name="resume" desc="Queue a resume event for this VMs instance">
       <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
     </method>
   </class>
@@ -215,4 +215,3 @@
   </class>
 
 </schema>
-
