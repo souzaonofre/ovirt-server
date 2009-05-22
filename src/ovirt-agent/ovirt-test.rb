@@ -15,6 +15,9 @@ puts "Connecting to #{srv}.."
 s = Qpid::Qmf::Session.new()
 b = s.add_broker(srv)
 
+# This segfaults in F10 (ruby-1.8.6.287-2.fc10.x86_64)
+# p s.objects(:class => "Ovirt")
+
 ovirt = s.object(:class => "Ovirt")
 puts "id is #{ovirt.object_id}"
 raise "ACK! NO ovirt class!" unless ovirt
