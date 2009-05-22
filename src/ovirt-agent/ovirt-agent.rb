@@ -327,8 +327,8 @@ class OvirtAgent < Qmf::AgentHandler
   end
 
   def assert_controller_responds(controller, method)
-    unless controller.respond_to?(name)
-      raise ArgumentError, "unknown method #{name} for #{controller.class.name}"
+    unless controller.respond_to?(method)
+      raise ArgumentError, "unknown method #{method} for #{controller.class.name}"
     end
   end
 
