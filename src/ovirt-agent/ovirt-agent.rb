@@ -270,8 +270,11 @@ class OvirtAgent < Qmf::AgentHandler
       else
         # Class query
         controller_class = @controller_classes.values.find { |klass|
-          klass.name == query.class_name
+          klass.schema_class.name == query.class_name
         }
+        unless controller_class
+          raise "Unknown class #{query.class_name}"
+        end
         controller = controller_instance(context, controller_class)
         assert_controller_responds(controller, :list)
         if objs = controller.list
