@@ -219,6 +219,7 @@ class OvirtAgent < Qmf::AgentHandler
 
     @connection = Qmf::Connection.new(@settings)
     @agent = Qmf::Agent.new(self)
+    @agent.set_connection(@connection)
 
     @schema_classes = schema_parse(SCHEMA_XML)
 
@@ -343,7 +344,6 @@ class OvirtAgent < Qmf::AgentHandler
   def mainloop
     Thread.abort_on_exception = true
 
-    @agent.set_connection(@connection)
     @controller_classes.values.each do |klass|
       klass.setup(@agent) if klass.respond_to?(:setup)
     end
