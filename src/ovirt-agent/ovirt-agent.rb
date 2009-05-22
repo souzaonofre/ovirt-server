@@ -119,14 +119,12 @@ class OvirtController < AgentController
   end
 
   def list
-    puts "query for 'Ovirt' object"
     [ @@instance ]
   end
 
   def create_vm_def
     vm_hash = {}
     args.each do |key, value|
-      puts "key is #{key}, value is #{args[key]}"
       vm_hash[key] = value
     end
     vm_hash.delete('vm')
@@ -195,6 +193,7 @@ class OvirtAgent < Qmf::AgentHandler
 
     ensure_credentials
 
+    # FIXME: Use RAILS_DEFAULT_LOGGER
     @logger = Logger.new(STDERR)
     @logger.level = Logger::DEBUG
 
@@ -218,7 +217,6 @@ class OvirtAgent < Qmf::AgentHandler
 
     @connection = Qmf::Connection.new(@settings)
     @agent = Qmf::Agent.new(self)
-    @agent.set_connection(@connection)
 
     @schema_classes = schema_parse(SCHEMA_XML)
 
@@ -242,7 +240,6 @@ class OvirtAgent < Qmf::AgentHandler
       @logger.info "Register #{controller_class.schema_class.name} => #{controller_class.name}"
       @agent.register_class(controller_class.schema_class)
     end
-
   end
 
   # This method is called when a console does a search for a specific
@@ -256,11 +253,11 @@ class OvirtAgent < Qmf::AgentHandler
 
       if query.object_id
         # Lookup individual object
-        controller_id, row_id = @agent.decode_id(object_id)
+        controller_id, row_id = @agent.decode_id(query.object_id)
 
         @logger.debug "Query: object_num=#{controller_id}:#{row_id}"
 
-        controller = controller_for_id(controller_id)
+        controller = controller_for_id(context, controller_id)
         assert_controller_responds(controller, :find)
         if obj = controller.find(row_id)
           @agent.query_response(context, obj)
@@ -346,6 +343,7 @@ class OvirtAgent < Qmf::AgentHandler
   def mainloop
     Thread.abort_on_exception = true
 
+    @agent.set_connection(@connection)
     @controller_classes.values.each do |klass|
       klass.setup(@agent) if klass.respond_to?(:setup)
     end
@@ -359,4 +357,5 @@ else
   broker = "localhost"
 end
 ovirt_agent = OvirtAgent.new(broker)
+
 ovirt_agent.mainloop
