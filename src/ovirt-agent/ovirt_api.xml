@@ -10,10 +10,10 @@
     <method name="create_vm_def" desc="Define a new virtual machine definition.">
       <arg name="description" dir="I" type="sstr" desc="Description of new VM definition."/>
       <!-- What is the use case for being able to set the UUID? -->
-      <arg name="num_cpus" dir="I" type="uint32" desc="Number of virtual CPUs to allocate."/>
-      <arg name="memory" dir="I" type="uint64" desc="Amount of memory to allocate in KB."/>
-      <arg name="UUID" dir="I" type="sstr" desc="UUID of VM.  Will be assigned if left empty."/>
-      <arg name="vnic_mac" dir="I" type="sstr" desc="MAC address of virtual NIC.  Will be assigned if left empty."/>
+      <arg name="num_vcpus_allocated" dir="I" type="uint32" desc="Number of virtual CPUs to allocate."/>
+      <arg name="memory_allocated" dir="I" type="uint64" desc="Amount of memory to allocate in KB."/>
+      <arg name="uuid" dir="I" type="sstr" desc="UUID of VM.  Will be assigned if left empty."/>
+      <arg name="vnic_mac_addr" dir="I" type="sstr" desc="MAC address of virtual NIC.  Will be assigned if left empty."/>
 
       <arg name="vm" dir="O" type="objId" references="VmDef" desc="Newly created domain object"/>
     </method>
