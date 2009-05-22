@@ -112,7 +112,7 @@ class PoolController < ApplicationController
     # FIXME: REST and browsers send params differently. Should be fixed
     # in the views
     alert = svc_create(params[:pool] ? params[:pool] : params[:hardware_pool],
-                       additional_create_params)
+                       get_parent_id, additional_create_params)
     respond_to do |format|
       format.json {
         reply = { :object => "pool", :success => true,
@@ -164,6 +164,8 @@ class PoolController < ApplicationController
 
   protected
   def get_parent_id
-    params[:parent_id]
+    params[:hardware_pool] ?
+    params[:hardware_pool][:parent_id] :
+      params[:parent_id]
   end
 end

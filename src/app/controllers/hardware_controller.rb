@@ -187,10 +187,7 @@ class HardwareController < PoolController
   end
 
   def additional_create_params
-    ret_hash = {:resource_ids => params[:resource_ids],
-                :parent_id => (params[:hardware_pool] ?
-                               params[:hardware_pool][:parent_id] :
-                               params[:parent_id])}
+    ret_hash = {:resource_ids => params[:resource_ids]}
     ret_hash[:resource_type] = Host if params[:resource_type] == "hosts"
     ret_hash[:resource_type] = Storage if params[:resource_type] == "storage"
     ret_hash

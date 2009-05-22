@@ -43,8 +43,8 @@ module SmartPoolService
   #                    +parent_id+
   # === Required permissions
   # [<tt>Privilege::MODIFY</tt>] for the pool
-  def svc_create(pool_hash, other_args)
-    svc_new(nil, pool_hash)
+  def svc_create(pool_hash, parent_id, other_args)
+    svc_new(parent_id, pool_hash)
     @pool.create_with_parent(@parent)
     return "Smart Pool was successfully created."
   end

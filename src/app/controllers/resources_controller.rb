@@ -66,12 +66,6 @@ class ResourcesController < PoolController
     super(:full_items => @pool.vms, :find_opts => {}, :include_pool => :true)
   end
 
-  def additional_create_params
-    {:parent_id => (params[:hardware_pool] ?
-                    params[:hardware_pool][:parent_id] :
-                    params[:parent_id])}
-  end
-
   def delete
     vm_pool_ids = params[:vm_pool_ids].split(",")
     successes = []
