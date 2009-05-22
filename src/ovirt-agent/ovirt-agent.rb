@@ -105,7 +105,6 @@ class OvirtController < AgentController
     @@instance[:version] = "0.0.0.1"
     obj_id = agent.encode_id(schema_class.id, 1)
     @@instance.set_object_id(obj_id)
-    puts "Setup singleton for #{schema_class.name}: #{@@instance.inspect}"
   end
 
   def self.instance
@@ -284,7 +283,7 @@ class OvirtAgent < Qmf::AgentHandler
 
     rescue Exception => ex
       @logger.error "Error in ovirt-agent: #{ex}"
-      @logger.error ex.backtrace
+      @logger.error "    " + ex.backtrace.join("\n    ")
     end
 
     # FIXME: How do you properly report errors for queries ?
@@ -307,8 +306,8 @@ class OvirtAgent < Qmf::AgentHandler
 
       @agent.method_response(context, 0, "OK", args)
     rescue Exception => ex
-      @logger.info "Error calling #{name}: #{ex}"
-      @logger.info ex.backtrace
+      @logger.error "Error calling #{name}: #{ex}"
+      @logger.error "    " + ex.backtrace.join("\n    ")
       @agent.method_response(context, 1, "ERROR: #{ex}", args)
     end
   end
