@@ -65,6 +65,9 @@ class Pool < ActiveRecord::Base
     transaction do
       save!
       move_to_child_of(parent)
+      # second save! call is to trigger validation rules related to parent_id
+      # since this nested set API call bypasses the standard AR validation
+      save!
       parent.permissions.each do |permission|
         new_permission = Permission.new({:pool_id     => id,
                                          :uid         => permission.uid,
