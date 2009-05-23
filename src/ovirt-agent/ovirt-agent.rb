@@ -29,6 +29,22 @@ class Qmf::SchemaObjectClass
   def name
     impl.getName
   end
+
+  def properties
+    unless @properties
+      @properties = []
+      impl.getPropertyCount.times do |i|
+        @properties << impl.getProperty(i)
+      end
+    end
+    @properties
+  end
+end
+
+class Qmf::SchemaProperty
+  def name
+    impl.getName
+  end
 end
 
 class Qmf::Agent
@@ -86,6 +102,25 @@ class AgentController
     return "ovirtadmin"
   end
 
+  # Produce a QMF object of class +schema_class+ from obj; only properties
+  # for which +obj+ has accessors are set.
+  #
+  # Properties can be explicitly mapped to attributes by passing in a map
+  # from property names (symbols) to attribute names as the +:propmap+
+  # argument
+  def to_qmf(obj, kwargs)
+    qmf = Qmf::QmfObject.new(schema_class)
+    propmap = kwargs[:propmap] || {}
+    schema_class.properties.collect { |p| p.name.to_sym }.each { |n|
+      a = propmap[n] || n
+      qmf[n] = obj.send(a) if obj.respond_to?(a)
+    }
+
+    qmf.set_object_id(encode_id(obj.id))
+
+    return qmf
+  end
+
   # Subclasses should have
   #
   #   find(id) : look up object with that id and return the QMF object
@@ -105,6 +140,7 @@ class OvirtController < AgentController
     @@instance[:version] = "0.0.0.1"
     obj_id = agent.encode_id(schema_class.id, 1)
     @@instance.set_object_id(obj_id)
+
   end
 
   def self.instance
@@ -151,38 +187,20 @@ class VmDefController < AgentController
 
   include VmService
 
-  def ar_to_object(ar_vm)
-
-    vmdef = Qmf::QmfObject.new(schema_class)
-    vmdef.set_attr("description", ar_vm.description)
-    vmdef.set_attr("num_vcpus_allocated", ar_vm.num_vcpus_allocated)
-    vmdef.set_attr("memory_allocated", ar_vm.memory_allocated)
-    vmdef.set_attr("uuid", ar_vm.uuid)
-    vmdef.set_attr("mac", ar_vm.vnic_mac_addr)
-    vmdef.set_attr("provisioning", ar_vm.provisioning)
-    vmdef.set_attr("needs_restart", ar_vm.needs_restart)
-    vmdef.set_attr("state", ar_vm.state)
-
-    # Set the 'low' part of the local object ID to the VM row id, and the
-    # 'high' part of the local object id to the table ID.  Table ID here
-    # must then be unique for every class/table.
-    vmdef.set_object_id(encode_id(ar_vm.id))
-
-    return vmdef
-  end
-
   def find(id)
     svc_show(id)
-    ar_to_object(@vm)
+    render(@vm)
   end
 
   def list
     puts "query for VmDef class!"
-    # Return all VmDef objects. FIXME: Use VmService
-    ar_vms = Vm.find(:all)
-    ar_vms.collect { |ar_vm| ar_to_object(ar_vm) }
+    # Return all VmDef objects. FIXME: Use VmService to list vm's
+    Vm.find(:all).collect { |vm| render(vm) }
   end
 
+  def render(vm)
+    to_qmf(vm, :propmap => { :mac => :vnic_mac_addr } )
+  end
 end
 
 class OvirtAgent < Qmf::AgentHandler
