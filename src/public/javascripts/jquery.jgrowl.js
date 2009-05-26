@@ -98,7 +98,7 @@
 			theme: 			'default',
 			corners: 		'10px',
 			check: 			500,
-			life: 			10000,
+			life: 			3000,
 			speed: 			'normal',
 			easing: 		'swing',
 			closer: 		true,
