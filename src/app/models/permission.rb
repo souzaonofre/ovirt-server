@@ -45,7 +45,7 @@ class Permission < ActiveRecord::Base
     !is_primary?
   end
   def source
-    is_primary? ? "Direct" : "Inherited"
+    is_primary? ? "(Direct)" : parent_permission.pool.name
   end
   def grid_id
     id.to_s + "_" + (is_primary? ? "1" : "0")
