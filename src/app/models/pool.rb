@@ -57,7 +57,9 @@ class Pool < ActiveRecord::Base
     :in => %w( DirectoryPool HardwarePool VmResourcePool SmartPool )
 
   # overloading this method such that we can use permissions.admins to get all the admins for an object
-  has_many :permissions, :dependent => :destroy, :include => :role, :order => "permissions.id ASC"
+  has_many :permissions, :dependent => :destroy,
+           :include => [:role, :pool, {:parent_permission => :pool}],
+           :order => "permissions.id ASC"
 
   has_one :quota, :dependent => :destroy
 
