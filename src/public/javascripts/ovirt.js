@@ -115,7 +115,7 @@ function add_storage_to_smart_pool(url)
                }, 'json');
     }
 }
-function add_vms_to_smart_pool(url)
+function add_vms_to_current_smart_pool(url)
 {
     vms= get_selected_checkboxes("add_smart_vms_grid_form");
     if (validate_selected(vms, "vm")) {
