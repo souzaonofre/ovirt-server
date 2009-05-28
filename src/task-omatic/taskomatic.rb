@@ -60,6 +60,7 @@ class TaskOmatic
     @nth_host = 0
 
     do_daemon = true
+    do_debug = false
 
     opts = OptionParser.new do |opts|
       opts.on("-h", "--help", "Print help message") do
@@ -68,6 +69,9 @@ class TaskOmatic
       end
       opts.on("-n", "--nodaemon", "Run interactively (useful for debugging)") do |n|
         do_daemon = false
+      end
+      opts.on("-d", "--debug", "Print verbose debugging output") do |d|
+        do_debug = true
       end
       opts.on("-s N", Integer, "--sleep",
               "Seconds to sleep between iterations (default is 5 seconds)") do |s|
@@ -93,6 +97,11 @@ class TaskOmatic
     else
       @logger = Logger.new(STDERR)
     end
+
+    #@logger.level = Logger::DEBUG if do_debug
+    #
+    # For now I'm going to always enable debugging until we do a real release.
+    @logger.level = Logger::DEBUG
 
     ensure_credentials
 
@@ -197,6 +206,7 @@ class TaskOmatic
         phys_libvirt_pool.connect(@session, node)
       end
 
+      @logger.debug "Verifying mount of pool #{db_pool.ip_addr}:#{db_pool.type}:#{db_pool.target}:#{db_pool.export_path}"
       libvirt_pool = LibvirtPool.factory(db_pool)
       libvirt_pool.connect(@session, node)
 
@@ -205,10 +215,15 @@ class TaskOmatic
 
       volume_name = db_volume.read_attribute(db_volume.volume_name)
       pool = libvirt_pool.remote_pool
+
+      @logger.debug "Pool mounted: #{pool.name}; state: #{pool.state}"
+
       volume = @session.object(:class => 'volume',
                                'name' => volume_name,
                                'storagePool' => pool.object_id)
       raise "Unable to find volume #{volume_name} attached to pool #{pool.name}." unless volume
+      @logger.debug "Verified volume of pool #{volume.path}"
+
       storagedevs << volume.path
     end
 
@@ -342,6 +357,8 @@ class TaskOmatic
     volumes = []
     volumes += db_vm.storage_volumes
     volumes << image_volume if image_volume
+
+    @logger.debug("Connecting volumes: #{volumes}")
     storagedevs = connect_storage_pools(node, volumes)
 
     # determine if vm has been assigned to physical or
@@ -369,6 +386,8 @@ class TaskOmatic
     xml = create_vm_xml(db_vm.description, db_vm.uuid, db_vm.memory_allocated,
               db_vm.memory_used, db_vm.num_vcpus_allocated, db_vm.boot_device,
               db_vm.vnic_mac_addr, net_device, storagedevs)
+
+    @logger.debug("XML Domain definition: #{xml}")
 
     result = node.domainDefineXML(xml.to_s)
     raise "Error defining virtual machine: #{result.text}" unless result.status == 0
@@ -506,17 +525,18 @@ class TaskOmatic
 
       volumes = []
       volumes += db_vm.storage_volumes
+      @logger.debug("Connecting volumes: #{volumes}")
       connect_storage_pools(dest_node, volumes)
 
       # Sadly migrate with qpid is broken because it requires a connection between
       # both nodes and currently that can't happen securely.  For now we do it
       # the old fashioned way..
-      src_conn = Libvirt::open("qemu+tcp://" + src_node.hostname + "/system")
-      dst_conn = Libvirt::open("qemu+tcp://" + dest_node.hostname + "/system")
-      dom = src_conn.lookup_domain_by_uuid(vm.uuid)
-      dom.migrate(dst_conn, Libvirt::Domain::MIGRATE_LIVE)
-      src_conn.close
-      dst_conn.close
+      src_uri = "qemu+tcp://" + src_node.hostname + "/system"
+      dest_uri = "qemu+tcp://" + dest_node.hostname + "/system"
+      @logger.debug("Migrating from #{src_uri} to #{dest_uri}")
+
+      result = vm.migrate(dest_uri, Libvirt::Domain::MIGRATE_LIVE, '', '', 0, :timeout => 60 * 4)
+      @logger.error "Error migrating VM: #{result.text}" unless result.status == 0
 
       # undefine can fail, for instance, if we live migrated from A -> B, and
       # then we are shutting down the VM on B (because it only has "transient"
@@ -526,7 +546,7 @@ class TaskOmatic
       # difference between a real undefine failure and one because of migration
       result = vm.undefine
 
-      @logger.info "Error undefining old vm after migrate: #{result.text}" unless result.status == 0
+      @logger.info "Couldn't undefine old vm after migrate (probably fine): #{result.text}" unless result.status == 0
 
       # See if we can take down storage pools on the src host.
       teardown_storage_pools(src_node)
@@ -631,7 +651,7 @@ class TaskOmatic
           if not existing_vol
             add_volume_to_db(db_pool_phys, volume);
           else
-            @logger.error "volume #{volume.name} already exists in db.."
+            @logger.info "Scanned volume #{volume.name} already exists in db.."
           end
 
           # Now check for an LVM pool carving up this volume.
