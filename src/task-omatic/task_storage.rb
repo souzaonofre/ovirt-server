@@ -129,7 +129,7 @@ class LibvirtPool
     end
 
     if @remote_pool == nil
-      result = node.storagePoolDefineXML(@xml.to_s)
+      result = node.storagePoolDefineXML(@xml.to_s, :timeout => 60 * 2)
       raise "Error creating pool: #{result.text}" unless result.status == 0
       @remote_pool = session.object(:object_id => result.pool)
       raise "Error finding newly created remote pool." unless @remote_pool
@@ -137,7 +137,7 @@ class LibvirtPool
       # we need this because we don't want to "build" LVM pools, which would
       # destroy existing data
       if @build_on_start
-        result = @remote_pool.build
+        result = @remote_pool.build(:timeout => 60 * 2)
         raise "Error building pool: #{result.text}" unless result.status == 0
       end
       @remote_pool_defined = true
@@ -151,7 +151,7 @@ class LibvirtPool
     if @remote_pool.state == "inactive"
       # only try to start the pool if it is currently inactive; in all other
       # states, assume it is already running
-      result = @remote_pool.create
+      result = @remote_pool.create(:timeout => 60 * 2)
       raise "Error defining pool: #{result.text}" unless result.status == 0
 
       # Refresh qpid object with new properties.
@@ -195,7 +195,7 @@ class LibvirtPool
 
   def self.factory(pool)
     if pool[:type] == "IscsiStoragePool"
-      return IscsiLibvirtPool.new(pool.ip_addr, pool[:target])
+      return IscsiLibvirtPool.new(pool.ip_addr, pool[:target], pool[:port]")
     elsif pool[:type] == "NfsStoragePool"
       return NFSLibvirtPool.new(pool.ip_addr, pool.export_path)
     elsif pool[:type] == "LvmStoragePool"
@@ -220,8 +220,9 @@ class LibvirtPool
 end
 
 class IscsiLibvirtPool < LibvirtPool
-  def initialize(ip_addr, target)
-    super('iscsi')
+  def initialize(ip_addr, target, port)
+    mount = "#{ip_addr}-#{target}-#{port}"
+    super('iscsi', mount)
 
     @type = 'iscsi'
     @ipaddr = ip_addr
@@ -242,7 +243,8 @@ end
 
 class NFSLibvirtPool < LibvirtPool
   def initialize(ip_addr, export_path)
-    super('netfs')
+    target = "#{ip_addr}-#{export_path.tr('/', '_')}"
+    super('netfs', target)
 
     @type = 'netfs'
     @host = ip_addr
