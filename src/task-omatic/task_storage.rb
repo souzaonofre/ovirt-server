@@ -195,7 +195,7 @@ class LibvirtPool
 
   def self.factory(pool)
     if pool[:type] == "IscsiStoragePool"
-      return IscsiLibvirtPool.new(pool.ip_addr, pool[:target], pool[:port]")
+      return IscsiLibvirtPool.new(pool.ip_addr, pool[:target], pool[:port])
     elsif pool[:type] == "NfsStoragePool"
       return NFSLibvirtPool.new(pool.ip_addr, pool.export_path)
     elsif pool[:type] == "LvmStoragePool"
