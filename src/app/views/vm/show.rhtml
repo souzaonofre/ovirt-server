@@ -5,7 +5,7 @@
 <%- content_for :action_links do -%>
   <%if @can_control_vms -%>
     <%if @vm.has_console -%>
-      <%= link_to image_tag("icon_terminal_11px.png") + " Remote Desktop",
+      <%= link_to image_tag("icon_machine_11px.png") + " Remote Desktop",
                             {:controller => 'vm', :action => 'console', :id => @vm},
                             :id=>"vnc_console_link" %>
       <script type="text/javascript">
