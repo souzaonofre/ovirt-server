@@ -35,10 +35,9 @@ Requires: iscsi-initiator-utils
 Requires: cyrus-sasl-gssapi
 Requires: ovirt-docs
 Requires: qpidd
-Requires: ruby-qpid
+Requires: ruby-qpid >= 0.5.776856
 Requires: qpidc
 Requires: qmf
-Requires: ruby-qpid
 Requires(post):  /sbin/chkconfig
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
