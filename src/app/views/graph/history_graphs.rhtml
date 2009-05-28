@@ -7,10 +7,10 @@ $('#flex_history_chart').flash(
         {
           src: '<%=flash_path("flexchart")%>',
           width: 720,
-          height: 300,
+          height: 380,
           wmode: 'transparent',
           menu: false,
-          flashvars: { flexchart_data: "<%= url_for :controller =>'/graph', :action => 'flexchart_data' %>/<%= @id %>/memory/<%= Time.now.to_i - 60 * 60 * 24 %>/<%= Time.now.to_i %>/peak" }
+          flashvars: { flexchart_data: "<%= url_for :controller =>'/graph', :action => 'flexchart_data' %>/<%= @id %>/cpu/<%= Time.now.to_i - 60 * 60 * 24 %>/<%= Time.now.to_i %>/average" }
         },
         { version: 9 }
     );
