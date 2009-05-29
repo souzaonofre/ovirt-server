@@ -286,7 +286,6 @@ class TaskOmatic
       result = vm.undefine
       if result.status == 0
         @logger.info "Deleted VM #{db_vm.description}."
-        set_vm_shut_down(db_vm)
         teardown_storage_pools(node)
       end
       return
