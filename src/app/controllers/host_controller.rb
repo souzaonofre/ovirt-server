@@ -48,7 +48,7 @@ class HostController < ApplicationController
   end
 
   def quick_summary
-    svc_show(id)
+    svc_show(params[:id])
     render :layout => false
   end
 
