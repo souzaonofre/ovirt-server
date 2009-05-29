@@ -842,13 +842,18 @@ class TaskOmatic
   end
 
   def mainloop()
+    was_disconnected = false
     loop do
 
       if not @broker.connected?
-        @logger.error("Cannot implement tasks, not connected to broker.  Sleeping.")
+        @logger.info("Cannot implement tasks, not connected to broker.  Sleeping.")
         sleep(@sleeptime * 3)
+        was_disconnected = true
         next
       end
+
+      @logger.info("Reconnected, resuming task checking..") if was_disconnected
+      was_disconnected = false
 
       tasks = Array.new
       begin
