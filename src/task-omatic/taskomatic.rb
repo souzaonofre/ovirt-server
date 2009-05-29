@@ -207,7 +207,7 @@ class TaskOmatic
       end
 
       @logger.debug "Verifying mount of pool #{db_pool.ip_addr}:#{db_pool.type}:#{db_pool.target}:#{db_pool.export_path}"
-      libvirt_pool = LibvirtPool.factory(db_pool)
+      libvirt_pool = LibvirtPool.factory(db_pool, @logger)
       libvirt_pool.connect(@session, node)
 
       # OK, the pool should be all set.  The last thing we need to do is get
@@ -631,7 +631,7 @@ class TaskOmatic
     begin
       @logger.info("refresh being done on node #{node.hostname}")
 
-      phys_libvirt_pool = LibvirtPool.factory(db_pool_phys)
+      phys_libvirt_pool = LibvirtPool.factory(db_pool_phys, @logger)
       phys_libvirt_pool.connect(@session, node)
       db_pool_phys.state = StoragePool::STATE_AVAILABLE
       db_pool_phys.save!
@@ -651,14 +651,14 @@ class TaskOmatic
           if not existing_vol
             add_volume_to_db(db_pool_phys, volume);
           else
-            @logger.info "Scanned volume #{volume.name} already exists in db.."
+            @logger.debug "Scanned volume #{volume.name} already exists in db.."
           end
 
           # Now check for an LVM pool carving up this volume.
           lvm_name = volume.childLVMName
           next if lvm_name == ''
 
-          @logger.info "Child LVM exists for this volume - #{lvm_name}"
+          @logger.debug "Child LVM exists for this volume - #{lvm_name}"
           lvm_db_pool = LvmStoragePool.find(:first, :conditions =>
                                           [ "vg_name = ?", lvm_name ])
           if lvm_db_pool == nil
@@ -683,7 +683,7 @@ class TaskOmatic
           physical_vol.lvm_pool_id = lvm_db_pool.id
           physical_vol.save!
 
-          lvm_libvirt_pool = LibvirtPool.factory(lvm_db_pool)
+          lvm_libvirt_pool = LibvirtPool.factory(lvm_db_pool, @logger)
           lvm_libvirt_pool.connect(@session, node)
 
           lvm_volumes = @session.objects(:class => 'volume',
@@ -725,7 +725,7 @@ class TaskOmatic
       end
 
       begin
-        libvirt_pool = LibvirtPool.factory(db_pool)
+        libvirt_pool = LibvirtPool.factory(db_pool, @logger)
 
         begin
           libvirt_pool.connect(@session, node)
@@ -733,9 +733,9 @@ class TaskOmatic
           volume = @session.object(:object_id => volume_id)
           raise "Unable to find newly created volume" unless volume
 
-          @logger.info "  volume:"
+          @logger.debug "  volume:"
           for (key, val) in volume.properties
-            @logger.info "    property: #{key}, #{val}"
+            @logger.debug "    property: #{key}, #{val}"
           end
 
           # FIXME: Should have this too I think..
@@ -790,7 +790,7 @@ class TaskOmatic
       end
 
       begin
-        libvirt_pool = LibvirtPool.factory(db_pool)
+        libvirt_pool = LibvirtPool.factory(db_pool, @logger)
         libvirt_pool.connect(@session, node)
 
         begin
