@@ -843,6 +843,13 @@ class TaskOmatic
 
   def mainloop()
     loop do
+
+      if not @broker.connected?
+        @logger.error("Cannot implement tasks, not connected to broker.  Sleeping.")
+        sleep(@sleeptime * 3)
+        next
+      end
+
       tasks = Array.new
       begin
         tasks = Task.find(:all, :conditions =>
