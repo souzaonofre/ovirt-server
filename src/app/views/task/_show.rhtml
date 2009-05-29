@@ -75,7 +75,9 @@
           <img src="images/jumbo_find.png" alt="find" width="145" height="145">
           <div class="no-grid-items-text">
             <h2>There are no tasks that match this filter.</h2>
-            <p>Type: <strong><%= task_types.select {|type| type[1]==task_type}[0][0] %></strong></p>
+             <%if task_types %>
+               <p>Type: <strong><%= task_types.select {|type| type[1]==task_type}[0][0] %></strong></p>
+             <% end %>
             <p>State: <strong><%= task_states.select {|state| state[1]==task_state}[0][0] %></strong></p><br />
             <p>Choose another filter to display tasks.</p>
           </div>
