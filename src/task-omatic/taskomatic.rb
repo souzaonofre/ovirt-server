@@ -202,7 +202,7 @@ class TaskOmatic
       # we have to special case LVM pools.  In that case, we need to first
       # activate the underlying physical device, and then do the logical one
       if db_volume[:type] == "LvmStorageVolume"
-        phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume)
+        phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume, @logger)
         phys_libvirt_pool.connect(@session, node)
       end
 
@@ -719,7 +719,7 @@ class TaskOmatic
 
     begin
       if db_volume[:type] == "LvmStorageVolume"
-        phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume)
+        phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume, @logger)
         phys_libvirt_pool.connect(@session, node)
       end
 
@@ -783,7 +783,7 @@ class TaskOmatic
 
     begin
       if db_volume[:type] == "LvmStorageVolume"
-        phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume)
+        phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume, @logger)
         phys_libvirt_pool.connect(@session, node)
         @logger.info "connected to lvm pool.."
       end

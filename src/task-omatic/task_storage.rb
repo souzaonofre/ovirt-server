@@ -27,11 +27,11 @@ def String.random_alphanumeric(size=16)
   s
 end
 
-def get_libvirt_lvm_pool_from_volume(db_volume)
+def get_libvirt_lvm_pool_from_volume(db_volume, logger)
   phys_volume = StorageVolume.find(:first, :conditions =>
                                    ["lvm_pool_id = ?", db_volume.storage_pool_id])
 
-  return LibvirtPool.factory(phys_volume.storage_pool)
+  return LibvirtPool.factory(phys_volume.storage_pool, logger)
 end
 
 
