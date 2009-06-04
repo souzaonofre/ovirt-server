@@ -18,6 +18,14 @@
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
 class LvmStorageVolume < StorageVolume
+
+  def initialize(params)
+    super
+    self.lv_owner_perms='0744' unless self.lv_owner_perms
+    self.lv_group_perms='0744' unless self.lv_group_perms
+    self.lv_mode_perms='0744' unless self.lv_mode_perms
+  end
+
   def display_name
     "#{get_type_label}: #{storage_pool.vg_name}:#{lv_name}"
   end

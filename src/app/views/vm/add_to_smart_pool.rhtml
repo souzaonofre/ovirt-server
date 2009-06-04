@@ -20,7 +20,8 @@
              :vms_per_page => 40} %>
 </div>
 
-<%= popup_footer("add_vms_to_smart_pool('#{url_for :controller => "smart_pools",
+<%= popup_footer("add_vms_to_current_smart_pool('#{url_for :controller =>
+                                                            "smart_pools",
                                                      :action => "add_vms",
                                                      :id => @pool}')",
                  "Add Vms") %>

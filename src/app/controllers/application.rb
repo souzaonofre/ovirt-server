@@ -20,18 +20,24 @@
 # Filters added to this controller apply to all controllers in the application.
 # Likewise, all the methods added will be available for all controllers.
 
+
 class ApplicationController < ActionController::Base
+  # FIXME: once all controller classes include this, remove here
+  include ApplicationService
+
   # Pick a unique cookie name to distinguish our session data from others'
   session :session_key => '_ovirt_session_id'
   init_gettext "ovirt"
   layout :choose_layout
 
-  before_filter :pre_new, :only => [:new]
-  before_filter :pre_create, :only => [:create]
-  before_filter :pre_edit, :only => [:edit, :update, :destroy]
-  before_filter :pre_show, :only => [:show]
-  before_filter :authorize_admin, :only => [:new, :create, :edit, :update, :destroy]
   before_filter :is_logged_in, :get_help_section
+
+  # General error handlers, must be in order from least specific
+  # to most specific
+  rescue_from Exception, :with => :handle_general_error
+  rescue_from PermissionError, :with => :handle_perm_error
+  rescue_from ActionError, :with => :handle_action_error
+  rescue_from PartialSuccessError, :with => :handle_partial_success_error
 
   def choose_layout
     if(params[:component_layout])
@@ -41,7 +47,7 @@ class ApplicationController < ActionController::Base
   end
 
   def is_logged_in
-    redirect_to(:controller => "login", :action => "login") unless get_login_user
+    redirect_to(:controller => "/login", :action => "login") unless get_login_user
   end
 
   def get_help_section
@@ -61,62 +67,65 @@ class ApplicationController < ActionController::Base
     (ENV["RAILS_ENV"] == "production") ? session[:user] : "ovirtadmin"
   end
 
-  def set_perms(hwpool)
-    @user = get_login_user
-    @can_view = hwpool.can_view(@user)
-    @can_control_vms = hwpool.can_control_vms(@user)
-    @can_modify = hwpool.can_modify(@user)
-    @can_view_perms = hwpool.can_view_perms(@user)
-    @can_set_perms = hwpool.can_set_perms(@user)
-  end
-
   protected
   # permissions checking
 
-  def pre_new
-  end
-  def pre_create
-  end
-  def pre_edit
-  end
-  def pre_show
+  def handle_perm_error(error)
+    handle_error(:error => error, :status => :forbidden,
+                 :title => "Access denied")
   end
 
-  def authorize_user(msg=nil)
-    authorize_action(false,msg)
-  end
-  def authorize_admin(msg=nil)
-    authorize_action(true,msg)
-  end
-  def authorize_action(is_modify_action, msg=nil)
-    msg ||= 'You do not have permission to create or modify this item '
-    if @perm_obj
-      set_perms(@perm_obj)
-      unless (is_modify_action ? @can_modify : @can_control_vms)
-        respond_to do |format|
-          format.html do
-            @title = "Access denied"
-            @errmsg = msg
-            @ajax = params[:ajax]
-            @nolayout = params[:nolayout]
-            if @ajax
-              render :template => 'layouts/popup-error', :layout => 'tabs-and-content'
-            elsif @nolayout
-              render :template => 'layouts/popup-error', :layout => 'help-and-content'
-            else
-              render :template => 'layouts/popup-error', :layout => 'popup'
-            end
-          end
-          format.json do
-            @json_hash ||= {}
-            @json_hash[:success] = false
-            @json_hash[:alert] = msg
-            render :json => @json_hash
-          end
-          format.xml { head :forbidden }
-        end
-        false
+  def handle_partial_success_error(error)
+    failures_arr = error.failures.collect do |resource, reason|
+      if resource.respond_to?(:display_name)
+        resource.display_name + ": " + reason
+      else
+        reason
       end
+    end
+    @successes = error.successes
+    @failures = error.failures
+    handle_error(:error => error, :status => :ok,
+                 :message => error.message + ": " + failures_arr.join(", "),
+                 :title => "Some actions failed")
+  end
+
+  def handle_action_error(error)
+    handle_error(:error => error, :status => :conflict,
+                 :title => "Action Error")
+  end
+
+  def handle_general_error(error)
+    flash[:errmsg] = error.message
+    handle_error(:error => error, :status => :internal_server_error,
+                 :title => "Internal Server Error")
+  end
+
+  def handle_error(hash)
+    log_error(hash[:error]) if hash[:error]
+    msg = hash[:message] || hash[:error].message
+    title = hash[:title] || "Internal Server Error"
+    status = hash[:status] || :internal_server_error
+    respond_to do |format|
+      format.html { html_error_page(title, msg) }
+      format.json { render :json => json_error_hash(msg, status) }
+      format.xml { render :xml => xml_errors(msg), :status => status }
+    end
+  end
+
+  def html_error_page(title, msg)
+    @title = title
+    @errmsg = msg
+    @ajax = params[:ajax]
+    @nolayout = params[:nolayout]
+    if @layout
+      render :layout => @layout
+    elsif @ajax
+      render :template => 'layouts/popup-error', :layout => 'tabs-and-content'
+    elsif @nolayout
+      render :template => 'layouts/popup-error', :layout => 'help-and-content'
+    else
+      render :template => 'layouts/popup-error', :layout => 'popup'
     end
   end
 
@@ -155,6 +164,37 @@ class ApplicationController < ActionController::Base
     render :json => json_hash(full_items, attributes, arg_list, find_opts, id_method).to_json
   end
 
+  private
+  def json_error_hash(msg, status)
+    json = {}
+    json[:success] = (status == :ok)
+    json.merge!(instance_errors)
+    # There's a potential issue here: if we add :errors for an object
+    # that the view won't generate inline error messages for, the user
+    # won't get any indication what the error is. But if we set :alert
+    # unconditionally, the user will get validation errors twice: once
+    # inline in the form, and once in the flash
+    json[:alert] = msg unless json[:errors]
+    return json
+  end
 
+  def xml_errors(msg)
+    xml = {}
+    xml[:message] = msg
+    xml.merge!(instance_errors)
+    return xml
+  end
 
+  def instance_errors
+    hash = {}
+    instance_variables.each do |ivar|
+      val = instance_variable_get(ivar)
+      if val && val.respond_to?(:errors) && val.errors.size > 0
+        hash[:object] = ivar[1, ivar.size]
+        hash[:errors] ||= []
+        hash[:errors] += val.errors.localize_error_messages.to_a
+      end
+    end
+    return hash
+  end
 end

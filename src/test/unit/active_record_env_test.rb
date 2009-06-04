@@ -22,8 +22,8 @@ require File.dirname(__FILE__) + '/../../dutils/active_record_env'
 
 class ActiveRecordEnvTest < Test::Unit::TestCase
   fixtures :pools, :hosts, :vms, :boot_types,
-    :networks, :nics, :ip_addresses, :permissions, :quotas,
-    :storage_pools, :storage_volumes, :tasks
+    :networks, :nics, :ip_addresses, :privileges, :roles, :permissions,
+    :quotas, :storage_pools, :storage_volumes, :tasks
 
   def test_can_find_hosts
     database_connect

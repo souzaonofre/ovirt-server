@@ -3,18 +3,31 @@
 <%- end -%>
 
 <%- content_for :action_links do -%>
-  <%if @can_control_vms and @vm.has_console -%>
-    <%= link_to image_tag("icon_x.png") + " Open Console",
-                          {:controller => 'vm', :action => 'console', :id => @vm},
-                          :id=>"vnc_console_link" %>
+  <%if @can_control_vms -%>
+    <%if @vm.has_console -%>
+      <%= link_to image_tag("icon_machine_11px.png") + " Remote Desktop",
+                            {:controller => 'vm', :action => 'console', :id => @vm},
+                            :id=>"vnc_console_link" %>
+      <script type="text/javascript">
+        $('#vnc_console_link').bind('click', function(){
+                window.open($(this).attr('href'),'console','toolbar=no,height=300,width=400,resizable=no,status=no,scrollbars=no,menubar=no,location=no');
+                return false;})
+      </script>
+    <% end -%>
+
+    <%= link_to image_tag("icon_terminal_11px.png") + " Open Terminal",
+                         {:controller => 'vm', :action => 'terminal', :id => @vm},
+                         :id=> "vm_terminal_link"%>
     <script type="text/javascript">
-      $('#vnc_console_link').bind('click', function(){
-              window.open($(this).attr('href'),'console','toolbar=no,height=300,width=400,resizable=no,status=no,scrollbars=no,menubar=no,location=no');
-              return false;})
+     $('#vm_terminal_link').attr("href", $('#vm_terminal_link').attr("href") + "?host=" + get_server_from_url());
+     $('#vm_terminal_link').bind('click', function(){
+        window.open($(this).attr('href'),'console','toolbar=no,height=450,width=600,resizable=no,status=no,scrollbars=no,menubar=no,location=no');
+        return false;})
     </script>
   <% end -%>
+
   <%if @can_modify -%>
-    <%= link_to image_tag("icon_edit.png") + " Edit",
+    <%= link_to image_tag("icon_edit_11px.png") + " Edit",
                           {:controller => 'vm', :action => 'edit', :id => @vm},
                           :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
     <% for name, action in @actions %>
@@ -30,10 +43,10 @@
       <% end -%>
     <% end %>
     <a href="#confirm_cancel"  rel="facebox[.bolder]">
-      <%= image_tag "icon_x.png" %> Cancel queued tasks
+      <%= image_tag "icon_cancel_11px.png" %> Cancel queued tasks
     </a> 
     <a href="#confirm_delete"  rel="facebox[.bolder]">
-      <%= image_tag "icon_x.png" %> Delete
+      <%= image_tag "icon_delete_11px.png" %> Delete
     </a> 
   <% end -%>
 <% end -%>

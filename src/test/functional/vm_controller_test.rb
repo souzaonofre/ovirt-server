@@ -24,7 +24,7 @@ require 'vm_controller'
 class VmController; def rescue_action(e) raise e end; end
 
 class VmControllerTest < Test::Unit::TestCase
-  fixtures :permissions, :pools, :vms
+  fixtures :privileges, :roles, :permissions, :pools, :vms
 
   def setup
     @controller = VmController.new
@@ -32,8 +32,9 @@ class VmControllerTest < Test::Unit::TestCase
     @response   = ActionController::TestResponse.new
 
     @vm_id = vms(:production_httpd_vm).id
-    @default_pool = pools(:default)
+    @vm_pool = pools(:corp_com_production_vmpool)
   end
+
 
   def test_show
     get :show, :id => @vm_id
@@ -46,25 +47,22 @@ class VmControllerTest < Test::Unit::TestCase
   end
 
   def test_new
-    get :new, :hardware_pool_id => @default_pool.id
-
-    assert_response :redirect
-    assert_redirected_to :controller => 'resources', :action => 'show'
-
-    assert_not_nil assigns(:vm)
+    get :new, :vm_resource_pool_id => @vm_pool.id
+    assert_response :success
+    assert_template 'new'
+    assert assigns(:vm)
   end
 
   def test_create
     num_vms = Vm.count
 
-    post :create, :vm_resource_pool_name => 'foobar',
-      :hardware_pool_id => @default_pool.id,
-      :vm => { :uuid => 'f43b298c-1e65-46fa-965f-0f6fb9ffaa10',
-                :description =>     'descript',
-                :num_vcpus_allocated => 4,
-                :memory_allocated => 262144,
-                :vnic_mac_addr => 'AA:BB:CC:DD:EE:FF',
-                :boot_device => 'network' }
+    post :create, :vm => { :uuid => 'f43b298c-1e65-46fa-965f-0f6fb9ffaa10',
+               :vm_resource_pool_id => @vm_pool.id,
+               :description =>     'descript',
+               :num_vcpus_allocated => 4,
+               :memory_allocated => 262144,
+               :vnic_mac_addr => 'AA:BB:CC:DD:EE:FF',
+               :boot_device => 'network' }
 
     assert_response :success
 

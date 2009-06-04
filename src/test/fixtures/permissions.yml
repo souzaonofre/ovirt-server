@@ -1,39 +1,39 @@
 ovirtadmin_root:
-  user_role: Super Admin
+  role: super_admin
   uid: ovirtadmin
   pool: root_dir_pool
 ovirtadmin_default:
-  user_role: Super Admin
+  role: super_admin
   uid: ovirtadmin
   pool: default
-  inherited_from_id: <%= Fixtures.identify(:ovirtadmin_root) %>
+  parent_permission: ovirtadmin_root
 ovirtadmin_hardware_pool:
-  user_role: Super Admin
+  role: super_admin
   uid: ovirtadmin
   pool: hw_dir_pool
-  inherited_from_id: <%= Fixtures.identify(:ovirtadmin_root) %>
+  parent_permission: ovirtadmin_root
 ovirtadmin_users_pool:
-  user_role: Super Admin
+  role: super_admin
   uid: ovirtadmin
   pool: smart_dir_pool
-  inherited_from_id: <%= Fixtures.identify(:ovirtadmin_root) %>
+  parent_permission: ovirtadmin_root
 ovirtadmin_corp_com_pool:
-  user_role: Super Admin
+  role: super_admin
   uid: ovirtadmin
   pool: corp_com
-  inherited_from_id: <%= Fixtures.identify(:ovirtadmin_root) %>
+  parent_permission: ovirtadmin_root
 ovirtadmin_corp_com_production_vmpool:
-  user_role: Super Admin
+  role: super_admin
   uid: ovirtadmin
   pool: corp_com_production_vmpool
-  inherited_from_id: <%= Fixtures.identify(:ovirtadmin_root) %>
+  parent_permission: ovirtadmin_root
 ovirtadmin_prodops_pool:
-  user_role:  Super Admin #Monitor
+  role:  super_admin
   uid: ovirtadmin
   pool: corp_com_prod
-  inherited_from_id: <%= Fixtures.identify(:ovirtadmin_root) %>
+  parent_permission: ovirtadmin_root
 ovirtadmin_corp_com_qa_pool:
-  user_role:  Monitor
+  role:  monitor
   uid: ovirtadmin
   pool: corp_com_qa
-  inherited_from_id: <%= Fixtures.identify(:ovirtadmin_root) %>
+  parent_permission: ovirtadmin_root

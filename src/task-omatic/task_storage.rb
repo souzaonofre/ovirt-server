@@ -27,11 +27,11 @@ def String.random_alphanumeric(size=16)
   s
 end
 
-def get_libvirt_lvm_pool_from_volume(db_volume)
+def get_libvirt_lvm_pool_from_volume(db_volume, logger)
   phys_volume = StorageVolume.find(:first, :conditions =>
                                    ["lvm_pool_id = ?", db_volume.storage_pool_id])
 
-  return LibvirtPool.factory(phys_volume.storage_pool)
+  return LibvirtPool.factory(phys_volume.storage_pool, logger)
 end
 
 
@@ -92,11 +92,12 @@ class LibvirtPool
 
   attr_reader :remote_pool
 
-  def initialize(type, name = nil)
+  def initialize(type, name = nil, logger = nil)
     @remote_pool = nil
     @build_on_start = true
     @remote_pool_defined = false
     @remote_pool_started = false
+    @logger = logger
 
     if name == nil
       @name = type + "-" + String.random_alphanumeric
@@ -124,12 +125,14 @@ class LibvirtPool
       xml_desc = result.description
       if self.xmlequal?(Document.new(xml_desc).root)
         @remote_pool = pool
+        @logger.debug("Found existing storage pool #{pool.name} on host: #{node.hostname}")
         break
       end
     end
 
     if @remote_pool == nil
-      result = node.storagePoolDefineXML(@xml.to_s)
+      @logger.debug("Defining new storage pool: #{@xml.to_s} on host: #{node.hostname}")
+      result = node.storagePoolDefineXML(@xml.to_s, :timeout => 60 * 2)
       raise "Error creating pool: #{result.text}" unless result.status == 0
       @remote_pool = session.object(:object_id => result.pool)
       raise "Error finding newly created remote pool." unless @remote_pool
@@ -137,7 +140,8 @@ class LibvirtPool
       # we need this because we don't want to "build" LVM pools, which would
       # destroy existing data
       if @build_on_start
-        result = @remote_pool.build
+        @logger.debug("Building remote pool #{@remote_pool.name}")
+        result = @remote_pool.build(:timeout => 60 * 2)
         raise "Error building pool: #{result.text}" unless result.status == 0
       end
       @remote_pool_defined = true
@@ -151,7 +155,7 @@ class LibvirtPool
     if @remote_pool.state == "inactive"
       # only try to start the pool if it is currently inactive; in all other
       # states, assume it is already running
-      result = @remote_pool.create
+      result = @remote_pool.create(:timeout => 60 * 2)
       raise "Error defining pool: #{result.text}" unless result.status == 0
 
       # Refresh qpid object with new properties.
@@ -159,6 +163,13 @@ class LibvirtPool
 
       @remote_pool_started = true
     end
+
+    # Refresh the remote pool requesting that it rescan its volumes.  Putting
+    # it here means it will call this every time we connect to a pool from
+    # taskomatic.  This includes when starting a VM which is probably the most
+    # important time.
+    result = @remote_pool.refresh
+    puts "Error refreshing storage pool: #{result.text}" unless result.status == 0
   end
 
   def create_vol(type, name, size, owner, group, mode)
@@ -186,11 +197,11 @@ class LibvirtPool
     return false
   end
 
-  def self.factory(pool)
+  def self.factory(pool, logger)
     if pool[:type] == "IscsiStoragePool"
-      return IscsiLibvirtPool.new(pool.ip_addr, pool[:target])
+      return IscsiLibvirtPool.new(pool.ip_addr, pool[:target], pool[:port], logger)
     elsif pool[:type] == "NfsStoragePool"
-      return NFSLibvirtPool.new(pool.ip_addr, pool.export_path)
+      return NFSLibvirtPool.new(pool.ip_addr, pool.export_path, logger)
     elsif pool[:type] == "LvmStoragePool"
       # OK, if this is LVM storage, there are two cases we need to care about:
       # 1) this is a LUN with LVM already on it.  In this case, all we need to
@@ -205,7 +216,7 @@ class LibvirtPool
       phys_volume = StorageVolume.find(:first, :conditions =>
                                        [ "lvm_pool_id = ?", pool.id])
       return LVMLibvirtPool.new(pool.vg_name, phys_volume.path,
-                                pool.state == StoragePool::STATE_PENDING_SETUP)
+                                pool.state == StoragePool::STATE_PENDING_SETUP, logger)
     else
       raise "Unknown storage pool type " + pool[:type].to_s
     end
@@ -213,8 +224,9 @@ class LibvirtPool
 end
 
 class IscsiLibvirtPool < LibvirtPool
-  def initialize(ip_addr, target)
-    super('iscsi')
+  def initialize(ip_addr, target, port, logger)
+    mount = "#{ip_addr}-#{target}-#{port}"
+    super('iscsi', mount, logger)
 
     @type = 'iscsi'
     @ipaddr = ip_addr
@@ -234,8 +246,9 @@ class IscsiLibvirtPool < LibvirtPool
 end
 
 class NFSLibvirtPool < LibvirtPool
-  def initialize(ip_addr, export_path)
-    super('netfs')
+  def initialize(ip_addr, export_path, logger)
+    target = "#{ip_addr}-#{export_path.tr('/', '_')}"
+    super('netfs', target, logger)
 
     @type = 'netfs'
     @host = ip_addr
@@ -267,6 +280,7 @@ class NFSLibvirtPool < LibvirtPool
     # however.  We want to have non-sparse files for performance reasons.
     @vol_xml.root.add_element("allocation").add_text('0')
 
+    @logger.debug("Creating new volume on pool #{@remote_pool.name} - XML: #{@vol_xml.to_s}")
     result = @remote_pool.createVolumeXML(@vol_xml.to_s)
     raise "Error creating remote pool: #{result.text}" unless result.status == 0
     return result.volume
@@ -280,8 +294,8 @@ class NFSLibvirtPool < LibvirtPool
 end
 
 class LVMLibvirtPool < LibvirtPool
-  def initialize(vg_name, device, build_on_start)
-    super('logical', vg_name)
+  def initialize(vg_name, device, build_on_start, logger)
+    super('logical', vg_name, logger)
 
     @type = 'logical'
     @build_on_start = build_on_start
@@ -293,6 +307,8 @@ class LVMLibvirtPool < LibvirtPool
 
   def create_vol(name, size, owner, group, mode)
     super("logical", name, size, owner, group, mode)
+
+    @logger.debug("Creating new volume on pool #{@remote_pool.name} - XML: #{@vol_xml.to_s}")
     result = @remote_pool.createVolumeXML(@vol_xml.to_s)
     raise "Error creating remote pool: #{result.text}" unless result.status == 0
     return result.volume

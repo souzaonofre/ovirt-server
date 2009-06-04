@@ -64,8 +64,8 @@ foobar_prod1_vm:
   needs_restart: 0
   boot_device: cdrom
   host: fedoraworkstation_foobar_com
-  vm_resource_pool_id: 2
-ten:
+  vm_resource_pool: corp_com_production_vmpool
+foobar_prod2_vm:
   uuid: 24b9a994-d415-481d-ace8-1d810b601eb6
   description: foobar prod2
   num_vcpus_allocated: 2
@@ -77,8 +77,8 @@ ten:
   needs_restart: 0
   boot_device: cdrom
   host_id: 6
-  vm_resource_pool_id: 2
-eleven:
+  vm_resource_pool: corp_com_production_vmpool
+corp_com_errata_vm:
   uuid: 9b2c3c73-1abe-460e-b671-b8b7b6719e4c
   description: corp.com errata appliance
   num_vcpus_allocated: 2
@@ -90,8 +90,8 @@ eleven:
   needs_restart: 0
   boot_device: network
   host_id: 8
-  vm_resource_pool_id: 6
-twelve:
+  vm_resource_pool: corp_com_production_vmpool
+corp_com_bugzilla_vm:
   uuid: 552134c7-b0ad-4607-bbf5-d6b9a33c2476
   description: corp.com bugzilla appliance
   num_vcpus_allocated: 2
@@ -103,4 +103,4 @@ twelve:
   needs_restart: 0
   boot_device: network
   host_id: 8
-  vm_resource_pool_id: 6
+  vm_resource_pool: corp_com_production_vmpool

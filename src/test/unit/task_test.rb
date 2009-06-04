@@ -20,7 +20,7 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class TaskTest < Test::Unit::TestCase
-  fixtures :pools, :hosts, :vms, :permissions, :tasks
+  fixtures :pools, :hosts, :vms, :privileges, :roles, :permissions, :tasks
 
   def setup
     @task = Task.new( :type => 'HostTask', :state => 'finished' )

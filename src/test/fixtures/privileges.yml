@@ -1,0 +1,14 @@
+set_perms:
+  name: set_perms
+view_perms:
+  name: view_perms
+modify:
+  name: modify
+vm_control:
+  name: vm_control
+view:
+  name: view
+cloud_create:
+  name: cloud_create
+cloud_view:
+  name: cloud_view

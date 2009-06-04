@@ -2,19 +2,19 @@
   <%=h @pool.name %> quota
 <%- end -%>
 <%- content_for :action_links do -%>
-  <%if @is_hwpool_admin -%>
-    <%= link_to image_tag("icon_edit.png") + " Edit",
+  <%if @pool.parent.can_modify(@user) -%>
+    <%= link_to image_tag("icon_edit_11px.png") + " Edit",
                           {:controller => 'resources', :action => 'edit', :id => @pool},
                           :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
     <%if @pool.quota -%>
-      <%= link_to image_tag("icon_edit.png") + " Edit Quota",
+      <%= link_to image_tag("icon_edit_11px.png") + " Edit Quota",
                             {:controller => 'quota', :action => 'edit', :id => @pool.quota},
                             :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
       <a href="#confirm_delete_quota"  rel="facebox[.bolder]">
-        <%= image_tag "icon_x.png" %> Revert to Default Quota
+        <%= image_tag "icon_restore_11px.png" %> Revert to Default Quota
       </a> 
     <% else -%>
-      <%= link_to image_tag("icon_edit.png") + " Edit Quota",
+      <%= link_to image_tag("icon_edit_11px.png") + " Edit Quota",
                             {:controller => 'quota', :action => 'new', :pool_id => @pool },
                             :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
     <% end -%>
@@ -38,7 +38,6 @@
              }, 'json');
   }
 </script>
-
     <div id="vmpool_selection_id" style="display:none"><%= @pool.id %></div>
     <% resources = @pool.full_resources %>
     <div class="selection_key">
@@ -58,7 +57,6 @@
           <%= item[2]%><br>
         <% end %>
     </div>
-</div>
-<div class="selection_right">  
+<%- content_for :right do -%>
     <%= render_component :controller=> 'graph', :action => 'snapshot_graph', :id => @pool.id, :target => 'resource' %>
-</div>
+<% end -%>

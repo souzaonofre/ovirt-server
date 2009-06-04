@@ -90,8 +90,10 @@ class QuotaControllerTest < Test::Unit::TestCase
   end
 
   def test_no_perms_to_destroy
-    post :destroy, :id => quotas(:corp_com_dev_quota).id
-    assert_response :redirect #Is this really what we want? Or should we just pop up the login page?
+    post :destroy, :id => quotas(:corp_com_dev_quota).id, :format => "json"
+    assert_response :success
+    json = ActiveSupport::JSON.decode(@response.body)
+    assert_equal 'You have insufficient privileges to perform action.', json['alert']
   end
 
   #FIXME: write the code to make this a real test!

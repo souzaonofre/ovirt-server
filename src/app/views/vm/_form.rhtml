@@ -3,8 +3,7 @@
 <%  start_resources = @vm.vm_resource_pool.available_resources_for_vm(@vm) %>
 
 <!--[form:vm]-->
-<%= hidden_field 'vm', 'vm_resource_pool_id' unless @vm_resource_pool_name %>
-<%= hidden_field_tag 'vm_resource_pool_name', @vm_resource_pool_name if @vm_resource_pool_name %>
+<%= hidden_field 'vm', 'vm_resource_pool_id' %>
 <%= hidden_field_tag 'hardware_pool_id', @hardware_pool.id if @hardware_pool %>
 
     <%= text_field_with_label "Name:", "vm", "description", {:style=>"width:250px;"}  %>
@@ -73,7 +72,7 @@
             {if !item.available}disabled="disabled" style="display:none"{/if}
             {if item.selected}checked="checked"{/if}/> ${item.name} {if item.size}(${item.size} GB){/if}
             {if item.create_volume}
-              <%=image_tag("icon_addstorage.png")%>
+              <%=image_tag("icon_add_storage.png")%>
               {if item.is_pool}
               <a href="<%= url_for :controller => 'storage_volume', :action => 'new'%>?storage_pool_id=${item.id}&return_to_workflow=true"
                 rel="facebox[.bolder]" class="selection_facebox"></a>

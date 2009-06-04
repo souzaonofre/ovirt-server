@@ -48,7 +48,7 @@ class ManagedNodeConfigurationTest < Test::Unit::TestCase
 
     expected = <<-HERE
 # THIS FILE IS GENERATED!
-ifcfg=#{nic.mac}|breth0|BOOTPROTO=#{nic.boot_protocol}|TYPE=bridge|PEERDNS=no|ONBOOT=yes
+ifcfg=#{nic.mac}|breth0|BOOTPROTO=#{nic.boot_protocol}|TYPE=Bridge|PEERDNS=no|ONBOOT=yes
 ifcfg=#{nic.mac}|eth0|BRIDGE=breth0|ONBOOT=yes
     HERE
 
@@ -67,7 +67,7 @@ ifcfg=#{nic.mac}|eth0|BRIDGE=breth0|ONBOOT=yes
 
     expected = <<-HERE
 # THIS FILE IS GENERATED!
-ifcfg=#{nic.mac}|breth0|BOOTPROTO=#{nic.boot_protocol}|IPADDR=#{nic.ip_address}|NETMASK=#{nic.netmask}|BROADCAST=#{nic.broadcast}|GATEWAY=#{nic.gateway}|TYPE=bridge|PEERDNS=no|ONBOOT=yes
+ifcfg=#{nic.mac}|breth0|BOOTPROTO=#{nic.boot_protocol}|IPADDR=#{nic.ip_address}|NETMASK=#{nic.netmask}|BROADCAST=#{nic.broadcast}|GATEWAY=#{nic.gateway}|TYPE=Bridge|PEERDNS=no|ONBOOT=yes
 ifcfg=#{nic.mac}|eth0|BRIDGE=breth0|ONBOOT=yes
     HERE
 
@@ -76,6 +76,8 @@ ifcfg=#{nic.mac}|eth0|BRIDGE=breth0|ONBOOT=yes
       {"#{nic.mac}" => 'eth0'}
     )
 
+    logger.info "expected: #{expected.class}, #{expected.length}, #{expected}"
+    logger.info "result: #{result.class}, #{result.size}, #{result}"
     assert_equal expected, result
   end
 
@@ -87,9 +89,9 @@ ifcfg=#{nic.mac}|eth0|BRIDGE=breth0|ONBOOT=yes
 
     expected = <<-HERE
 # THIS FILE IS GENERATED!
-ifcfg=#{nic1.mac}|breth0|BOOTPROTO=#{nic1.boot_protocol}|IPADDR=#{nic1.ip_address}|NETMASK=#{nic1.netmask}|BROADCAST=#{nic1.broadcast}|GATEWAY=#{nic1.gateway}|TYPE=bridge|PEERDNS=no|ONBOOT=yes
+ifcfg=#{nic1.mac}|breth0|BOOTPROTO=#{nic1.boot_protocol}|IPADDR=#{nic1.ip_address}|NETMASK=#{nic1.netmask}|BROADCAST=#{nic1.broadcast}|GATEWAY=#{nic1.gateway}|TYPE=Bridge|PEERDNS=no|ONBOOT=yes
 ifcfg=#{nic1.mac}|eth0|BRIDGE=breth0|ONBOOT=yes
-ifcfg=#{nic2.mac}|breth1|BOOTPROTO=#{nic2.boot_protocol}|TYPE=bridge|PEERDNS=no|ONBOOT=yes
+ifcfg=#{nic2.mac}|breth1|BOOTPROTO=#{nic2.boot_protocol}|TYPE=Bridge|PEERDNS=no|ONBOOT=yes
 ifcfg=#{nic2.mac}|eth1|BRIDGE=breth1|ONBOOT=yes
     HERE
 
@@ -116,7 +118,7 @@ ifcfg=#{nic2.mac}|eth1|BRIDGE=breth1|ONBOOT=yes
 # THIS FILE IS GENERATED!
 bonding=#{bonding.interface_name}
 ifcfg=none|#{bonding.interface_name}|BONDING_OPTS="mode=#{bonding.bonding_type.mode} miimon=100"|BRIDGE=br#{bonding.interface_name}|ONBOOT=yes
-ifcfg=none|br#{bonding.interface_name}|BOOTPROTO=dhcp|TYPE=bridge|PEERDNS=no|ONBOOT=yes
+ifcfg=none|br#{bonding.interface_name}|BOOTPROTO=dhcp|TYPE=Bridge|PEERDNS=no|ONBOOT=yes
 ifcfg=#{nic1.mac}|eth0|MASTER=#{bonding.interface_name}|SLAVE=yes|ONBOOT=yes
 ifcfg=#{nic2.mac}|eth1|MASTER=#{bonding.interface_name}|SLAVE=yes|ONBOOT=yes
 HERE
@@ -143,7 +145,7 @@ HERE
 # THIS FILE IS GENERATED!
 bonding=#{bonding.interface_name}
 ifcfg=none|#{bonding.interface_name}|BONDING_OPTS="mode=#{bonding.bonding_type.mode} miimon=100"|BRIDGE=br#{bonding.interface_name}|ONBOOT=yes
-ifcfg=none|br#{bonding.interface_name}|BOOTPROTO=#{bonding.boot_protocol}|TYPE=bridge|PEERDNS=no|ONBOOT=yes
+ifcfg=none|br#{bonding.interface_name}|BOOTPROTO=#{bonding.boot_protocol}|TYPE=Bridge|PEERDNS=no|ONBOOT=yes
 ifcfg=#{nic1.mac}|eth0|MASTER=#{bonding.interface_name}|SLAVE=yes|ONBOOT=yes
 ifcfg=#{nic2.mac}|eth1|MASTER=#{bonding.interface_name}|SLAVE=yes|ONBOOT=yes
 HERE

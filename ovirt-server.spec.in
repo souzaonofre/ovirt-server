@@ -35,10 +35,9 @@ Requires: iscsi-initiator-utils
 Requires: cyrus-sasl-gssapi
 Requires: ovirt-docs
 Requires: qpidd
-Requires: ruby-qpid
+Requires: ruby-qpid >= 0.5.776856
 Requires: qpidc
 Requires: qmf
-Requires: ruby-qpid
 Requires(post):  /sbin/chkconfig
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
@@ -104,6 +103,7 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-mongrel-rails.sysconf %{buildroot}%{_sysconfdir}/sysconfig/ovirt-mongrel-rails
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-rails.sysconf %{buildroot}%{_sysconfdir}/sysconfig/ovirt-rails
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-taskomatic %{buildroot}%{_initrddir}
+%{__install} -Dp -m0755 %{pbuild}/conf/ovirt-vnc-proxy %{buildroot}%{_initrddir}
 
 # copy over all of the src directory...
 %{__cp} -a %{pbuild}/src/* %{buildroot}%{app_root}
@@ -130,6 +130,7 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 %{__rm} -f %{buildroot}%{app_root}/task-omatic/.gitignore
 
 %{__cp} -a %{pbuild}/scripts/ovirt-add-host %{buildroot}%{_bindir}
+%{__cp} -a %{pbuild}/scripts/ovirt-vm2node %{buildroot}%{_bindir}
 %{__cp} -a %{pbuild}/scripts/ovirt-reindex-search %{buildroot}%{_sbindir}
 %{__cp} -a %{pbuild}/scripts/ovirt-update-search %{buildroot}%{_sbindir}
 %{__rm} -rf %{buildroot}%{app_root}/tmp
@@ -179,6 +180,7 @@ fi
 %daemon_chkconfig_post -d ovirt-host-collect
 %daemon_chkconfig_post -d ovirt-mongrel-rails
 %daemon_chkconfig_post -d ovirt-taskomatic
+%daemon_chkconfig_post -d ovirt-vnc-proxy
 
 %preun
 if [ "$1" = 0 ] ; then
@@ -187,11 +189,13 @@ if [ "$1" = 0 ] ; then
   /sbin/service ovirt-host-collect stop > /dev/null 2>&1
   /sbin/service ovirt-mongrel-rails stop > /dev/null 2>&1
   /sbin/service ovirt-taskomatic stop > /dev/null 2>&1
+  /sbin/service ovirt-vnc-proxy stop > /dev/null 2>&1
   /sbin/chkconfig --del ovirt-host-browser
   /sbin/chkconfig --del ovirt-db-omatic
   /sbin/chkconfig --del ovirt-host-collect
   /sbin/chkconfig --del ovirt-mongrel-rails
   /sbin/chkconfig --del ovirt-taskomatic
+  /sbin/chkconfig --del ovirt-vnc-proxy
 fi
 
 %files
@@ -199,11 +203,13 @@ fi
 %{_sbindir}/ovirt-reindex-search
 %{_sbindir}/ovirt-update-search
 %{_bindir}/ovirt-add-host
+%{_bindir}/ovirt-vm2node
 %{_initrddir}/ovirt-host-browser
 %{_initrddir}/ovirt-db-omatic
 %{_initrddir}/ovirt-host-collect
 %{_initrddir}/ovirt-mongrel-rails
 %{_initrddir}/ovirt-taskomatic
+%{_initrddir}/ovirt-vnc-proxy
 %{_sysconfdir}/cron.d/%{name}
 %config(noreplace) %{_sysconfdir}/sysconfig/ovirt-mongrel-rails
 %config(noreplace) %{_sysconfdir}/sysconfig/ovirt-rails

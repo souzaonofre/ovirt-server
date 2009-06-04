@@ -115,7 +115,7 @@ function add_storage_to_smart_pool(url)
                }, 'json');
     }
 }
-function add_vms_to_smart_pool(url)
+function add_vms_to_current_smart_pool(url)
 {
     vms= get_selected_checkboxes("add_smart_vms_grid_form");
     if (validate_selected(vms, "vm")) {
@@ -380,4 +380,17 @@ var VmCreator = {
       VmCreator.recreateTree(storedOptions);
       VmCreator.clickCheckboxes();
   }
+}
+
+function get_server_from_url()
+{
+   var regexS = "https.*"
+   var regex  = new RegExp(regexS);
+   var results = regex.exec( window.location.href );
+   var start = 8;
+   if(results == null){
+     start = 7;
+   }
+   var end = window.location.href.indexOf('/', 8) - start;
+   return window.location.href.substr(start, end);
 }

@@ -60,6 +60,7 @@ class TaskOmatic
     @nth_host = 0
 
     do_daemon = true
+    do_debug = false
 
     opts = OptionParser.new do |opts|
       opts.on("-h", "--help", "Print help message") do
@@ -68,6 +69,9 @@ class TaskOmatic
       end
       opts.on("-n", "--nodaemon", "Run interactively (useful for debugging)") do |n|
         do_daemon = false
+      end
+      opts.on("-d", "--debug", "Print verbose debugging output") do |d|
+        do_debug = true
       end
       opts.on("-s N", Integer, "--sleep",
               "Seconds to sleep between iterations (default is 5 seconds)") do |s|
@@ -93,6 +97,11 @@ class TaskOmatic
     else
       @logger = Logger.new(STDERR)
     end
+
+    #@logger.level = Logger::DEBUG if do_debug
+    #
+    # For now I'm going to always enable debugging until we do a real release.
+    @logger.level = Logger::DEBUG
 
     ensure_credentials
 
@@ -193,11 +202,12 @@ class TaskOmatic
       # we have to special case LVM pools.  In that case, we need to first
       # activate the underlying physical device, and then do the logical one
       if db_volume[:type] == "LvmStorageVolume"
-        phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume)
+        phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume, @logger)
         phys_libvirt_pool.connect(@session, node)
       end
 
-      libvirt_pool = LibvirtPool.factory(db_pool)
+      @logger.debug "Verifying mount of pool #{db_pool.ip_addr}:#{db_pool.type}:#{db_pool.target}:#{db_pool.export_path}"
+      libvirt_pool = LibvirtPool.factory(db_pool, @logger)
       libvirt_pool.connect(@session, node)
 
       # OK, the pool should be all set.  The last thing we need to do is get
@@ -205,10 +215,15 @@ class TaskOmatic
 
       volume_name = db_volume.read_attribute(db_volume.volume_name)
       pool = libvirt_pool.remote_pool
+
+      @logger.debug "Pool mounted: #{pool.name}; state: #{pool.state}"
+
       volume = @session.object(:class => 'volume',
                                'name' => volume_name,
                                'storagePool' => pool.object_id)
       raise "Unable to find volume #{volume_name} attached to pool #{pool.name}." unless volume
+      @logger.debug "Verified volume of pool #{volume.path}"
+
       storagedevs << volume.path
     end
 
@@ -216,6 +231,7 @@ class TaskOmatic
   end
 
   def task_create_vm(task)
+    @logger.info "starting task_create_vm"
     # This is mostly just a place holder.
     vm = find_vm(task, false)
     if vm.state != Vm::STATE_PENDING
@@ -255,6 +271,7 @@ class TaskOmatic
 
 
   def task_shutdown_or_destroy_vm(task, action)
+    @logger.info "starting task_shutdown_or_destroy_vm"
     db_vm = task.vm
     vm = @session.object(:class => 'domain', 'uuid' => db_vm.uuid)
     if !vm
@@ -269,7 +286,6 @@ class TaskOmatic
       result = vm.undefine
       if result.status == 0
         @logger.info "Deleted VM #{db_vm.description}."
-        set_vm_shut_down(db_vm)
         teardown_storage_pools(node)
       end
       return
@@ -310,6 +326,7 @@ class TaskOmatic
   end
 
   def task_start_vm(task)
+    @logger.info "starting task_start_vm"
     db_vm = find_vm(task, false)
 
     vm = @session.object(:class => "domain", 'uuid' => db_vm.uuid)
@@ -329,6 +346,7 @@ class TaskOmatic
     node = @session.object(:class => "node", 'hostname' => db_host.hostname)
 
     raise "Unable to find host #{db_host.hostname} to create VM on." unless node
+    @logger.info("VM will be started on node #{node.hostname}")
 
     image_volume = task_storage_cobbler_setup(db_vm)
 
@@ -338,6 +356,8 @@ class TaskOmatic
     volumes = []
     volumes += db_vm.storage_volumes
     volumes << image_volume if image_volume
+
+    @logger.debug("Connecting volumes: #{volumes}")
     storagedevs = connect_storage_pools(node, volumes)
 
     # determine if vm has been assigned to physical or
@@ -365,6 +385,8 @@ class TaskOmatic
     xml = create_vm_xml(db_vm.description, db_vm.uuid, db_vm.memory_allocated,
               db_vm.memory_used, db_vm.num_vcpus_allocated, db_vm.boot_device,
               db_vm.vnic_mac_addr, net_device, storagedevs)
+
+    @logger.debug("XML Domain definition: #{xml}")
 
     result = node.domainDefineXML(xml.to_s)
     raise "Error defining virtual machine: #{result.text}" unless result.status == 0
@@ -399,6 +421,7 @@ class TaskOmatic
   end
 
   def task_suspend_vm(task)
+    @logger.info "starting task_suspend_vm"
     db_vm = task.vm
     dom = @session.object(:class => 'domain', 'uuid' => db_vm.uuid)
     raise "Unable to locate VM to suspend" unless dom
@@ -416,6 +439,7 @@ class TaskOmatic
   end
 
   def task_resume_vm(task)
+    @logger.info "starting task_resume_vm"
     db_vm = task.vm
     dom = @session.object(:class => 'domain', 'uuid' => db_vm.uuid)
     raise "Unable to locate VM to resume" unless dom
@@ -436,6 +460,7 @@ class TaskOmatic
   end
 
   def task_save_vm(task)
+    @logger.info "starting task_save_vm"
 
     # FIXME: This task is actually very broken.  It saves to a local
     # disk on the node which could be volatile memory, and there is no
@@ -457,6 +482,7 @@ class TaskOmatic
   end
 
   def task_restore_vm(task)
+    @logger.info "starting task_restore_vm"
 
     # FIXME: This is also broken, see task_save_vm FIXME.
     db_vm = task.vm
@@ -498,17 +524,18 @@ class TaskOmatic
 
       volumes = []
       volumes += db_vm.storage_volumes
+      @logger.debug("Connecting volumes: #{volumes}")
       connect_storage_pools(dest_node, volumes)
 
       # Sadly migrate with qpid is broken because it requires a connection between
       # both nodes and currently that can't happen securely.  For now we do it
       # the old fashioned way..
-      src_conn = Libvirt::open("qemu+tcp://" + src_node.hostname + "/system")
-      dst_conn = Libvirt::open("qemu+tcp://" + dest_node.hostname + "/system")
-      dom = src_conn.lookup_domain_by_uuid(vm.uuid)
-      dom.migrate(dst_conn, Libvirt::Domain::MIGRATE_LIVE)
-      src_conn.close
-      dst_conn.close
+      src_uri = "qemu+tcp://" + src_node.hostname + "/system"
+      dest_uri = "qemu+tcp://" + dest_node.hostname + "/system"
+      @logger.debug("Migrating from #{src_uri} to #{dest_uri}")
+
+      result = vm.migrate(dest_uri, Libvirt::Domain::MIGRATE_LIVE, '', '', 0, :timeout => 60 * 4)
+      @logger.error "Error migrating VM: #{result.text}" unless result.status == 0
 
       # undefine can fail, for instance, if we live migrated from A -> B, and
       # then we are shutting down the VM on B (because it only has "transient"
@@ -518,7 +545,7 @@ class TaskOmatic
       # difference between a real undefine failure and one because of migration
       result = vm.undefine
 
-      @logger.info "Error undefining old vm after migrate: #{result.text}" unless result.status == 0
+      @logger.info "Couldn't undefine old vm after migrate (probably fine): #{result.text}" unless result.status == 0
 
       # See if we can take down storage pools on the src host.
       teardown_storage_pools(src_node)
@@ -535,7 +562,7 @@ class TaskOmatic
   end
 
   def task_migrate_vm(task)
-    @logger.info "migrate_vm"
+    @logger.info "starting task_migrate_vm"
 
     # here, we are given an id for a VM to migrate; we have to lookup which
     # physical host it is running on
@@ -585,7 +612,7 @@ class TaskOmatic
   #                   represented in the database
 
   def task_refresh_pool(task)
-    @logger.info "refresh_pool"
+    @logger.info "starting task_refresh_pool"
 
     db_pool_phys = task.storage_pool
     raise "Could not find storage pool" unless db_pool_phys
@@ -601,7 +628,9 @@ class TaskOmatic
     # little tricky, though; we have to make sure that we don't pull the
     # database entry out from underneath a possibly running VM (or do we?)
     begin
-      phys_libvirt_pool = LibvirtPool.factory(db_pool_phys)
+      @logger.info("refresh being done on node #{node.hostname}")
+
+      phys_libvirt_pool = LibvirtPool.factory(db_pool_phys, @logger)
       phys_libvirt_pool.connect(@session, node)
       db_pool_phys.state = StoragePool::STATE_AVAILABLE
       db_pool_phys.save!
@@ -621,14 +650,14 @@ class TaskOmatic
           if not existing_vol
             add_volume_to_db(db_pool_phys, volume);
           else
-            @logger.error "volume #{volume.name} already exists in db.."
+            @logger.debug "Scanned volume #{volume.name} already exists in db.."
           end
 
           # Now check for an LVM pool carving up this volume.
           lvm_name = volume.childLVMName
           next if lvm_name == ''
 
-          @logger.info "Child LVM exists for this volume - #{lvm_name}"
+          @logger.debug "Child LVM exists for this volume - #{lvm_name}"
           lvm_db_pool = LvmStoragePool.find(:first, :conditions =>
                                           [ "vg_name = ?", lvm_name ])
           if lvm_db_pool == nil
@@ -653,7 +682,7 @@ class TaskOmatic
           physical_vol.lvm_pool_id = lvm_db_pool.id
           physical_vol.save!
 
-          lvm_libvirt_pool = LibvirtPool.factory(lvm_db_pool)
+          lvm_libvirt_pool = LibvirtPool.factory(lvm_db_pool, @logger)
           lvm_libvirt_pool.connect(@session, node)
 
           lvm_volumes = @session.objects(:class => 'volume',
@@ -667,7 +696,7 @@ class TaskOmatic
             if not existing_vol
               add_volume_to_db(lvm_db_pool, lvm_volume, "0744", "0744", "0744");
             else
-              @logger.error "volume #{lvm_volume.name} already exists in db.."
+              @logger.info "volume #{lvm_volume.name} already exists in db.."
             end
           end
         end
@@ -678,7 +707,7 @@ class TaskOmatic
   end
 
   def task_create_volume(task)
-    @logger.info "create_volume"
+    @logger.info "starting task_create_volume"
 
     db_volume = task.storage_volume
     raise "Could not find storage volume to create" unless db_volume
@@ -690,12 +719,12 @@ class TaskOmatic
 
     begin
       if db_volume[:type] == "LvmStorageVolume"
-        phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume)
+        phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume, @logger)
         phys_libvirt_pool.connect(@session, node)
       end
 
       begin
-        libvirt_pool = LibvirtPool.factory(db_pool)
+        libvirt_pool = LibvirtPool.factory(db_pool, @logger)
 
         begin
           libvirt_pool.connect(@session, node)
@@ -703,9 +732,9 @@ class TaskOmatic
           volume = @session.object(:object_id => volume_id)
           raise "Unable to find newly created volume" unless volume
 
-          @logger.info "  volume:"
+          @logger.debug "  volume:"
           for (key, val) in volume.properties
-            @logger.info "    property: #{key}, #{val}"
+            @logger.debug "    property: #{key}, #{val}"
           end
 
           # FIXME: Should have this too I think..
@@ -727,10 +756,22 @@ class TaskOmatic
         end
       end
     end
+
+    # Now that we created a new volume, we need to refresh
+    # the storage pools to ensure that they pick up the changes.
+    # I currently refresh ALL storage pools at this time as it
+    # shouldn't be a long operation and it doesn't hurt to refresh
+    # them once in a while.
+    pools = @session.objects(:class => 'pool')
+    pools.each do |pool|
+      result = pool.refresh
+      @logger.info "Problem refreshing pool (you can probably ignore this): #{result.text}" unless result.status == 0
+    end
+
   end
 
   def task_delete_volume(task)
-    @logger.info "delete_volume"
+    @logger.info "starting task_delete_volume"
 
     db_volume = task.storage_volume
     raise "Could not find storage volume to create" unless db_volume
@@ -742,13 +783,13 @@ class TaskOmatic
 
     begin
       if db_volume[:type] == "LvmStorageVolume"
-        phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume)
+        phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume, @logger)
         phys_libvirt_pool.connect(@session, node)
         @logger.info "connected to lvm pool.."
       end
 
       begin
-        libvirt_pool = LibvirtPool.factory(db_pool)
+        libvirt_pool = LibvirtPool.factory(db_pool, @logger)
         libvirt_pool.connect(@session, node)
 
         begin
@@ -792,6 +833,7 @@ class TaskOmatic
   end
 
   def task_clear_vms_host(task)
+    @logger.info "starting task_clear_vms_host"
     src_host = task.host
 
     src_host.vms.each do |vm|
@@ -800,7 +842,19 @@ class TaskOmatic
   end
 
   def mainloop()
+    was_disconnected = false
     loop do
+
+      if not @broker.connected?
+        @logger.info("Cannot implement tasks, not connected to broker.  Sleeping.")
+        sleep(@sleeptime * 3)
+        was_disconnected = true
+        next
+      end
+
+      @logger.info("Reconnected, resuming task checking..") if was_disconnected
+      was_disconnected = false
+
       tasks = Array.new
       begin
         tasks = Task.find(:all, :conditions =>
@@ -859,7 +913,7 @@ class TaskOmatic
             state = Task::STATE_FAILED
             task.message = "Unknown task type"
           end
-        rescue => ex
+        rescue Exception => ex
           @logger.error "Task action processing failed: #{ex.class}: #{ex.message}"
           @logger.error ex.backtrace
           state = Task::STATE_FAILED
@@ -868,7 +922,12 @@ class TaskOmatic
 
         task.state = state
         task.time_ended = Time.now
-        task.save!
+        begin
+          task.save!
+        rescue Exception => ex
+          @logger.error "Error saving task state for task #{task.id}: #{ex.class}: #{ex.message}"
+          @logger.error ex.backtrace
+        end
         @logger.info "done"
       end
       # FIXME: here, we clean up "orphaned" tasks.  These are tasks

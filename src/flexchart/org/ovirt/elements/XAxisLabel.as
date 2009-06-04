@@ -26,6 +26,7 @@ package org.ovirt.elements {
   import flash.events.MouseEvent;
   import mx.events.*;
   import mx.events.FlexEvent;
+  import org.ovirt.Constants;
 
   public class XAxisLabel extends Box {
 
@@ -36,6 +37,7 @@ package org.ovirt.elements {
       super();
       labelText = new TextLiberation(text);
       labelText.setVisible(true);
+      labelText.setStyle("color",Constants.labelTextColor);
       this.addChild(labelText);
       this.horizontalScrollPolicy = ScrollPolicy.OFF;
       this.verticalScrollPolicy = ScrollPolicy.OFF;

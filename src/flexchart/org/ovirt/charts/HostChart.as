@@ -19,6 +19,7 @@
 */
 
 package org.ovirt.charts {
+  import flash.display.Graphics;
   import flash.events.Event;
   import flash.events.MouseEvent;
   import mx.collections.ArrayCollection;
@@ -29,9 +30,11 @@ package org.ovirt.charts {
   import mx.controls.TextInput;
   import mx.controls.DateField;
   import mx.controls.Button;
+  import mx.controls.Label;
   import mx.controls.PopUpMenuButton;
   import mx.controls.Text;
   import mx.events.MenuEvent;
+  import mx.events.FlexEvent;
   import mx.formatters.DateFormatter;
   import org.ovirt.data.*;
   import org.ovirt.elements.*;
@@ -42,9 +45,21 @@ package org.ovirt.charts {
   public class HostChart extends Chart {
 
     private var yScale:Scale;
+    private var navBar:HBox;
     private var chartFrame:HBox;
     private var chartArea:Canvas;
     private var XAxisLabelArea:Canvas;
+
+    //this has to happen after the scale area has been rendered, or it will have no width.
+    private function drawLine(event:Event):void {
+      var xg:Graphics = XAxisLabelArea.graphics;
+      xg.beginFill(Constants.axisColor);
+      xg.lineStyle(1,Constants.axisColor);
+      xg.moveTo(yScale.width,0);
+      xg.lineTo(Constants.width,0);
+      xg.endFill();
+    }
+
 
     /*
       Constructors
@@ -74,6 +89,27 @@ package org.ovirt.charts {
       var i:int;
       var yLabelPercentWidth:int = 8;
 
+      var myDate:Date = new Date();
+      myDate.setTime(startTime * 1000);
+      var dateFormat:DateFormatter = new DateFormatter();
+      dateFormat.formatString = "JJ:NN DD-MMM-YYYY";
+
+      navBar = new HBox();
+      navBar.setStyle("horizontalGap","1");
+      navBar.height = 20;
+      navBar.percentWidth = 100;
+      navBar.setVisible(true);
+      var navBarLabel:Label = new Label();
+      navBarLabel.text = "Host status at " + dateFormat.format(myDate);
+      navBar.addChild(navBarLabel);
+
+      var closeLink:Label = new Label();
+      closeLink.setStyle("color","0x2875c1");
+      closeLink.setStyle("textDecoration","underline");
+      closeLink.text = "Close";
+      navBar.addChild(closeLink);
+      this.container.addChild(navBar);
+
       chartFrame = new HBox();
       chartFrame.percentHeight = 80;
       chartFrame.percentWidth = 100;
@@ -88,12 +124,13 @@ package org.ovirt.charts {
       chartArea = new Canvas();
       chartArea.percentHeight = 100;
       chartArea.percentWidth = 100 - yLabelPercentWidth;
-      chartArea.setStyle("backgroundColor","0xbbccdd");
+      chartArea.setStyle("backgroundColor","0xffffff");
 
       chartArea.verticalScrollPolicy = ScrollPolicy.OFF
 
       chartFrame.addChild(yScale);
       chartFrame.addChild(chartArea);
+      chartFrame.addEventListener(FlexEvent.CREATION_COMPLETE,drawLine);
       this.container.addChild(chartFrame);
 
       XAxisLabelArea = new Canvas();
@@ -143,6 +180,8 @@ package org.ovirt.charts {
           var dataPoint:DataPoint = dataPoints[i] as DataPoint;
 
           var bar:SingleBar = new SingleBar(dataPoint,scale);
+          bar.setColor(Constants.hostsBarColor)
+          bar.setLitColor(Constants.hostsBarLitColor)
           chartArea.addChild(bar);
           bar.width = barWidth;
 	  bar.x = currentBarPosition;
@@ -173,5 +212,6 @@ package org.ovirt.charts {
         trace(e.getStackTrace())
       }
     }
+
   }
 }

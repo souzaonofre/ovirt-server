@@ -50,7 +50,7 @@ class DirectoryPool < Pool
         user_root.create_with_parent(get_smart_root)
         permission = Permission.new({:pool_id => user_root.id,
                                      :uid => user,
-                                     :user_role => Permission::ROLE_SUPER_ADMIN})
+                                     :role_id => Role.find_by_name(Role::SUPER_ADMIN).id})
         #we don't need save_with_new_children here since there are no children yet
         permission.save!
       end

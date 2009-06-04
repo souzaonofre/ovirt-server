@@ -4,19 +4,19 @@
 
 <%- content_for :action_links do -%>
   <%if @can_modify -%>
-      <%= link_to image_tag("icon_edit.png") + " Edit",
+      <%= link_to image_tag("icon_edit_11px.png") + " Edit",
                             {:controller => 'storage', :action => 'edit', :id => @storage_pool},
                             :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
       <a href="#" onClick="refresh_storage_pool()">
-        <%= image_tag "icon_refresh.png" %> Refresh
+        <%= image_tag "icon_refresh_11px.png" %> Refresh
       </a> 
       <%if @storage_pool.user_subdividable -%>
-      <%= link_to image_tag("icon_addstorage.png") + " Add new Volume",
+      <%= link_to image_tag("icon_add_11px.png") + " Add New Volume",
                             {:controller => 'storage_volume', :action => 'new', :storage_pool_id => @storage_pool.id},
                              :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
     <% end %>
       <a href="#confirm_delete_storage" rel="facebox[.bolder]">
-        <%= image_tag "icon_x.png" %> Delete
+        <%= image_tag "icon_delete_11px.png" %> Delete
       </a> 
   <%- end -%>
 <%- end -%>

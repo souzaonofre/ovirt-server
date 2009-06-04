@@ -18,6 +18,8 @@
 }
 
 .header_titlebar {
+  color: #4e4e4e;
+  text-transform: uppercase;
   background: #979797;
   float: left;
   height: 25px;
@@ -29,7 +31,7 @@
 .header_menu {
   padding: 5px 0 0 10px;
   margin: 1px;
-  background: #CCCCCC url(../images/bg_menu_big.jpg) repeat-x top;
+  background: #CCCCCC url(../images/bg_navtoolbar.png) repeat-x top;
   font-size: 110%;
   line-height:1.5;
   height: 26px;
@@ -80,10 +82,11 @@
     height: 28px;
     border-right: 1px solid #5A7A8E;
     border-left: 1px solid #93B2C4;
-    background: #000000 url(../images/bg_toolbarheader.jpg) repeat-x top;
+    background: #000000 url(../images/bg_toolbarheader.png) repeat-x top;
 }
 #toolbar_nav li:hover {
     background: #4B95B8;
+    color: #FFFFFF;
 }
 #toolbar_nav li.current {
     background: #4B95B8;
@@ -124,19 +127,37 @@
 }
 
 /***  the no grid items block ***/
-.no-grid-items{
+.no-grid-items {
     padding: 45px;
     margin: 50px;
-    width: 750px;
     height: 150px;
-    border: 1px solid #E8E8E8;
+    border: 1px solid #c9e7f7;
     vertical-align: middle;
 }
-.no-grid-items-text {
+
+.no-grid-items img{
+	float:left;
+}
+
+.no-grid-items-text{
   float: left;
-  padding-top: 35px;
   padding-left: 20px;
 }
+
+.no-grid-items-text h2{
+	margin: 0.8em 0 0;
+	font-family: Arial, sans-serif;
+}
+
+.no-grid-items-text p{
+	color:#999999;
+}
+
+.no-grid-items-button{
+	margin: 2.5em 0 0 0;
+}
+
+
 
 /***************************
  *      Graphing Style
@@ -208,11 +229,14 @@
 }
 
 /* snapshot graphs on hardware / resource summary tab */
-#snapshot_graphs table {
-  width: 98%;
-}
 #snapshot_graphs th    { background: #EEEEEE; text-align: left; padding-left: 10px;border:1px solid #CCCCCC;}
-#snapshot_graphs td    { padding-left: 10px; background: #FFFFFF;border:1px solid #CCCCCC;}
+#snapshot_graphs td {
+  padding-left: 10px;
+  padding-right: 10px;
+  white-space: nowrap;
+  background: #FFFFFF;
+  border:1px solid #CCCCCC;
+}
 .snapshot_graph_container{
   width: 180px;
   height: 10px;

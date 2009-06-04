@@ -24,4 +24,15 @@ class IpAddress < ActiveRecord::Base
    belongs_to :network
    belongs_to :nic
    belongs_to :bonding
+
+  def self.factory(params = {})
+    case params[:type]
+    when "IpV4Address"
+      return IpV4Address.new(params)
+    when "IpV6Address"
+      return IpV6Address.new(params)
+    else
+      raise ArgumentError("Invalid type #{params[:type]}")
+    end
+  end
 end

@@ -124,6 +124,12 @@ if (prompt_yes_no(welcome, :default => "y") == "n")
     exit(0)
 end
 
+modssl_check = `rpm -q mod_ssl`
+if modssl_check !~ /(not installed)/
+    puts "\nmod_ssl package must be removed prior to installing, to remove run: rpm -e mod_ssl\n\n"
+    exit
+end
+
 if File.exist?("/usr/sbin/selinuxenabled")
     sestatus = system "/usr/sbin/selinuxenabled"
     if sestatus == true
@@ -183,6 +189,8 @@ File.open('/etc/resolv.conf').each_line{ |line|
   line = line.chomp
     puts line if line =~ /nameserver/
 }
+@cli.say("<%= color('\nIf your above dns servers contain the A records for your management server select \"y\"
+otherwise select \"n\" and a dns server will be configured during the install', RED) %>")
 dns_servers = prompt_yes_no("Use this systems's dns servers?")
 
 guest_httpd_ipaddr = interfaces[guest_httpd_dev]

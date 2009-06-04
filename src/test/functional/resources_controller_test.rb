@@ -24,7 +24,7 @@ require 'resources_controller'
 class ResourcesController; def rescue_action(e) raise e end; end
 
 class ResourcesControllerTest < ActionController::TestCase
-  fixtures :permissions, :pools
+  fixtures :privileges, :roles, :permissions, :pools
 
   def setup
     @controller = ResourcesController.new
@@ -71,7 +71,7 @@ class ResourcesControllerTest < ActionController::TestCase
     post :destroy, :id => pools(:corp_com_production_vmpool).id
     assert_response :success
     json = ActiveSupport::JSON.decode(@response.body)
-    assert_equal 'Virtual Machine Pool was successfully deleted.', json['alert']
+    assert_equal 'Pool was successfully deleted.', json['alert']
   end
 
 end

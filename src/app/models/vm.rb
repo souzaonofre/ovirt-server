@@ -51,7 +51,7 @@ class Vm < ActiveRecord::Base
   validates_format_of :uuid,
      :with => %r([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})
 
-  FORWARD_VNC_PORT_START = 5900
+  FORWARD_VNC_PORT_START = 5901
 
   validates_numericality_of :forward_vnc_port,
     :message => 'must be >= ' + FORWARD_VNC_PORT_START.to_s,
@@ -177,10 +177,16 @@ class Vm < ActiveRecord::Base
      :in => EFFECTIVE_STATE.keys
 
 
+  def get_vm_pool
+    vm_resource_pool
+  end
   def get_hardware_pool
     pool = vm_resource_pool
     pool = pool.get_hardware_pool if pool
     pool
+  end
+  def permission_obj
+    vm_resource_pool
   end
   def storage_volume_ids
     storage_volumes.collect {|x| x.id }
@@ -295,8 +301,7 @@ class Vm < ActiveRecord::Base
     task = VmTask.new({ :user        => user,
                         :task_target => self,
                         :action      => action,
-                        :args        => data,
-                        :state       => Task::STATE_QUEUED})
+                        :args        => data})
     task.save!
     return true
   end
@@ -372,6 +377,19 @@ class Vm < ActiveRecord::Base
                i = i + 1
             }
     return i
+  end
+
+  # Make method for calling paginated vms easier for clients.
+  # TODO: Might want to have an optional param for per_page var
+  def self.paged_with_perms(user, priv, page, order)
+    Vm.paginate(:include => [{:vm_resource_pool =>
+                              {:permissions => {:role => :privileges}}}],
+                :conditions => ["privileges.name=:priv
+                           and permissions.uid=:user",
+                         { :user => user, :priv => priv }],
+                :per_page => 5,
+                :page => page,
+                :order => order)
   end
 
   protected

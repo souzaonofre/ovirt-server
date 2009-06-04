@@ -65,16 +65,16 @@ define dns::common($guest_ipaddr="", $admin_ipaddr="",$guest_dev="",$admin_dev="
         require => [Single_exec["set_hostname"], Package["dnsmasq"], File["/etc/dhclient.conf"]]  ,
         notify => Service[dnsmasq],
     }
+
+    single_exec {"add_guest_server_to_etc_hosts":
+        command => "/bin/echo $guest_ipaddr $ipa_host >> /etc/hosts",
+        notify => [Service[dnsmasq], Single_exec["add_dns_server_to_resolv.conf"]]
+    }
 }
 
 define dns::bundled($guest_ipaddr="", $admin_ipaddr="",$guest_dev="",$admin_dev="") {
 
     dns::common{"setup": guest_ipaddr=>$guest_ipaddr, admin_ipaddr=>$admin_ipaddr, guest_dev=>$guest_dev, admin_dev=>$admin_dev}
-
-	single_exec {"add_guest_server_to_etc_hosts":
-		command => "/bin/echo $guest_ipaddr $ipa_host >> /etc/hosts",
-		notify => [Service[dnsmasq], Single_exec["add_dns_server_to_resolv.conf"]]
-	}
 
 	augeas{"set_system_hostname":
 	    context => "/files/etc/sysconfig/network",

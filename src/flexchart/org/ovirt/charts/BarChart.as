@@ -19,8 +19,10 @@
 */
 
 package org.ovirt.charts {
+  import flash.display.Graphics;
   import flash.events.Event;
   import flash.events.MouseEvent;
+  import flash.geom.Rectangle;
   import mx.collections.ArrayCollection;
   import mx.containers.Box;
   import mx.containers.HBox;
@@ -29,9 +31,11 @@ package org.ovirt.charts {
   import mx.controls.TextInput;
   import mx.controls.DateField;
   import mx.controls.Button;
+  import mx.controls.Label;
   import mx.controls.PopUpMenuButton;
   import mx.controls.Text;
   import mx.events.MenuEvent;
+  import mx.events.FlexEvent;
   import mx.formatters.DateFormatter;
   import org.ovirt.data.*;
   import org.ovirt.elements.*;
@@ -54,10 +58,22 @@ package org.ovirt.charts {
     private var functionMenu:PopUpMenuButton;
     private var dateBar:Box;
     private var datePattern:RegExp;
+    private var selectedBar:SingleBar;
 
     /*
        Private, class-specific functions
     */
+
+    //this has to happen after the scale area has been rendered, or it will have no width.
+    private function drawLine(event:Event):void {
+      var xg:Graphics = XAxisLabelArea.graphics;
+      xg.beginFill(Constants.axisColor);
+      xg.lineStyle(1,Constants.axisColor);
+      xg.moveTo(yScale.width,0);
+      xg.lineTo(Constants.width,0);
+      xg.endFill();
+    }
+
     private function timeRangeAdjusted(event:Event):void {
       var t1:Number = startDateField.selectedDate.getTime()
                       + (parseHour(startTimeField.text) * 3600 * 1000)
@@ -73,6 +89,13 @@ package org.ovirt.charts {
       load();
     }
 
+    private function selectClickedBar(event:MouseEvent):void {
+      if (selectedBar) {
+        selectedBar.deselect();
+      }
+      selectedBar = event.target as SingleBar;
+      selectedBar.select();
+    }
 
     private function updateHostChart(event:MouseEvent):void {
       var hostChart:HostChart = ApplicationBus.instance().hostChart;
@@ -138,8 +161,25 @@ package org.ovirt.charts {
     }
 
     /*
+      Public functions
+    */
+
+    public function clearSelection():void {
+      if (selectedBar) {
+        selectedBar.deselect();
+      }
+      selectedBar = null;
+    }
+
+    /*
       Overriden functions
     */
+
+    override public function load():void {
+      clearSelection();
+      super.load();
+    }
+
     override protected function initializeDataSource():void {
       dataSource = new BarChartDataSource(this);
     }
@@ -186,19 +226,20 @@ package org.ovirt.charts {
       chartArea = new Canvas();
       chartArea.percentHeight = 100;
       chartArea.percentWidth = 100 - yLabelPercentWidth;
-      chartArea.setStyle("backgroundColor","0xbbccdd");
+      chartArea.setStyle("backgroundColor","0xffffff");
 
       chartArea.verticalScrollPolicy = ScrollPolicy.OFF
 
       chartFrame.addChild(yScale);
       chartFrame.addChild(chartArea);
-      this.container.addChild(chartFrame);
+
+      chartFrame.addEventListener(FlexEvent.CREATION_COMPLETE,drawLine);
 
       XAxisLabelArea = new Canvas();
       XAxisLabelArea.height = Constants.labelHeight;
       XAxisLabelArea.minHeight = Constants.labelHeight;
       XAxisLabelArea.percentWidth = 100;
-      this.container.addChild(XAxisLabelArea);
+
 
       var t1:Date = new Date(startTime * 1000);
       var t2:Date = new Date(endTime * 1000);
@@ -208,7 +249,10 @@ package org.ovirt.charts {
         dateBar = new HBox();
         dateBar.setVisible(true);
         this.container.addChild(dateBar);
+        this.container.addChild(chartFrame);
+        this.container.addChild(XAxisLabelArea);
         var dataPoints:Array = dataSeries.getDataPoints();
+
         var maxValue:Number = dataSeries.getMaxValue();
         var scale:Number = maxValue;
         yScale.setMax(maxValue);
@@ -264,12 +308,18 @@ package org.ovirt.charts {
 
           var value:Number = dataPoint.getValue();
           var bar:SingleBar = new SingleBar(dataPoint,scale);
+          bar.setColor(Constants.summaryBarColor)
+          bar.setLitColor(Constants.summaryBarLitColor)
+
           chartArea.addChild(bar);
           bar.width = barWidth;
           bar.addEventListener(MouseEvent.CLICK,
                                ApplicationBus.instance().mainChartBarClickAction);
           bar.addEventListener(MouseEvent.CLICK,
                                updateHostChart);
+          bar.addEventListener(MouseEvent.CLICK,
+                               selectClickedBar);
+
 	  bar.x = currentBarPosition;
           if (makeup > 0 && i % makeup == 0 && madeup < shortfall) {
             bar.width = bar.width + 1;
@@ -295,14 +345,15 @@ package org.ovirt.charts {
             //add a 'tick' in the center of the bar to which this label
             //corresponds
             var ind:Box = new Box();
-            ind.opaqueBackground = 0x000000;
-            ind.width=1;
-            ind.height=3;
+            ind.width=2;
+            ind.height=4;
             ind.x = label.getCenter();
             ind.y = 0;
             ind.setVisible(true);
-            ind.setStyle("backgroundColor","0x000000");
+            ind.setStyle("backgroundColor",Constants.axisColorString);
             XAxisLabelArea.addChild(ind);
+
+
             lastDate = dataPoint.getTimestamp().date;
           }
           currentBarPosition += (bar.width + Constants.barSpacing);
@@ -310,6 +361,8 @@ package org.ovirt.charts {
 
         t1 = new Date(dataPoints[0].getTimestamp().getTime());
         t2 = new Date(dataPoints[size - 1].getTimestamp().getTime());
+
+
 
       } catch (e:Error) {
         trace(e.message);
@@ -325,51 +378,15 @@ package org.ovirt.charts {
         }
       }
 
-      //fill in the time range selection bar
-
-      var f1:Text = new Text();
-      f1.text = "View data between";
-      dateBar.addChild(f1);
-
-      startDateField = new DateField();
-      startDateField.selectedDate = t1;
-      startDateField.editable = true;
-      startTimeField = new TextInput();
-      startTimeField.minWidth = 50;
-      startTimeField.maxWidth = 50;
-      startTimeField.text = pad(t1.hours) + ":" + pad(t1.minutes);
-      dateBar.addChild(startTimeField);
-      dateBar.addChild(startDateField);
-      var f2:Text = new Text();
-      f2.text = "and";
-      dateBar.addChild(f2);
-
-
-      endDateField = new DateField();
-      endDateField.selectedDate = t2;
-      endDateField.editable = true;
-      endTimeField = new TextInput();
-      endTimeField.minWidth = 50;
-      endTimeField.maxWidth = 50;
-      endTimeField.text = pad(t2.hours) + ":" + pad(t2.minutes);
-      dateBar.addChild(endTimeField);
-      dateBar.addChild(endDateField);
-
-      button = new Button();
-      button.label = "go";
-      button.addEventListener(MouseEvent.CLICK,timeRangeAdjusted);
-
-      dateBar.addChild(button);
-
       //FIXME: these should be fetched from the graph controller so
       //that different types can be added (or restricted) dynamically
       var menuItems:ArrayCollection =
-        new ArrayCollection( [{label: "memory"},
-                              {label: "cpu"},
+        new ArrayCollection( [{label: "cpu"},
+                              {label: "disk"},
                               {label: "load"},
+                              {label: "memory"},
                               {label: "netin"},
-                              {label: "netout"},
-                              {label: "disk"}
+                              {label: "netout"}
                              ]);
 
       if (menu != null) {
@@ -384,12 +401,12 @@ package org.ovirt.charts {
 
 
       var functionMenuItems:ArrayCollection =
-        new ArrayCollection( [{label: "peak"},
-                              {label: "average"},
+        new ArrayCollection( [{label: "average"},
                               {label: "min"},
+                              {label: "peak"},
                               {label: "rolling avg"},
-                              {label: "rolling peak"},
-                              {label: "rolling min"}
+                              {label: "rolling min"},
+                              {label: "rolling peak"}
                              ]);
 
       if (functionMenu != null) {
@@ -402,6 +419,42 @@ package org.ovirt.charts {
       functionMenu.addEventListener(MenuEvent.ITEM_CLICK,functionSelected);
       dateBar.addChild(functionMenu);
 
+
+      //fill in the time range selection bar
+
+      var f1:Text = new Text();
+      f1.text = "From:";
+      dateBar.addChild(f1);
+
+      startDateField = new DateField();
+      startDateField.selectedDate = t1;
+      startDateField.editable = true;
+      startTimeField = new TextInput();
+      startTimeField.minWidth = Constants.timeFieldWidth;
+      startTimeField.maxWidth = Constants.timeFieldWidth;
+      startTimeField.text = pad(t1.hours) + ":" + pad(t1.minutes);
+      dateBar.addChild(startTimeField);
+      dateBar.addChild(startDateField);
+      var f2:Text = new Text();
+      f2.text = "to";
+      dateBar.addChild(f2);
+
+
+      endDateField = new DateField();
+      endDateField.selectedDate = t2;
+      endDateField.editable = true;
+      endTimeField = new TextInput();
+      endTimeField.minWidth = Constants.timeFieldWidth;
+      endTimeField.maxWidth = Constants.timeFieldWidth;
+      endTimeField.text = pad(t2.hours) + ":" + pad(t2.minutes);
+      dateBar.addChild(endTimeField);
+      dateBar.addChild(endDateField);
+
+      button = new Button();
+      button.label = "go";
+      button.addEventListener(MouseEvent.CLICK,timeRangeAdjusted);
+
+      dateBar.addChild(button);
     }
   }
 }

@@ -1,0 +1,23 @@
+<div id="toolbar_nav">
+  <!-- TODO: Make each li a submit button with same styling as current li.
+       Handlng of this will be implemented in InstanceController::handle_form
+  -->
+  <ul>
+    <li>New Instance</li>
+    <li>
+      Actions
+      <ul>
+        <% @actions.each {|action| %>
+          <li><%= image_tag action[2]%><%= action[0] %></li>
+        <% } %>
+      </ul>
+    </li>
+  </ul>
+</div>
+<form  action="<%= url_for({:action => 'index'})%>" method="post"> <%# This form tag is terminated in _show.rhtml %>
+  <div id="list-view">
+      <%= render :partial => 'list' %>
+  </div>
+  <div id="detail-view">
+      <%= render :partial => 'show' %>
+  </div>

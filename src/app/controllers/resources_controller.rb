@@ -18,12 +18,11 @@
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
 class ResourcesController < PoolController
+  include VmResourcePoolService
   def index
     list
     render :action => 'list'
   end
-
-  before_filter :pre_vm_actions, :only => [:vm_actions]
 
   # GETs should be safe (see http://www.w3.org/2001/tag/doc/whenToUseGet.html)
   verify :method => :post, :only => [ :destroy, :create, :update ],
@@ -31,7 +30,7 @@ class ResourcesController < PoolController
 
   def list
     @user = get_login_user
-    @vm_resource_pools = VmResourcePool.list_for_user(@user, Permission::PRIV_VIEW)
+    @vm_resource_pools = VmResourcePool.list_for_user(@user, Privilege::VIEW)
     @vms = Set.new
     @vm_resource_pools.each { |vm_resource_pool| @vms += vm_resource_pool.vms}
     @vms = @vms.entries
@@ -52,13 +51,7 @@ class ResourcesController < PoolController
 
   # resource's vms list page
   def show_vms    
-    @actions = [VmTask.label_and_action(VmTask::ACTION_START_VM),
-                VmTask.label_and_action(VmTask::ACTION_SHUTDOWN_VM),
-                (VmTask.label_and_action(VmTask::ACTION_POWEROFF_VM) << "break"),
-                VmTask.label_and_action(VmTask::ACTION_SUSPEND_VM),
-                VmTask.label_and_action(VmTask::ACTION_RESUME_VM),
-                VmTask.label_and_action(VmTask::ACTION_SAVE_VM),
-                VmTask.label_and_action(VmTask::ACTION_RESTORE_VM)]
+    @actions = VmTask.get_vm_actions
     show
   end
 
@@ -69,116 +62,37 @@ class ResourcesController < PoolController
   end
 
   def vms_json
-    pre_show
+    svc_show(params[:id])
     super(:full_items => @pool.vms, :find_opts => {}, :include_pool => :true)
   end
 
-  def create
-    begin
-      @pool.create_with_parent(@parent)
-      render :json => { :object => "vm_resource_pool", :success => true, 
-                        :alert => "Virtual Machine Pool was successfully created." }
-    rescue
-      render :json => { :object => "vm_resource_pool", :success => false, 
-                        :errors => @pool.errors.localize_error_messages.to_a}
-    end    
-  end
-
-  def update
-    begin
-      @pool.update_attributes!(params[:pool])
-      render :json => { :object => "vm_resource_pool", :success => true, 
-                        :alert => "Virtual Machine Pool was successfully modified." }
-    rescue
-      render :json => { :object => "vm_resource_pool", :success => false, 
-                        :errors => @pool.errors.localize_error_messages.to_a}
-    end
-  end
-
-  #FIXME: we need permissions checks. user must have permission. We also need to fail
-  # for pools that aren't currently empty
   def delete
-    vm_pool_ids_str = params[:vm_pool_ids]
-    vm_pool_ids = vm_pool_ids_str.split(",").collect {|x| x.to_i}
-    vm_pool_names = []
-    begin
-      VmResourcePool.transaction do
-        pools = VmResourcePool.find(:all, :conditions => "id in (#{vm_pool_ids.join(', ')})")
-        pools.each do |pool|
-          vm_pool_names << pool.name
-          pool.destroy
-        end
+    vm_pool_ids = params[:vm_pool_ids].split(",")
+    successes = []
+    failures = {}
+    vm_pool_ids.each do |pool_id|
+      begin
+        svc_destroy(pool_id)
+        successes << @pool
+      # PermissionError expected
+      rescue Exception => ex
+        failures[@pool.nil? ? pool_id : @pool] = ex.message
       end
-      render :json => { :object => "vm_resource_pool", :success => true, 
-                        :alert => "Virtual Machine Pools #{vm_pool_names.join(', ')} were successfully deleted." }
-    rescue
-      render :json => { :object => "vm_resource_pool", :success => false, 
-                        :alert => "Error in deleting Virtual Machine Pools."}
     end
-  end
-
-  def destroy
-    if @pool.destroy
-      alert="Virtual Machine Pool was successfully deleted."
-      success=true
-    else
-      alert="Failed to delete virtual machine pool."
-      success=false
+    unless failures.empty?
+      raise PartialSuccessError.new("Delete failed for some VM Pools",
+                                    failures, successes)
     end
-    render :json => { :object => "vm_resource_pool", :success => success, :alert => alert }
+    render :json => { :object => "vm_resource_pool", :success => true,
+                      :alert => "VM Pools were successfully deleted." }
   end
 
   def vm_actions
-    @action = params[:vm_action]
-    @action_label = VmTask.action_label(@action)
-    vms_str = params[:vm_ids]
-    @vms = vms_str.split(",").collect {|x| Vm.find(x.to_i)}
-    @success_list = []
-    @failure_list = []
-    begin
-      @pool.transaction do
-        @vms.each do |vm|
-          if vm.queue_action(@user, @action)
-            @success_list << vm
-            print vm.description, vm.id, "\n"
-          else
-            @failure_list << vm
-          end
-        end
-      end
-    rescue
-      flash[:errmsg] = 'Error queueing VM actions.'
-      @success_list = []
-      @failure_list = []
-    end
-    render :layout => 'confirmation'    
+    @layout = 'confirmation'
+    alert = svc_vm_actions(params[:id], params[:vm_action],
+                           params[:vm_ids].split(","))
+    @successes = @vms
+    @failures = {}
+    render :layout => @layout
   end
-
-  protected
-  def pre_new
-    @pool = VmResourcePool.new
-    super
-  end
-  def pre_create
-    @pool = VmResourcePool.new(params[:pool])
-    super
-  end
-  def pre_edit
-    @pool = VmResourcePool.find(params[:id])
-    @parent = @pool.parent
-    @perm_obj = @pool.parent
-    @current_pool_id=@pool.id
-  end
-  def pre_show
-    @pool = VmResourcePool.find(params[:id])
-    super
-    @is_hwpool_admin = @pool.parent.can_modify(@user)
-  end
-  def pre_vm_actions
-    @pool = VmResourcePool.find(params[:id])
-    @parent = @pool.parent
-    @perm_obj = @pool
-    authorize_user
-  end
-
 end

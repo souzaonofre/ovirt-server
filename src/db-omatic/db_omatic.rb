@@ -219,7 +219,7 @@ class DbOmatic < Qpid::Qmf::Console
             #db_host.lock_version = 2
             # XXX: This would just be for init..
             #db_host.is_disabled = 0
-            db_host.save
+            db_host.save!
             host_info[:synced] = true
 
             if state == Host::STATE_AVAILABLE
@@ -406,21 +406,29 @@ class DbOmatic < Qpid::Qmf::Console
         db_host.each do |host|
             @logger.info "Marking host #{host.hostname} unavailable"
             host.state = Host::STATE_UNAVAILABLE
-            host.save
+            host.save!
         end
 
         begin
            VmVnc.deallocate_all
          rescue Exception => e # just log any errors here
-            @logger.error "Error with closing all VM VNCs operation: " + e
+            @logger.error "Error with closing all VM VNCs operation: #{e.message}"
          end
 
         db_vm = Vm.find(:all)
         db_vm.each do |vm|
             @logger.info "Marking vm #{vm.description} as stopped."
             vm.state = Vm::STATE_STOPPED
-            vm.save
+            vm.save!
         end
+    end
+
+    def broker_connected(broker)
+        @logger.info "Connected to broker."
+    end
+
+    def broker_disconnected(broker)
+        @logger.error "Broker disconnected."
     end
 
 

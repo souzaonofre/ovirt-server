@@ -40,54 +40,6 @@ class HardwarePool < Pool
     hw_root ? hw_root.named_child(DEFAULT_POOL_NAME) : nil
   end
 
-  def create_with_resources(parent, resource_type= nil, resource_ids=[])
-    create_with_parent(parent) do
-      if resource_type == "hosts"
-        move_hosts(resource_ids, id)
-      elsif resource_type == "storage"
-        move_storage(resource_ids, id)
-      end
-    end
-  end
-
-  def move_hosts(host_ids, target_pool_id) 
-    hosts = Host.find(:all, :conditions => "id in (#{host_ids.join(', ')})")
-    transaction do
-      hosts.each do |host|
-        host.hardware_pool = HardwarePool.find(target_pool_id)
-        host.save!
-      end
-    end
-  end
-
-  def move_storage(storage_pool_ids, target_pool_id)
-    storage_pools = StoragePool.find(:all, :conditions => "id in (#{storage_pool_ids.join(', ')})")
-    transaction do
-      storage_pools.each do |storage_pool|
-        storage_pool.hardware_pool_id = target_pool_id
-        storage_pool.save!
-      end
-    end
-  end
-
-
-  # todo: does this method still make sense? or should we just enforce "empty" pools?
-  def move_contents_and_destroy
-    transaction do 
-      parent_id = parent.id
-      hosts.each do |host| 
-        host.hardware_pool_id=parent_id
-        host.save
-      end
-      storage_pools.each do |vol| 
-        vol.hardware_pool_id=parent_id
-        vol.save
-      end
-      # what about quotas -- for now they're deleted
-      destroy
-    end
-  end
-
   def total_storage_volumes
     storage_pools.inject(0) { |sum, pool| sum += pool.storage_volumes.size}
   end

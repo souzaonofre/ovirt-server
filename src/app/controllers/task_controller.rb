@@ -18,22 +18,10 @@
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
 class TaskController < ApplicationController
-  def show
-    @task = Task.find(params[:id])
-    if @task[:type] == VmTask.name
-      set_perms(@task.vm.vm_resource_pool)
-    elsif @task[:type] == StorageTask.name 
-      set_perms(@task.storage_pool.hardware_pool)
-    elsif @task[:type] == StorageVolumeTask.name
-      set_perms(@task.storage_volume.storage_pool.hardware_pool)
-    elsif @task[:type] == HostTask.name 
-      set_perms(@task.host.hardware_pool)
-    end
-    unless @can_view
-      flash[:notice] = 'You do not have permission to view this task: redirecting to top level'
-      redirect_to :controller => 'dashboard'
-    end
+  include TaskService
 
+  def show
+    svc_show(params[:id])
   end
 
 end

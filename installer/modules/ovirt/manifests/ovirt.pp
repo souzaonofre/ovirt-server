@@ -156,7 +156,8 @@ class ovirt::setup {
                 enable => true,
 		require => [Package[ovirt-server],Single_Exec[db_migrate]],
                 ensure => running,
-		notify => Service[httpd]
+		notify => Service[httpd],
+                hasstatus => true
         }
 
 	service {"ovirt-taskomatic" :
@@ -196,6 +197,7 @@ class ovirt::setup {
         firewall_rule{"http": destination_port => "80"}
         firewall_rule {"https": destination_port => '443'}
         firewall_rule {"host-browser": destination_port => '12120'}
+        firewall_rule {"vnc-proxy": destination_port => '5900'}
         firewall_rule {"qpidd": destination_port => '5672'}
         firewall_rule {"collectd": destination_port => '25826', protocol => 'udp'}
         firewall_rule {"ntpd": destination_port => '123', protocol => 'udp'}

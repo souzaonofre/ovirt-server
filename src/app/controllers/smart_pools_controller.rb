@@ -19,12 +19,8 @@
 #
 
 class SmartPoolsController < PoolController
+  include SmartPoolService
 
-  before_filter :pre_modify, :only => [:add_hosts, :remove_hosts,
-                                       :add_storage, :remove_storage,
-                                       :add_vms, :remove_vms,
-                                       :add_pools, :remove_pools,
-                                       :add_items, :add_pool_dialog]
   def show_vms
     show
   end
@@ -38,33 +34,17 @@ class SmartPoolsController < PoolController
   end
 
   def show_storage
+    svc_show(params[:id])
     @storage_tree = @pool.storage_tree(:filter_unavailable => false, :include_used => true).to_json
-    show
+    render_show
   end
 
-  def create
-    begin
-      @pool.create_with_parent(@parent)
-      render :json => { :object => "smart_pool", :success => true,
-                        :alert => "Smart Pool was successfully created." }
-    rescue
-      render :json => { :object => "smart_pool", :success => false,
-                        :errors => @pool.errors.localize_error_messages.to_a}
-    end
-  end
-
-  def update
-    begin
-      @pool.update_attributes!(params[:smart_pool])
-      render :json => { :object => "smart_pool", :success => true,
-                        :alert => "Smart Pool was successfully modified." }
-    rescue
-      render :json => { :object => "smart_pool", :success => false,
-                        :errors => @pool.errors.localize_error_messages.to_a}
-    end
+  def additional_create_params
+    {}
   end
 
   def add_pool_dialog
+    svc_modify(params[:id])
     @selected_pools = @pool.tagged_pools.collect {|pool| pool.id}
     render :layout => 'popup'
   end
@@ -98,7 +78,7 @@ class SmartPoolsController < PoolController
 
   def items_json_internal(item_class, item_assoc)
     if params[:id]
-      pre_show
+      svc_show(params[:id])
       full_items = @pool.send(item_assoc)
       find_opts = {}
       include_pool = false
@@ -120,107 +100,58 @@ class SmartPoolsController < PoolController
   end
 
   def add_hosts
-    edit_items(Host, :add_items, :add)
+    add_or_remove_items(Host, :add)
   end
 
   def remove_hosts
-    edit_items(Host, :remove_items, :remove)
+    add_or_remove_items(Host, :remove)
   end
 
   def add_storage
-    edit_items(StoragePool, :add_items, :add)
+    add_or_remove_items(StoragePool, :add)
   end
 
   def remove_storage
-    edit_items(StoragePool, :remove_items, :remove)
+    add_or_remove_items(StoragePool, :remove)
   end
 
   def add_vms
-    edit_items(Vm, :add_items, :add)
+    add_or_remove_items(Vm, :add)
   end
 
   def remove_vms
-    edit_items(Vm, :remove_items, :remove)
+    add_or_remove_items(Vm, :remove)
   end
 
   def add_pools
-    edit_items(Pool, :add_items, :add)
+    add_or_remove_items(Pool, :add)
   end
 
   def remove_pools
-    edit_items(Pool, :remove_items, :remove)
+    add_or_remove_items(Pool, :remove)
   end
 
-  def edit_items(item_class, item_method, item_action)
-    resource_ids_str = params[:resource_ids]
-    resource_ids = resource_ids_str.split(",").collect {|x| x.to_i}
-    begin
-      @pool.send(item_method,item_class, resource_ids)
-      render :json => { :success => true,
-        :alert => "#{item_action.to_s} #{item_class.table_name.humanize} successful." }
-    rescue
-      render :json => { :success => false,
-        :alert => "#{item_action.to_s} #{item_class.table_name.humanize} failed." }
-    end
+  def add_or_remove_items(item_class, item_action)
+    alert = svc_add_remove_items(params[:id], item_class, item_action,
+                                 params[:resource_ids].split(","))
+    render :json => { :success => true, :alert => alert}
   end
 
   def add_items
     class_and_ids_str = params[:class_and_ids]
-    class_and_ids = class_and_ids_str.split(",").collect {|x| x.split("_")}
-
-    begin
-      @pool.transaction do
-        class_and_ids.each do |class_and_id|
-          @pool.add_item(class_and_id[0].constantize.find(class_and_id[1].to_i))
-        end
-      end
-      render :json => { :success => true,
-        :alert => "Add items to smart pool successful." }
-    rescue => ex
-      render :json => { :success => false,
-          :alert => "Add items to smart pool failed: " + ex.message }
+    class_and_ids = class_and_ids_str.split(",").collect do |class_and_id_str|
+      class_and_id = class_and_id_str.split("_")
+      class_and_id[0] = class_and_id[0].constantize
+      class_and_id
     end
 
-  end
-
-  def destroy
-    if @pool.destroy
-      alert="Smart Pool was successfully deleted."
-      success=true
-    else
-      alert="Failed to delete Smart pool."
-      success=false
-    end
-    render :json => { :object => "smart_pool", :success => success, :alert => alert }
+    alert = svc_add_remove_items(params[:id], nil, :add, class_and_ids)
+    render :json => { :success => true, :alert => alert}
   end
 
   protected
-  #filter methods
-  def pre_new
-    @pool = SmartPool.new
-    @parent = DirectoryPool.get_or_create_user_root(get_login_user)
-    @perm_obj = @parent
-    @current_pool_id=@parent.id
-  end
-  def pre_create
-    @pool = SmartPool.new(params[:smart_pool])
-    @parent = DirectoryPool.get_or_create_user_root(get_login_user)
-    @perm_obj = @parent
-    @current_pool_id=@parent.id
-  end
-  def pre_edit
-    @pool = SmartPool.find(params[:id])
-    @parent = @pool.parent
-    @perm_obj = @pool
-    @current_pool_id=@pool.id
-  end
-  def pre_show
-    @pool = SmartPool.find(params[:id])
-    super
-  end
-  def pre_modify
-    pre_edit
-    authorize_admin
+  def get_parent_id
+    DirectoryPool.get_or_create_user_root(get_login_user).id
   end
 
 end

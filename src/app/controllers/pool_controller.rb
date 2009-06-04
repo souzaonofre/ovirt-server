@@ -20,13 +20,6 @@
 
 class PoolController < ApplicationController
 
-  before_filter :pre_show_pool, :only => [:show_vms, :show_users,
-                                          :show_hosts, :show_storage,
-                                          :users_json, :show_tasks, :tasks,
-                                          :vm_pools_json,
-                                          :pools_json, :show_pools,
-                                          :storage_volumes_json, :quick_summary]
-
   XML_OPTS  = {
     :include => [ :storage_pools, :hosts, :quota ]
   }
@@ -39,7 +32,22 @@ class PoolController < ApplicationController
     {}
   end
 
+  def show_tasks
+    svc_show(params[:id])
+    super
+  end
+
+  def tasks
+    svc_show(params[:id])
+    super
+  end
+
   def show
+    svc_show(params[:id])
+    render_show
+  end
+
+  def render_show
     respond_to do |format|
       format.html {
         render :layout => 'tabs-and-content' if params[:ajax]
@@ -49,22 +57,24 @@ class PoolController < ApplicationController
         render :xml => @pool.to_xml(XML_OPTS)
       }
     end
-  end
 
+  end
   def quick_summary
+    svc_show(params[:id])
     render :layout => 'selection'
   end
 
   # resource's users list page
   def show_users
-    @roles = Permission::ROLES.keys
+    @roles = Role.find(:all).collect{ |role| [role.name, role.id] }
     show
   end
 
   def users_json
+    svc_show(params[:id])
     attr_list = []
     attr_list << :grid_id if params[:checkboxes]
-    attr_list += [:uid, :user_role, :source]
+    attr_list += [:uid, [:role, :name], :source]
     json_list(@pool.permissions, attr_list)
   end
 
@@ -94,44 +104,68 @@ class PoolController < ApplicationController
   end
 
   def new
+    svc_new(get_parent_id)
     render :layout => 'popup'
+  end
+
+  def create
+    # FIXME: REST and browsers send params differently. Should be fixed
+    # in the views
+    alert = svc_create(params[:pool] ? params[:pool] : params[:hardware_pool],
+                       get_parent_id, additional_create_params)
+    respond_to do |format|
+      format.json {
+        reply = { :object => "pool", :success => true,
+          :alert => alert }
+        reply[:resource_type] = params[:resource_type] if params[:resource_type]
+        render :json => reply
+      }
+      format.xml {
+        render :xml => @pool.to_xml(XML_OPTS),
+        :status => :created,
+        :location => hardware_pool_url(@pool)
+      }
+    end
+  end
+
+  def update
+    alert = svc_update(params[:id], params[:pool] ? params[:pool] :
+                       params[:hardware_pool])
+    respond_to do |format|
+      format.json {
+        reply = { :object => "pool", :success => true, :alert => alert }
+        render :json => reply
+      }
+      format.xml {
+        render :xml => @pool.to_xml(XML_OPTS),
+        :status => :created,
+        :location => hardware_pool_url(@pool)
+      }
+    end
+  end
+
+  def additional_create_params
+    {}
   end
 
   def edit
+    svc_modify(params[:id])
     render :layout => 'popup'
   end
 
-  protected
-  def pre_new
-    @parent = Pool.find(params[:parent_id])
-    @perm_obj = @parent
-    @current_pool_id=@parent.id
-  end
-  def pre_create
-    #this is currently only true for the rest API for hardware pools
-    if params[:hardware_pool]
-      @parent = Pool.find(params[:hardware_pool][:parent_id])
-    else
-      @parent = Pool.find(params[:parent_id])
-    end
-    @perm_obj = @parent
-    @current_pool_id=@parent.id
-  end
-  def pre_show_pool
-    pre_show
-  end
-  def pre_show
-    @perm_obj = @pool
-    @current_pool_id=@pool.id
-    set_perms(@perm_obj)
-    unless @can_view
-      flash[:notice] = 'You do not have permission to view this pool: redirecting to top level'
-      respond_to do |format|
-        format.html { redirect_to :controller => "dashboard" }
-        format.xml { head :forbidden }
-      end
-      return
+  def destroy
+    alert = svc_destroy(params[:id])
+    respond_to do |format|
+      format.json { render :json => { :object => "pool", :success => true,
+          :alert => alert } }
+      format.xml { head(:ok) }
     end
   end
 
+  protected
+  def get_parent_id
+    params[:hardware_pool] ?
+    params[:hardware_pool][:parent_id] :
+      params[:parent_id]
+  end
 end

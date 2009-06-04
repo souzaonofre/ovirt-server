@@ -31,6 +31,7 @@ package org.ovirt.elements {
   import mx.formatters.DateFormatter;
   import mx.managers.ToolTipManager;
   import org.ovirt.data.DataPoint;
+  import org.ovirt.Constants;
 
   public class SingleBar extends Canvas {
 
@@ -38,6 +39,10 @@ package org.ovirt.elements {
     private var dataPoint:DataPoint;
     private var scale:Number;
     private var dateFormat:DateFormatter = new DateFormatter();
+    private var color:String = Constants.summaryBarColor;
+    private var litColor:String = Constants.summaryBarLitColor;
+    private var selectedColor:String = Constants.hostsBarColor;
+    private var selected:Boolean = Boolean(false);
 
     public function SingleBar(dataPoint:DataPoint,scale:Number) {
       super();
@@ -45,16 +50,20 @@ package org.ovirt.elements {
       this.scale = scale;
       addEventListener(MouseEvent.MOUSE_OVER,showTip);
       addEventListener(MouseEvent.MOUSE_OUT,destroyTip);
+      addEventListener(MouseEvent.MOUSE_OVER,colorLit);
+      addEventListener(MouseEvent.MOUSE_OUT,colorNormal);
       addEventListener(ResizeEvent.RESIZE,myResize);
       addEventListener(FlexEvent.CREATION_COMPLETE,myResize);
       addEventListener(Event.RENDER,myResize);
-      this.setStyle("backgroundColor","0x2875c1");
+      this.setStyle("backgroundColor",color);
       dateFormat.formatString = "DD-MMM-YYYY JJ:NN";
     }
 
     public function destroy():void {
       removeEventListener(MouseEvent.MOUSE_OVER,showTip);
       removeEventListener(MouseEvent.MOUSE_OUT,destroyTip);
+      removeEventListener(MouseEvent.MOUSE_OVER,colorLit);
+      removeEventListener(MouseEvent.MOUSE_OUT,colorNormal);
       removeEventListener(ResizeEvent.RESIZE,myResize);
       removeEventListener(FlexEvent.CREATION_COMPLETE,myResize);
       removeEventListener(FlexEvent.UPDATE_COMPLETE,myResize);
@@ -63,7 +72,7 @@ package org.ovirt.elements {
 
 
     private function myResize(event:Event):void {
-       this.height = (dataPoint.getValue() / scale) * parent.height * .9 * -1;
+       this.height = (dataPoint.getValue() / scale) * parent.height * Constants.elementPercentHeight * -1;
        this.y = parent.height;
     }
 
@@ -79,15 +88,39 @@ package org.ovirt.elements {
                                          dateFormat.format(dataPoint.getTimestamp()) +
                                          "\n" +
                                          dataPoint.getValue(),
-                                         xPos,yPos) as ToolTip;
+                                         xPos + 6,yPos) as ToolTip;
+
+
+      var chartBounds:Rectangle = this.stage.getBounds(this.parent);
+
       tip.x = Math.min(tip.x,
                        w - tip.width);
-      tip.y = Math.max(0,
-                       tip.y - tip.height);
+      tip.y = Math.max(yPos + this.height - tip.height,
+                       chartBounds.y + tip.height);
+      tip.setStyle("backgroundColor","0xFFFFFF");
     }
 
     private function destroyTip(event:Event):void {
       ToolTipManager.destroyToolTip(tip);
+    }
+
+    private function colorNormal(event:Event):void {
+      if (!selected) {
+        this.setStyle("backgroundColor",color);
+      }
+    }
+    private function colorLit(event:Event):void {
+      if (!selected) {
+        this.setStyle("backgroundColor",litColor);
+      }
+    }
+
+    private function colorSelected(event:Event):void {
+      this.setStyle("backgroundColor",selectedColor);
+    }
+
+    public function getNodeName():String {
+      return dataPoint.getNodeName();
     }
 
     public function getResolution():Number {
@@ -96,6 +129,25 @@ package org.ovirt.elements {
 
     public function getStartTime():Number {
       return dataPoint.getTimestamp().getTime();
+    }
+
+    public function setColor(color:String):void {
+      this.color = color;
+      this.setStyle("backgroundColor",color);
+    }
+
+    public function setLitColor(litColor:String):void {
+      this.litColor = litColor;
+    }
+
+    public function deselect():void {
+      this.setStyle("backgroundColor",color);
+      selected = Boolean(false);
+    }
+
+    public function select():void {
+      this.setStyle("backgroundColor",selectedColor);
+      selected = Boolean(true);
     }
   }
 }

@@ -7,6 +7,8 @@
 html {
   /*overflow: hidden;*/
   font-size: small;
+  min-width: 900px;
+  min-height: 400px;
 }
 
 body {
@@ -45,7 +47,7 @@ a { color:#000000; text-decoration: none;}
   width: 100%;
   height: 90px;
   overflow: hidden;
-  background:#535353 url(../images/bg_header.jpg) repeat-x top;
+  background:#535353 url(../images/bg_header.png) repeat-x top;
 }
 
 .header_image {
@@ -98,7 +100,7 @@ a { color:#000000; text-decoration: none;}
 
 .toolbar {
   margin: 1px 0 1px 0;
-  background: #CCCCCC url(../images/bg_menu_big.jpg) repeat-x top;
+  background: #CCCCCC url(../images/bg_navtoolbar.png) repeat-x top;
   height: 31px;
   border-left: #FFFFFF solid 1px; 
   border-top: #FFFFFF solid 1px; 
@@ -128,7 +130,7 @@ a { color:#000000; text-decoration: none;}
 /*  ----- Right side of Header --------  */
 
 .header_info {
-  padding: 10px 30px 0px 10px;
+  padding: 10px 31px 0px 10px;
   margin: 0;
   float: right;
   text-align: right;
@@ -143,8 +145,13 @@ a { color:#000000; text-decoration: none;}
 #help-div {
   position: fixed;
   top: 10px;
-  right: -1px;
+  right: 10px;
 }
+
+.headeritem {
+	margin-left:5px;
+}
+
 
 #textfield_effect {
     border-width: 1px;
@@ -158,7 +165,7 @@ a { color:#000000; text-decoration: none;}
     height: 16px;
 }
 #searchbox-button{
-    vertical-align: bottom;
+    vertical-align: middle;
 }
 
 
@@ -169,7 +176,7 @@ a { color:#000000; text-decoration: none;}
   color: #FFFFFF;
   font-size: 110%;
   border-left: 1px solid #93B2C4;
-  background: #000000 url(../images/bg_toolbarheader.jpg) repeat-x top;
+  background: #000000 url(../images/bg_toolbarheader.png) repeat-x top;
 }
 
 
@@ -199,8 +206,9 @@ a { color:#000000; text-decoration: none;}
 	background: none;
 
 }
-.ui-tabs-nav a:hover {color:#FFFFFF; border-bottom: 5px solid #5599B8;}
-.ui-tabs-selected a {color:#FFFFFF; font-weight: bold; height: 24px; line-height:1.6; border-bottom: 5px solid #5599B8;}
+.ui-tabs-nav a:hover {color:#FFFFFF; border-bottom: 5px solid #537585;}
+.ui-tabs-nav a:focus, .ui-tabs-nav a:active {outline-style: none;}
+.ui-tabs-selected a {color:#FFFFFF; outline-style: none; height: 24px; line-height:1.6; border-bottom: 5px solid #5599B8;}
 
 .ui-tabs-hide {/*display:none;*/}
 
@@ -217,7 +225,7 @@ a { color:#000000; text-decoration: none;}
   overflow: auto;
   position: absolute;
   top: 28px;
-  bottom: 171px;
+  bottom: 191px;
   right: 0px;
   left: 0px;
 }
@@ -256,13 +264,11 @@ a { color:#000000; text-decoration: none;}
   background: #DEE7EB;
   border-top: #CCCCCC solid 1px;
   overflow: auto;
+  padding: 10px 10px 10px 15px;
 }
 
 .selection_left {
-  padding: 10px 10px 10px 15px;
-  height: 126px;
   float:left;
-  width: 40%;
 }
 
 .selection_title {
@@ -278,8 +284,8 @@ a { color:#000000; text-decoration: none;}
   float:left;
   line-height:1.7;
   list-style-type:none;
-  margin:0pt;
-  padding:0pt 8px;
+  margin:0;
+  padding:0;
   text-align:center;
   text-decoration:none;
 }
@@ -300,6 +306,7 @@ a { color:#000000; text-decoration: none;}
   text-decoration:none;
 }
 .selection_tools a:hover {
+  -moz-border-radius: 2px;
   background:#B0CBDE none repeat scroll 0%;
 }
 .selection_key {
@@ -315,12 +322,9 @@ a { color:#000000; text-decoration: none;}
 }
 
 .selection_right {
-  width:55%;
   float: right;
-   padding-top: 10px;
-   /*background: #F0F0F0;*/
-   height: 140px;
- }
+  padding-right: 10px;
+}
  
  .selection_right_title {
    padding: 4px 4px 4px 6px;
