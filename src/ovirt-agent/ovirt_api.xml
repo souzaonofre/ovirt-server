@@ -1,15 +1,23 @@
+<!--
+    The QMF API definition for oVirt.
+
+    This is a draft, and mostly unimplemented, but should show where things
+    are headed in the near future.
+
+    Most of the XML format should be self-explanatory. The 'access' describes
+    what can be done with a property/method argument from the caller's POV;
+    possible values are RC = Read/Create, RO = read only, RW = read/write.
+    The 'dir' attribute indicates in what direction information flows: I = in,
+    O = out, IO = in/out.
+-->
+
 <schema package="org.ovirt.ovirt">
-  <!-- This is an object model of the Ovirt API for QMF.
-       access: Access mode: RC = Read/Create, RO = read only (settable only by agent implementing class), RW = read/write.
-       dir: Direction of argument: I = in, O = out, IO = in/out.
-  -->
 
   <class name="Ovirt">
     <property name="version" type="sstr" access="RC" desc="Ovirt version string"/>
 
     <method name="create_vm_def" desc="Define a new virtual machine definition.">
       <arg name="description" dir="I" type="sstr" desc="Description of new VM definition."/>
-      <!-- What is the use case for being able to set the UUID? -->
       <arg name="num_vcpus_allocated" dir="I" type="uint32" desc="Number of virtual CPUs to allocate."/>
       <arg name="memory_allocated" dir="I" type="uint64" desc="Amount of memory to allocate in KB."/>
       <arg name="uuid" dir="I" type="sstr" desc="UUID of VM.  Will be assigned if left empty."/>
@@ -79,7 +87,6 @@
     </method>
   </class>
 
-  <!-- Should this be a Host or Node def?  Should get our terms straight. -->
   <class name="NodeDef">
     <property name="name" type="sstr" access="RC" desc="Host name"/>
     <property name="uuid" type="sstr" access="RC" desc="UUID of this node definition"/>
@@ -115,8 +122,6 @@
       <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
     </method>
 
-    <!-- FIXME: This is different from the WUI in that it just deletes the info from the database.  However I think it is
-         correct to have a task to do this. -->
     <method name="delete" desc="Delete this pool.  A new task is issued to ensure there are no references to this Pool in use.">
       <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
     </method>
@@ -177,7 +182,6 @@
   </class>
 
   <class name="ISCSIVolumeImpl">
-    <!-- FIXME Have to figure these out better -->
     <property name="name" type="lstr" access="RC" desc="iSCSI volume name."/>
 
     <property name="volume" type="objId" references="VolumeDef" access="RC" desc="The volume this implementation belongs to."/>
