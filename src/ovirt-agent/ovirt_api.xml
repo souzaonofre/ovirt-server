@@ -34,7 +34,7 @@
       <arg name="server_ip" type="sstr" desc="IP Address of NFS server."/>
       <arg name="export_path" type="lstr" desc="Path of export on NFS server."/>
 
-      <arg name="pool" dir="O" type="objId" references="PoolDef" desc="Newly created pool object"/>
+      <arg name="pool" dir="O" type="objId" references="StoragePoolDef" desc="Newly created pool object"/>
     </method>
 
     <method name="create_iscsi_pool_def" desc="Define new iscsi storage pool definition">
@@ -43,7 +43,7 @@
       <arg name="server_port" type="uint32" desc="iSCSI server port."/>
       <arg name="target" type="lstr" desc="iSCSI target."/>
 
-      <arg name="pool" dir="O" type="objId" references="PoolDef" desc="Newly created pool object"/>
+      <arg name="pool" dir="O" type="objId" references="StoragePoolDef" desc="Newly created pool object"/>
     </method>
   </class>
 
@@ -112,6 +112,7 @@
     <!-- FIXME: build this out to take bridge/bond/vlan into account -->
   </class>
 
+  <!-- A physical host in a data center -->
   <class name="NodeDef">
     <property name="name" type="sstr" access="RC" desc="Host name"/>
     <property name="uuid" type="sstr" access="RC" desc="UUID of this node definition"/>
@@ -129,7 +130,8 @@
     </method>
   </class>
 
-  <class name="PoolDef">
+  <!-- Storage handling -->
+  <class name="StoragePoolDef">
     <!-- FIXME: 'name' is not part of the model schema at this time. -->
     <property name="name" type="sstr" access="RC" desc="Name of pool."/>
     <!-- FIXME: 'uuid' is not part of the model schema at this time.
@@ -156,7 +158,7 @@
     <property name="server_ip" type="sstr" access="RC" desc="IP Address of NFS server."/>
     <property name="export_path" type="lstr" access="RC" desc="Path of export on NFS server."/>
 
-    <property name="pool" references='PoolDev' type="objId" access="RC" desc="References parent PoolDef object."/>
+    <property name="pool" references='StoragePoolDef' type="objId" access="RC" desc="References parent StoragePoolDef object."/>
 
     <method name="create_volume" desc="Create a new NFS volume.">
       <arg name="filename" type="lstr" dir="I" desc="File name to back volume."/>
@@ -172,7 +174,7 @@
     <property name="server_port" type="uint32" access="RC" desc="Port on iSCSI server."/>
     <property name="target" type="lstr" access="RC" desc="iSCSI target."/>
 
-    <property name="pool" references='PoolDev' type="objId" access="RC" desc="References parent PoolDef object."/>
+    <property name="pool" references='StoragePoolDef' type="objId" access="RC" desc="References parent StoragePoolDef object."/>
 
     <method name="create_volume" desc="Create a new iSCSI volume.">
       <arg name="name" type="lstr" dir="I" desc="Name of volume."/>
@@ -203,14 +205,14 @@
     <property name="state" type="sstr" access="R" desc="State of NFS volume."/>
 
     <property name="volume" type="objId" references="VolumeDef" access="RC" desc="The volume this implementation belongs to."/>
-    <property name="pool" type="objId" references="PoolDef" access="RC" desc="The pool this volume implementation belongs to."/>
+    <property name="pool" type="objId" references="StoragePoolDef" access="RC" desc="The pool this volume implementation belongs to."/>
   </class>
 
   <class name="ISCSIVolumeImpl">
     <property name="name" type="lstr" access="RC" desc="iSCSI volume name."/>
 
     <property name="volume" type="objId" references="VolumeDef" access="RC" desc="The volume this implementation belongs to."/>
-    <property name="pool" type="objId" references="PoolDef" access="RC" desc="The pool this volume implementation belongs to."/>
+    <property name="pool" type="objId" references="StoragePoolDef" access="RC" desc="The pool this volume implementation belongs to."/>
   </class>
 
 
@@ -233,9 +235,9 @@
     <property name="vm_def" type="objId" references="VmDef" access="RC" desc="Reference to VM this action is being performed for."/>
   </class>
 
-  <class name="PoolTaskImpl">
+  <class name="StoragePoolTaskImpl">
     <property name="task" type="objId" references="Task" access="RC" desc="Reference to the task this implementation is for."/>
-    <property name="pool_def" type="objId" references="PoolDef" access="RC" desc="Reference to pool definition this action is being performed for."/>
+    <property name="pool_def" type="objId" references="StoragePoolDef" access="RC" desc="Reference to pool definition this action is being performed for."/>
   </class>
 
   <class name="VolumeTaskImpl">
