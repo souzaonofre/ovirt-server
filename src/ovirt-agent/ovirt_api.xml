@@ -25,7 +25,7 @@
       <arg name="num_vcpus_allocated" dir="I" type="uint32" desc="Number of virtual CPUs to allocate."/>
       <arg name="memory_allocated" dir="I" type="uint64" desc="Amount of memory to allocate in KB."/>
       <arg name="uuid" dir="I" type="sstr" desc="UUID of VM.  Will be assigned if left empty."/>
-      <arg name="vnic_mac_addr" dir="I" type="sstr" desc="MAC address of virtual NIC.  Will be assigned if left empty."/>
+      <arg name="nics" dir="I" type="array" desc="The virtual NICS for this VM of class VmNicDef"/>
       <arg name="volumes" dir="I" type="array" desc="The storage volumes for this VM"/>
 
       <arg name="vm" dir="O" type="objId" references="VmDef" desc="Newly created domain object"/>
@@ -57,6 +57,10 @@
     </doc:desc>
     <property name="name" type="sstr" desc="The name of the network"/>
     <property name="proto" type="sstr" desc="The boot protocol on this network, one of 'static', 'dhcp' or 'bootp'"/>
+    <method name="create_vm_nic_def" desc="Create a new NIC for a VM">
+      <arg name="mac" type="sstr" dir="I" desc="The MAC address for the new NIC"/>
+      <arg name="nic" dir="O" type="objId" references="VmNicDef" desc="Newly created VM NIC"/>
+    </method>
   </class>
 
   <class name="VmNicDef">
