@@ -244,7 +244,6 @@
     <property name="impl" type="objId" access="RC" desc="References the task specific implementation dependent on type."/>
 
     <method name="cancel" desc="Cancel this task."/>
-    <method name="wait_for_completion" desc="Method that just sits and waits for this task to complete.  Can also be used with an async call to recieve an event when it is completed."/>
   </class>
 
   <class name="VmTaskImpl">
