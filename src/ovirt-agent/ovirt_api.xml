@@ -11,12 +11,13 @@
     O = out, IO = in/out.
 -->
 
-<schema package="org.ovirt.ovirt">
+<schema package="org.ovirt.ovirt" xmlns:doc="http://ovirt.org/qmf/doc/1.0">
 
-  <!-- The basic entry point to the API. Since QMF has no notion of a
-       class method, we collect them in this class for now.
-  -->
   <class name="Ovirt">
+    <doc:desc>
+      The basic entry point to the API. Since QMF has no notion of a
+      class method, we collect them in this class for now.
+    </doc:desc>
     <property name="version" type="sstr" access="RC" desc="Ovirt version string"/>
 
     <method name="create_vm_def" desc="Define a new virtual machine definition.">
@@ -47,23 +48,29 @@
     </method>
   </class>
 
-  <!-- Logical networks in the data center; physical NICs for hosts are
-       labelled with exactly one of the networks, and virtual NIC's are
-       connected to a logical network -->
   <class name="Network">
+    <doc:desc>
+      Logical networks in the data center; physical NICs for hosts are
+      labelled with exactly one of the networks, and virtual NIC's are
+      connected to a logical network
+    </doc:desc>
     <property name="name" type="sstr" desc="The name of the network"/>
     <property name="proto" type="sstr" desc="The boot protocol on this network, one of 'static', 'dhcp' or 'bootp'"/>
   </class>
 
-  <!-- The virtual NIC of a VM; ties a MAC address to a logical network -->
   <class name="VmNicDef">
+    <doc:desc>
+      The virtual NIC of a VM; ties a MAC address to a logical network
+    </doc:desc>
     <property name="mac" type="sstr" access="RC" desc="VM virtual network card MAC Address"/>
     <property name="network" type="objId" access="RC" desc="The logical network this NIC resides on"/>
   </class>
 
-  <!-- oVirt's view of a VM, used both for VM's that are merely defined
-       (i.e. not running), and currently running VM's -->
   <class name="VmDef">
+    <doc:desc>
+      oVirt's view of a VM, used both for VM's that are merely defined
+      (i.e. not running), and currently running VM's
+    </doc:desc>
     <property name="description" type="sstr" access="RW" desc="VM description/name"/>
     <property name="num_vcpus_allocated" type="uint32" access="RW" desc="Number of virtual CPUs to allocate to VM"/>
     <property name="memory_allocated" type="uint64" access="RW" desc="Amount of memory to allocate for VM in KB."/>
@@ -106,14 +113,16 @@
     </method>
   </class>
 
-  <!-- A physical NIC on a host -->
+  <!-- Physical hosts -->
+
   <class name="NodeNicDef">
+    <doc:desc>A physical NIC on a host</doc:desc>
     <property name="mac" type="sstr" access="RC" desc="MAC Address"/>
     <!-- FIXME: build this out to take bridge/bond/vlan into account -->
   </class>
 
-  <!-- A physical host in a data center -->
   <class name="NodeDef">
+    <doc:desc>A physical host in a data center</doc:desc>
     <property name="name" type="sstr" access="RC" desc="Host name"/>
     <property name="uuid" type="sstr" access="RC" desc="UUID of this node definition"/>
     <property name="cpus" type="uint32" access="RC" desc="Number of CPUs on this node."/>
@@ -131,7 +140,13 @@
   </class>
 
   <!-- Storage handling -->
+
   <class name="StoragePoolDef">
+    <doc:desc>
+      An abstract storage pool, without regard to storage technology used
+      in the backend. The +impl+ property contains backend specific
+      details. A pool is the container for many volumes.
+    </doc:desc>
     <!-- FIXME: 'name' is not part of the model schema at this time. -->
     <property name="name" type="sstr" access="RC" desc="Name of pool."/>
     <!-- FIXME: 'uuid' is not part of the model schema at this time.
@@ -216,14 +231,15 @@
   </class>
 
 
-  <!-- Tasks
+  <!-- Tasks -->
 
+  <class name="Task">
+    <doc:desc>
        Most actions in the API do not lead to immediate changes, instead
        they lead to the queueing of a task in oVirt's task queue. Task
        objects, together with QMF's notification mechanisms, can be used by
        a client to wait for changes to a task's state.
-  -->
-  <class name="Task">
+    </doc:desc>
     <property name="task_id" type="uint64" access="RC" desc="ID of this task"/>
     <property name="description" type="sstr" access="RC" desc="The type of task this is implementing"/>
     <property name="state" type="sstr" access="R" desc="The state of this task, 'queued', 'running', 'completed', 'failed'."/>
