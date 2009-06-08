@@ -216,6 +216,13 @@
   </class>
 
 
+  <!-- Tasks
+
+       Most actions in the API do not lead to immediate changes, instead
+       they lead to the queueing of a task in oVirt's task queue. Task
+       objects, together with QMF's notification mechanisms, can be used by
+       a client to wait for changes to a task's state.
+  -->
   <class name="Task">
     <property name="task_id" type="uint64" access="RC" desc="ID of this task"/>
     <property name="description" type="sstr" access="RC" desc="The type of task this is implementing"/>
