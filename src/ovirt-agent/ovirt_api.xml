@@ -160,6 +160,14 @@
 
     <property name="state" type="sstr" access="R" desc="State of storage pool."/>
 
+    <method name="create_volume" desc="Create a new volume.">
+      <arg name="name" type="lstr" dir="I" desc="Name of this volume."/>
+      <arg name="size" type="uint64" dir="I" desc="Size of new volume in KB."/>
+
+      <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
+      <arg name="volume" dir="O" type="objId" references="VolumeDef" desc="New Volume object.  Note that the state will be pending_setup on creation and the task must complete before it is ready for use."/>
+    </method>
+
     <method name="rescan" desc="Rescan the pool using a valid node to determine volume information.">
       <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
     </method>
@@ -175,13 +183,6 @@
 
     <property name="pool" references='StoragePoolDef' type="objId" access="RC" desc="References parent StoragePoolDef object."/>
 
-    <method name="create_volume" desc="Create a new NFS volume.">
-      <arg name="filename" type="lstr" dir="I" desc="File name to back volume."/>
-      <arg name="size" type="uint64" dir="I" desc="Size of new volume in KB."/>
-
-      <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
-      <arg name="volume" dir="O" type="objId" references="VolumeDef" desc="New Volume object.  Note that the state will be pending_setup on creation and the task must complete before it is ready for use."/>
-    </method>
   </class>
 
   <class name="ISCSIPoolImpl">
@@ -191,13 +192,6 @@
 
     <property name="pool" references='StoragePoolDef' type="objId" access="RC" desc="References parent StoragePoolDef object."/>
 
-    <method name="create_volume" desc="Create a new iSCSI volume.">
-      <arg name="name" type="lstr" dir="I" desc="Name of volume."/>
-      <arg name="size" type="uint64" dir="I" desc="Size of new volume in KB."/>
-
-      <arg name="task" dir="O" type="objId" references="Task" desc="New Task object representing this task."/>
-      <arg name="volume" dir="O" type="objId" references="VolumeDef" desc="New Volume object.  Note that the state will be pending_setup on creation and the task must complete before it is ready for use."/>
-    </method>
   </class>
 
   <class name="VolumeDef">
