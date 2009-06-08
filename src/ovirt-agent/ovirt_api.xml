@@ -26,6 +26,7 @@
       <arg name="memory_allocated" dir="I" type="uint64" desc="Amount of memory to allocate in KB."/>
       <arg name="uuid" dir="I" type="sstr" desc="UUID of VM.  Will be assigned if left empty."/>
       <arg name="vnic_mac_addr" dir="I" type="sstr" desc="MAC address of virtual NIC.  Will be assigned if left empty."/>
+      <arg name="volumes" dir="I" type="array" desc="The storage volumes for this VM"/>
 
       <arg name="vm" dir="O" type="objId" references="VmDef" desc="Newly created domain object"/>
     </method>
@@ -75,6 +76,7 @@
     <property name="num_vcpus_allocated" type="uint32" access="RW" desc="Number of virtual CPUs to allocate to VM"/>
     <property name="memory_allocated" type="uint64" access="RW" desc="Amount of memory to allocate for VM in KB."/>
     <property name="nics" type="array" access="RC" desc="The virtual NICS for this VM of class VmNicDef"/>
+    <property name="volumes" type="array" access="RC" desc="The storage volumes for this VM"/>
     <property name="uuid" type="sstr" access="RC" desc="VM UUID"/>
     <property name="provisioning" type="lstr" access="RW" desc="Cobbler profile or image to use on boot, or empty."/>
 
@@ -135,6 +137,7 @@
 
     <property name="instance" type="objId" references="Node" access="R" desc="Object reference pointing to the libvirt 'Node' object."/>
     <property name="nics" type="array" access="RW" desc="The physical NICs on this host"/>
+    <property name="vm" type="objId" access="RO" desc="The VM to which this volume is assigned"/>
     <method name="delete" desc="Delete this host from the records.">
     </method>
   </class>
