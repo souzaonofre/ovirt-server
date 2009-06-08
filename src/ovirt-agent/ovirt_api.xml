@@ -13,6 +13,9 @@
 
 <schema package="org.ovirt.ovirt">
 
+  <!-- The basic entry point to the API. Since QMF has no notion of a
+       class method, we collect them in this class for now.
+  -->
   <class name="Ovirt">
     <property name="version" type="sstr" access="RC" desc="Ovirt version string"/>
 
@@ -44,11 +47,27 @@
     </method>
   </class>
 
+  <!-- Logical networks in the data center; physical NICs for hosts are
+       labelled with exactly one of the networks, and virtual NIC's are
+       connected to a logical network -->
+  <class name="Network">
+    <property name="name" type="sstr" desc="The name of the network"/>
+    <property name="proto" type="sstr" desc="The boot protocol on this network, one of 'static', 'dhcp' or 'bootp'"/>
+  </class>
+
+  <!-- The virtual NIC of a VM; ties a MAC address to a logical network -->
+  <class name="VmNicDef">
+    <property name="mac" type="sstr" access="RC" desc="VM virtual network card MAC Address"/>
+    <property name="network" type="objId" access="RC" desc="The logical network this NIC resides on"/>
+  </class>
+
+  <!-- oVirt's view of a VM, used both for VM's that are merely defined
+       (i.e. not running), and currently running VM's -->
   <class name="VmDef">
     <property name="description" type="sstr" access="RW" desc="VM description/name"/>
     <property name="num_vcpus_allocated" type="uint32" access="RW" desc="Number of virtual CPUs to allocate to VM"/>
     <property name="memory_allocated" type="uint64" access="RW" desc="Amount of memory to allocate for VM in KB."/>
-    <property name="mac" type="sstr" access="RC" desc="VM virtual network card MAC Address"/>
+    <property name="nics" type="array" access="RC" desc="The virtual NICS for this VM of class VmNicDef"/>
     <property name="uuid" type="sstr" access="RC" desc="VM UUID"/>
     <property name="provisioning" type="lstr" access="RW" desc="Cobbler profile or image to use on boot, or empty."/>
 
@@ -87,6 +106,12 @@
     </method>
   </class>
 
+  <!-- A physical NIC on a host -->
+  <class name="NodeNicDef">
+    <property name="mac" type="sstr" access="RC" desc="MAC Address"/>
+    <!-- FIXME: build this out to take bridge/bond/vlan into account -->
+  </class>
+
   <class name="NodeDef">
     <property name="name" type="sstr" access="RC" desc="Host name"/>
     <property name="uuid" type="sstr" access="RC" desc="UUID of this node definition"/>
@@ -99,7 +124,7 @@
     <property name="enabled" type="bool" access="RW" desc="Set enabled/disabled for this host."/>
 
     <property name="instance" type="objId" references="Node" access="R" desc="Object reference pointing to the libvirt 'Node' object."/>
-
+    <property name="nics" type="array" access="RW" desc="The physical NICs on this host"/>
     <method name="delete" desc="Delete this host from the records.">
     </method>
   </class>
