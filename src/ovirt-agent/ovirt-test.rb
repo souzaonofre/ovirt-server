@@ -29,16 +29,16 @@ puts "Hardware Pools:"
 hwps = s.objects(:class => "HardwarePool")
 hwps.each do |hwp|
   puts "Hardware pool: #{hwp.name}"
-end
-
-puts "VM Pools:"
-vmps = s.objects(:class => "VmPool")
-vmps.each do |vmp|
-  puts "VM pool: #{vmp.name}"
-  for (key, val) in vmp.properties
-    puts "  property: #{key}, #{val}"
+  puts "VM pools in hardware pool:"
+  vmps = s.objects(:class => "VmPool", 'hardware_pool' => hwp.object_id)
+  vmps.each do |vmp|
+    puts "VM pool: #{vmp.name}"
+    for (key, val) in vmp.properties
+      puts "  property: #{key}, #{val}"
+    end
   end
 end
+
 
 #result = ovirt.create_vm_def('new_vm', 1, 512 * 1024, '', '')
 #puts "result.status is #{result.status}"
