@@ -105,7 +105,7 @@ module Ovirt::SchemaParser
 
   def enum_val(enum, name, desc)
     unless val = enum[name]
-      raise "Unkown #{desc} #{acc}"
+      raise "Unkown #{desc} #{name}"
     end
     return val
   end
