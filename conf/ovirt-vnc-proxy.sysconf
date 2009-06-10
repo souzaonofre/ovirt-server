@@ -1,0 +1,2 @@
+#sets the port which to listen on
+#OVIRT_VNC_PROXY_PORT=5900

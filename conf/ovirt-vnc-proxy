@@ -9,16 +9,18 @@
 #
 
 [ -r /etc/sysconfig/ovirt-rails ] && . /etc/sysconfig/ovirt-rails
+[ -r /etc/sysconfig/ovirt-vnc-proxy ] && . /etc/sysconfig/ovirt-vnc-proxy
 
 export RAILS_ENV="${RAILS_ENV:-production}"
+export OVIRT_VNC_PROXY_PORT="${OVIRT_VNC_PROXY_PORT:-5900}"
 
-DAEMON=/usr/share/ovirt-server/vnc-proxy/vnc-proxy.rb
+DAEMON=src/vnc-proxy/vnc-proxy.rb
 
 . /etc/init.d/functions
 
 start() {
     echo -n "Starting ovirt-vnc-proxy: "
-    daemon $DAEMON
+    daemon $DAEMON --port $OVIRT_VNC_PROXY_PORT
     RETVAL=$?
     echo
 }
