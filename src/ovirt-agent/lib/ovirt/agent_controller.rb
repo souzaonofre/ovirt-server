@@ -40,6 +40,11 @@ class AgentController
   # from property names (symbols) to attribute names as the +:propmap+
   # argument
   def to_qmf(obj, kwargs = {})
+    puts "to_qmf() called for object #{obj}; attributes:"
+    obj.attributes.each do |attrib, value|
+      puts " #{attrib}:#{value}"
+    end
+
     qmf = Qmf::QmfObject.new(schema_class)
     propmap = kwargs[:propmap] || {}
     schema_class.properties.collect { |p| p.name.to_sym }.each { |n|
