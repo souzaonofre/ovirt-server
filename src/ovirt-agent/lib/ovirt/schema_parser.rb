@@ -8,7 +8,8 @@ module Ovirt::SchemaParser
     "lstr" => Qmf::TYPE_LSTR,
     "sstr" => Qmf::TYPE_SSTR,
     "uint32" => Qmf::TYPE_UINT32,
-    "uint64" => Qmf::TYPE_UINT64
+    "uint64" => Qmf::TYPE_UINT64,
+    "array" => Qmf::TYPE_ARRAY
   }
 
   ACCESS = {
