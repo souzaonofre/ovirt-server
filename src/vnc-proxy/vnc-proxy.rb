@@ -63,7 +63,7 @@ class VncProxy
             opts.on("-n", "--nodaemon", "Run interactively (useful for debugging)") do |n|
                 do_daemon = false
             end
-            opts.on("-p", "--port", "Port to listen on") do |n|
+            opts.on("-p", "--port [port]", "Port to listen on") do |n|
                 port = n.to_i
             end
         end
