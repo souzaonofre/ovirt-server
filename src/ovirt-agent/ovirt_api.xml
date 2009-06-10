@@ -22,6 +22,47 @@
 
   </class>
 
+  <class name="HardwarePool">
+    <doc:desc>
+      Hardware pools are the top level organizing concept in oVirt: there
+      is always a 'default' hardware pool, to which newly discovered hosts
+      are assigned. The pool can be divided by creating subpools
+      recursively.
+    </doc:desc>
+    <property name="name" type="sstr" access="RW" desc="Name of the pool"/>
+    <property name="nodes" type="array" access="RO" desc="Hosts in this pool as NodeDef objects"/>
+    <property name="storage_pools" type="array" access="RO" desc="Storage pools for this hardware pool"/>
+    <property name="vm_pools" type="array" access="RO" desc="VM pools"/>
+
+    <property name="parent" type="objId" access="RO" desc="The parent hardware pool"/>
+    <property name="children" type="array" access="RO" desc="The children of this hardware pool"/>
+
+    <method name="create_hw_pool">
+      <arg name="name" dir="I" type="sstr" desc="Name of the new pool"/>
+      <arg name="result" dir="O" type="objId" desc="The newly created pool"/>
+    </method>
+    <method name="create_vm_pool">
+      <arg name="name" dir="I" type="sstr" desc="Name of the new pool"/>
+      <arg name="result" dir="O" type="objId" desc="The newly created pool"/>
+    </method>
+    <method name="create_nfs_pool_def" desc="Define new nfs storage pool">
+      <arg name="name" type="sstr" desc="Description/name of the pool."/>
+      <arg name="server_ip" type="sstr" desc="IP Address of NFS server."/>
+      <arg name="export_path" type="lstr" desc="Path of export on NFS server."/>
+
+      <arg name="pool" dir="O" type="objId" references="StoragePoolDef" desc="Newly created pool object"/>
+    </method>
+
+    <method name="create_iscsi_pool_def" desc="Define new iscsi storage pool">
+      <arg name="name" type="sstr" desc="Description/name of the pool."/>
+      <arg name="server_ip" type="sstr" desc="IP Address of NFS server."/>
+      <arg name="server_port" type="uint32" desc="iSCSI server port."/>
+      <arg name="target" type="lstr" desc="iSCSI target."/>
+
+      <arg name="pool" dir="O" type="objId" references="StoragePoolDef" desc="Newly created pool object"/>
+    </method>
+  </class>
+
   <class name="Network">
     <doc:desc>
       Logical networks in the data center; physical NICs for hosts are
@@ -64,7 +105,7 @@
     <property name="node" type="objId" references="NodeDef" access="R" desc="Object reference pointing to host this VM is running on, if it is running."/>
     <property name="instance" type="objId" references="Domain" access="R" desc="Object reference pointing to the libvirt 'domain' object."/>
 
-    <property name="vm_pool" type="objId" references="VmPool" access="R" desc="The VM pool to which this VM belongs"/>
+    <property name="vm_pool" type="objId" references="VmPool" access="R" desc="The VM pool to which this VM belongs."/>
 
     <method name="delete" desc="Delete this VM definition.">
     </method>
@@ -111,6 +152,7 @@
     <property name="architecture" type="sstr" access="RC" desc="Architecture of this node."/>
     <property name="memory" type="uint64" access="RC" desc="Amount of RAM on this machine in KB."/>
     <property name="available" type="bool" access="R" desc="See if node is currently available for use."/>
+    <property name="hardware_pool" type="objId" access="RO" desc="Hardware pool that this node belongs to."/>
 
     <property name="enabled" type="bool" access="RW" desc="Set enabled/disabled for this host."/>
 
@@ -136,6 +178,8 @@
          if that will work as it allows you to track libvirt pools to pool
          definitions. -->
     <property name="uuid" type="sstr" access="RC" desc="Pool UUID."/>
+
+    <property name="hardware_pool" type="objId" access="RO" desc="Hardware pool that this storage pool is in."/>
 
     <property name="impl" type="objId" access="RC" desc="References an NFSPoolImpl or ISCSIPoolImpl."/>
     <property name="type" type="sstr" access="RC" desc="The type of storage pool, currently 'nfs' or 'iscsi'."/>
@@ -223,7 +267,7 @@
     <property name="vms_used" type="uint32" access="RW" desc="Number of VM's in use"/>
     <property name="storage_used" type="uint32" access="RW" desc="Amount of storage for pool in GB currently in use"/>
 
-    <property name="hw_pool" type="objId" references="HardwarePool" desc="The hardware pool to which this VM pool belongs"/>
+    <property name="hardware_pool" type="objId" references="HardwarePool" desc="The hardware pool to which this VM pool belongs"/>
 
     <method name="create_vm_def" desc="Define a new virtual machine">
       <arg name="description" dir="I" type="sstr" desc="Description of new VM definition."/>
@@ -234,47 +278,6 @@
       <arg name="volumes" dir="I" type="array" desc="The storage volumes for this VM"/>
 
       <arg name="vm" dir="O" type="objId" references="VmDef" desc="Newly created domain object"/>
-    </method>
-  </class>
-
-  <class name="HardwarePool">
-    <doc:desc>
-      Hardware pools are the top level organizing concept in oVirt: there
-      is always a 'default' hardware pool, to which newly discovered hosts
-      are assigned. The pool can be divided by creating subpools
-      recursively.
-    </doc:desc>
-    <property name="name" type="sstr" access="RW" desc="Name of the pool"/>
-    <property name="nodes" type="array" access="RO" desc="Hosts in this pool as NodeDef objects"/>
-    <property name="storage_pools" type="array" access="RO" desc="Storage pools for this hardware pool"/>
-    <property name="vm_pools" type="array" access="RO" desc="VM pools"/>
-
-    <property name="parent" type="objId" access="RO" desc="The parent hardware pool"/>
-    <property name="children" type="array" access="RO" desc="The children of this hardware pool"/>
-
-    <method name="create_hw_pool">
-      <arg name="name" dir="I" type="sstr" desc="Name of the new pool"/>
-      <arg name="result" dir="O" type="objId" desc="The newly created pool"/>
-    </method>
-    <method name="create_vm_pool">
-      <arg name="name" dir="I" type="sstr" desc="Name of the new pool"/>
-      <arg name="result" dir="O" type="objId" desc="The newly created pool"/>
-    </method>
-    <method name="create_nfs_pool_def" desc="Define new nfs storage pool">
-      <arg name="name" type="sstr" desc="Description/name of the pool."/>
-      <arg name="server_ip" type="sstr" desc="IP Address of NFS server."/>
-      <arg name="export_path" type="lstr" desc="Path of export on NFS server."/>
-
-      <arg name="pool" dir="O" type="objId" references="StoragePoolDef" desc="Newly created pool object"/>
-    </method>
-
-    <method name="create_iscsi_pool_def" desc="Define new iscsi storage pool">
-      <arg name="name" type="sstr" desc="Description/name of the pool."/>
-      <arg name="server_ip" type="sstr" desc="IP Address of NFS server."/>
-      <arg name="server_port" type="uint32" desc="iSCSI server port."/>
-      <arg name="target" type="lstr" desc="iSCSI target."/>
-
-      <arg name="pool" dir="O" type="objId" references="StoragePoolDef" desc="Newly created pool object"/>
     </method>
   </class>
 
