@@ -147,7 +147,7 @@ class OvirtAgent < Qmf::AgentHandler
 
         @logger.debug "Query: object_num=#{controller_id}:#{row_id}"
 
-        controller = controller_for_id(context, controller_id)
+        controller = controller_for_id(context, controller_id, user_id)
         assert_controller_responds(controller, :find)
         if obj = controller.find(row_id)
           @agent.query_response(context, obj)
@@ -162,7 +162,7 @@ class OvirtAgent < Qmf::AgentHandler
         unless controller_class
           raise "Unknown class #{query.class_name}"
         end
-        controller = controller_instance(context, controller_class)
+        controller = controller_instance(context, controller_class, user_id)
         assert_controller_responds(controller, :list)
         if objs = controller.list
           objs.each do |obj|
@@ -188,7 +188,7 @@ class OvirtAgent < Qmf::AgentHandler
       @logger.debug "Method: context=#{context} method=#{name} row_id=#{row_id}, args=#{args}"
       @logger.debug "User ID: #{user_id}"
 
-      controller = controller_for_id(context, controller_id)
+      controller = controller_for_id(context, controller_id, user_id)
       assert_controller_responds(controller, name)
 
       controller.args = args
@@ -202,15 +202,15 @@ class OvirtAgent < Qmf::AgentHandler
     end
   end
 
-  def controller_for_id(context, id)
+  def controller_for_id(context, id, user_id)
     unless controller_class = @controller_classes[id]
       raise ControllerNotFoundError, "unknown controller id #{controller_id}"
     end
-    controller_instance(context, controller_class)
+    controller_instance(context, controller_class, user_id)
   end
 
-  def controller_instance(context, controller_class)
-    controller_class.new(context, @agent, @logger)
+  def controller_instance(context, controller_class, user_id)
+    controller_class.new(context, @agent, @logger, user_id)
   end
 
   def assert_controller_responds(controller, method)

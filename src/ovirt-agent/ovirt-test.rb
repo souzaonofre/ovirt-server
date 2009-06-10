@@ -25,6 +25,11 @@ puts "ovirt.version is #{ovirt.version}"
 ovirt_by_id = s.object(:object_id => ovirt.object_id)
 puts "ovirt_by_id.version is #{ovirt_by_id.version}"
 
+hwps = s.objects(:class => "HardwarePool")
+hwps.each do |hwp|
+  puts "Hardware pool: #{hwp.name}"
+end
+
 vms = s.objects(:class => "VmDef")
 vms.each do |vm|
   puts "VmDef: #{vm.description}"

@@ -30,12 +30,14 @@
       recursively.
     </doc:desc>
     <property name="name" type="sstr" access="RW" desc="Name of the pool"/>
+<!--
     <property name="nodes" type="array" access="RO" desc="Hosts in this pool as NodeDef objects"/>
     <property name="storage_pools" type="array" access="RO" desc="Storage pools for this hardware pool"/>
     <property name="vm_pools" type="array" access="RO" desc="VM pools"/>
+    <property name="children" type="array" access="RO" desc="The children of this hardware pool"/>
+-->
 
     <property name="parent" type="objId" access="RO" desc="The parent hardware pool"/>
-    <property name="children" type="array" access="RO" desc="The children of this hardware pool"/>
 
     <method name="create_hw_pool">
       <arg name="name" dir="I" type="sstr" desc="Name of the new pool"/>

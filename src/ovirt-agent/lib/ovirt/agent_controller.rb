@@ -12,10 +12,11 @@ class AgentController
   attr_reader :agent, :logger
   attr_accessor :args
 
-  def initialize(context, agent, logger)
+  def initialize(context, agent, logger, user_id)
     @context = context
     @agent = agent
     @logger = logger
+    @user_id = user_id
     @args = {}
   end
 
@@ -38,11 +39,12 @@ class AgentController
   # Properties can be explicitly mapped to attributes by passing in a map
   # from property names (symbols) to attribute names as the +:propmap+
   # argument
-  def to_qmf(obj, kwargs)
+  def to_qmf(obj, kwargs = {})
     qmf = Qmf::QmfObject.new(schema_class)
     propmap = kwargs[:propmap] || {}
     schema_class.properties.collect { |p| p.name.to_sym }.each { |n|
       a = propmap[n] || n
+      puts "Property translation - qmfobject[#{n}] = activerecord[#{a}]"
       qmf[n] = obj.send(a) if obj.respond_to?(a)
     }
 
