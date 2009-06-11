@@ -75,6 +75,8 @@ module PoolService
     authorized!(Privilege::MODIFY, @parent)
   end
 
+  alias_method :pool_new, :svc_new
+
   # Destroy the Pool object with +id+
   #
   # === Instance variables

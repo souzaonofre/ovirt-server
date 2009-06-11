@@ -32,7 +32,7 @@ module SmartPoolService
   # [<tt>Privilege::MODIFY</tt>] for the pool
   def svc_new(parent_id, attributes=nil)
     @pool = SmartPool.new(attributes)
-    super(parent_id)
+    pool_new(parent_id)
   end
 
   # Save a new SmartPool

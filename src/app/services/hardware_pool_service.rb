@@ -32,7 +32,7 @@ module HardwarePoolService
   # [<tt>Privilege::MODIFY</tt>] for the parent pool
   def svc_new(parent_id, attributes=nil)
     @pool = HardwarePool.new(attributes)
-    super(parent_id)
+    pool_new(parent_id)
   end
 
   # Save a new HardwarePool
