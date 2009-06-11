@@ -39,6 +39,20 @@ hwps.each do |hwp|
   end
 end
 
+hwp = s.object(:class => "HardwarePool", 'name' => 'default')
+
+vmp = s.object(:class => "VmPool", 'hardware_pool' => hwp.object_id, 'name' => 'new_vm_pool')
+
+if !vmp
+  result = hwp.create_vm_pool('new_vm_pool')
+  puts "result is #{result.status}"
+  puts "Error: #{result.text}" if result.status != 0
+  puts "New vm pool #{result.vm_pool}" if result.status == 0
+else
+  puts "Pool new_vm_pool already exists."
+end
+
+
 
 #result = ovirt.create_vm_def('new_vm', 1, 512 * 1024, '', '')
 #puts "result.status is #{result.status}"

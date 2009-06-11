@@ -41,18 +41,18 @@
 
     <method name="create_hw_pool">
       <arg name="name" dir="I" type="sstr" desc="Name of the new pool"/>
-      <arg name="result" dir="O" type="objId" desc="The newly created pool"/>
+      <arg name="hw_pool" dir="O" type="objId" desc="The newly created pool"/>
     </method>
     <method name="create_vm_pool">
       <arg name="name" dir="I" type="sstr" desc="Name of the new pool"/>
-      <arg name="result" dir="O" type="objId" desc="The newly created pool"/>
+      <arg name="vm_pool" dir="O" type="objId" desc="The newly created pool"/>
     </method>
     <method name="create_nfs_pool_def" desc="Define new nfs storage pool">
       <arg name="name" type="sstr" desc="Description/name of the pool."/>
       <arg name="server_ip" type="sstr" desc="IP Address of NFS server."/>
       <arg name="export_path" type="lstr" desc="Path of export on NFS server."/>
 
-      <arg name="pool" dir="O" type="objId" references="StoragePoolDef" desc="Newly created pool object"/>
+      <arg name="storage_pool" dir="O" type="objId" references="StoragePoolDef" desc="Newly created pool object"/>
     </method>
 
     <method name="create_iscsi_pool_def" desc="Define new iscsi storage pool">
@@ -61,7 +61,7 @@
       <arg name="server_port" type="uint32" desc="iSCSI server port."/>
       <arg name="target" type="lstr" desc="iSCSI target."/>
 
-      <arg name="pool" dir="O" type="objId" references="StoragePoolDef" desc="Newly created pool object"/>
+      <arg name="storage_pool" dir="O" type="objId" references="StoragePoolDef" desc="Newly created pool object"/>
     </method>
   </class>
 
