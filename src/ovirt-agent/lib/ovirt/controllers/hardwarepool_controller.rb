@@ -27,14 +27,14 @@ class HardwarePoolController < AgentController
   def create_vm_pool
     extend VmResourcePoolService
 
-    pool_hash = { :name => args[:name] }
+    pool_hash = { :name => args['name'] }
     puts "Args are #{args}"
     args.each do |arg, value|
-      puts "arg: #{arg}"
+      puts "arg: #{arg} = #{value}"
     end
+    puts "pool_hash: #{pool_hash.inspect}"
 
-    svc_create(pool_hash, {})
-    return encode_id(@pool.id)
+    svc_create(pool_hash, id, {})
+    args['vm_pool'] = encode_id(@pool.id)
   end
 end
-
