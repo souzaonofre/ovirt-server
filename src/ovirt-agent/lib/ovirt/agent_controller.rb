@@ -10,7 +10,7 @@ class AgentController
   class_inheritable_accessor :schema_class
 
   attr_reader :agent, :logger
-  attr_accessor :args
+  attr_accessor :args, :id
 
   def initialize(context, agent, logger, user_id)
     @context = context
@@ -65,6 +65,6 @@ class AgentController
   #
   #   methods with the same name as defined in the schema
   #     arguments can be accessed through method 'args'
+  #     the 'row id' of the QMF object on which the method was called
+  #     is available in the +id+ attribute
 end
-
-

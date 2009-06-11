@@ -192,6 +192,7 @@ class OvirtAgent < Qmf::AgentHandler
       assert_controller_responds(controller, name)
 
       controller.args = args
+      controller.id = row_id
       controller.send(name)
 
       @agent.method_response(context, 0, "OK", args)
