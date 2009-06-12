@@ -154,9 +154,10 @@ class HostBrowserIdentifyTest < Test::Unit::TestCase
 
     info = @browser.get_remote_info
 
-    assert_equal 4,info.keys.size, "Should contain four keys"
+    assert_equal 5,info.keys.size, "Should contain five keys"
     assert info.include?("IPADDR")
     assert info.include?("HOSTNAME")
+    assert info.include?("NICINFO")
     assert info.include?("key1")
     assert info.include?("key2")
   end
