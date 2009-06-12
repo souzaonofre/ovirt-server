@@ -49,6 +49,10 @@ fi
 # restore to checkout
 mv conf/ovirt-rails.sysconf.orig conf/ovirt-rails.sysconf
 
+# create the repo (need to be done here so the latest
+#  version is accessible to the install process)
+createrepo $AUTOBUILD_PACKAGE_ROOT/rpm/RPMS
+
 ############## setup new vm to test installer
 
 # setup parameters to ssh to vm
