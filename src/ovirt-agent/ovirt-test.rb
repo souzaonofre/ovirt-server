@@ -39,22 +39,43 @@ hwps.each do |hwp|
   end
 end
 
-hwp = s.object(:class => "HardwarePool", 'name' => 'default')
+hwp = s.object(:class => 'HardwarePool', 'name' => 'default')
 
-vmp = s.object(:class => "VmPool", 'hardware_pool' => hwp.object_id, 'name' => 'new_vm_pool')
+vmp = s.object(:class => 'VmPool', 'hardware_pool' => hwp.object_id, 'name' => 'new_vm_pool')
 
 if !vmp
   result = hwp.create_vm_pool('new_vm_pool')
   puts "result is #{result.status}"
   puts "Error: #{result.text}" if result.status != 0
   puts "New vm pool #{result.vm_pool}" if result.status == 0
+  vmp = s.object(:object_id => result.vm_pool)
 else
   puts "Pool new_vm_pool already exists."
 end
 
 
 
-#result = ovirt.create_vm_def('new_vm', 1, 512 * 1024, '', '')
+vm = s.object(:class => 'VmDef', 'name' => 'ovirt-test-vm')
+if !vm
+  result = vmp.create_vm_def('ovirt-test-vm', 1, 512 * 1024, '')
+  puts "result is #{result.status}"
+  puts "Error: #{result.text}" if result.status != 0
+  puts "New VM: #{result.vm}" if result.status == 0
+  vm = s.object(:object_id => result.vm)
+else
+  puts "VM ovirt-test-vm already exists"
+end
+
+
+vms = s.objects(:class => 'VmDef')
+vms.each do |vm|
+  puts "VM: #{vm.description}"
+  for (key, val) in vm.properties
+    puts "  property: #{key}, #{val}"
+  end
+end
+
+
 #puts "result.status is #{result.status}"
 #puts "result.text is #{result.text}"
 #puts "result.vm is #{result.vm}" if result.status == 0
