@@ -23,7 +23,7 @@ require 'vm_controller'
 # Re-raise errors caught by the controller.
 class VmController; def rescue_action(e) raise e end; end
 
-class VmControllerTest < Test::Unit::TestCase
+class VmControllerTest < ActionController::TestCase
   fixtures :privileges, :roles, :permissions, :pools, :vms
 
   def setup

@@ -1,6 +1,7 @@
 
 # Copyright (C) 2008 Red Hat, Inc.
-# Written by Scott Seago <sseago@redhat.com>
+# Written by Scott Seago <sseago@redhat.com>,
+#            Jason Guiditta <jguiditt@redhat.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +24,7 @@ require 'permission_controller'
 # Re-raise errors caught by the controller.
 class PermissionController; def rescue_action(e) raise e end; end
 
-class PermissionControllerTest < Test::Unit::TestCase
+class PermissionControllerTest < ActionController::TestCase
   fixtures :privileges, :roles, :permissions, :pools
 
   def setup

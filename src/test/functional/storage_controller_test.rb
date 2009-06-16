@@ -23,7 +23,7 @@ require 'storage_controller'
 # Re-raise errors caught by the controller.
 class StorageController; def rescue_action(e) raise e end; end
 
-class StorageControllerTest < Test::Unit::TestCase
+class StorageControllerTest < ActionController::TestCase
   fixtures :privileges, :roles, :permissions, :pools,
            :storage_volumes, :storage_pools
 
