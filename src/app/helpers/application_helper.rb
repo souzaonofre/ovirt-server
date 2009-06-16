@@ -171,4 +171,18 @@ module ApplicationHelper
   def flash_path(source)
     compute_public_path(source, 'swfs', 'swf')
   end
+
+  def number_to_duration(input_num)
+    input_int = input_num.to_i
+    hours_to_seconds = [input_int/3600 % 24,
+                        input_int/60 % 60,
+                        input_int % 60].map{|t| t.to_s.rjust(2,'0')}.join(':')
+    days = input_int / 86400
+    day_str = ""
+    if days > 0
+      day_label = (days > 1) ? "days" : "day"
+      day_str = "#{days} #{day_label} "
+    end
+    day_str + hours_to_seconds
+  end
 end

@@ -111,6 +111,7 @@
         Provisioning source:<br/>
 	State:<br/>
 	Pending State:<br/>
+	Total Run Time:<br/>
     </div>
     <div class="selection_value">
        <%=h @vm.uuid %><br/>
@@ -128,7 +129,8 @@
        <%unless @vm.needs_restart.nil? or @vm.needs_restart == 0  -%>
          (needs restart)
        <% end -%><br/>
-       <%=h @vm.get_pending_state %>
+       <%=h @vm.get_pending_state %><br/>
+       <%=h number_to_duration(@vm.get_calculated_uptime) %>
     </div>
 
 <!-- FIXME: show storage volumes

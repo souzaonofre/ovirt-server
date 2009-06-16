@@ -420,14 +420,23 @@ class Vm < ActiveRecord::Base
     return i
   end
 
+  def self.calc_uptime
+    "vms.*, case when state='running' then
+       (cast(total_uptime || ' sec' as interval) +
+        (now() - total_uptime_timestamp))
+     else cast(total_uptime || ' sec' as interval)
+     end as calc_uptime"
+  end
+
   # Make method for calling paginated vms easier for clients.
   # TODO: Might want to have an optional param for per_page var
   def self.paged_with_perms(user, priv, page, order)
-    Vm.paginate(:include => [{:vm_resource_pool =>
+    Vm.paginate(:joins => [{:vm_resource_pool =>
                               {:permissions => {:role => :privileges}}}],
                 :conditions => ["privileges.name=:priv
                            and permissions.uid=:user",
                          { :user => user, :priv => priv }],
+                :select => calc_uptime,
                 :per_page => 5,
                 :page => page,
                 :order => order)

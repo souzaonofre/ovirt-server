@@ -195,4 +195,10 @@ class VmTest < ActiveSupport::TestCase
   def test_paginated_results
     assert_equal 5, Vm.paged_with_perms('ovirtadmin', Privilege::VIEW, 1, 'vms.id').size
   end
+
+  def test_paginated_results_sorting
+    vms = Vm.paged_with_perms('ovirtadmin', Privilege::VIEW, 1, 'calc_uptime')
+    assert_equal(5, vms.size)
+    assert_equal('00:00:00',vms[0].calc_uptime)
+  end
 end
