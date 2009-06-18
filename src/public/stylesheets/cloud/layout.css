@@ -1,47 +1,90 @@
 /* ------ General Layout ------ */
 
-.toolbar {text-align:left;}
+html {min-width:640px;}
 
-.current, .toolbar a:hover {
-  border-bottom: 5px solid #5599B8;
+#head h1 a {
+	background:transparent url(/images/mystery_cloud.png) no-repeat scroll 20px 50%;
+  /*
+    TODO: change this back to a real logo when we have one.
+  */
+	display:block;
+	height:59px;
+	overflow:hidden;
+	text-decoration:none;
+	text-indent:-9999px;
+	width:87px;
 }
-
-.toolbar a {
-  text-decoration: none;
-}
-
-#nav {height:1em;padding-top:1ex;}
-
-#nav a {display: inline-block;}
-
-#head {height:50px;}
 
 #login-box {
-  text-align:right;
-  /*
-    TODO: put this back in with a real logo when we have one.
-        background: url('../../images/logo_cumulus.png') left top no-repeat;
-  */
+	display:block;
+	line-height:3.75ex;
+	position:absolute;
+	right:4ex;
+	text-align:right;
+	top:12px;
 }
 
-#content {margin-left:18px;}
+#login-box a {
+  color: #337ACC;
+}
+
+#navcontainer {
+	height:40px;
+}
+
+#navcontainer ul {
+	padding-left: 0;
+	margin-left: 0;
+	background-color: #fff;
+	color: #afb2bd;
+	float: left;
+	width: 100%;
+}
+
+#navcontainer ul li { display: inline; }
+
+#navcontainer ul li a {
+	padding: 12px 20px;
+	border-top: solid 2px transparent;
+	background: #fff;
+	color: #afb2bd;
+	font-weight: bold;
+	text-decoration: none;
+	text-transform: uppercase;
+	float: left;
+}
+
+#navcontainer ul li a:hover {
+	background: #fff;
+	color: #989ba7;
+}
+
+#navcontainer ul li a.current {
+	border-top: solid 2px #337acc;
+	background: #e0eeff url(/images/tab_bg.png) repeat-x;
+	color: #404552;
+}
+
+#content {margin-left:0;}
 
 #content table{width:100%;}
 
-#content table tr.odd {background:#eef2f2;}
+/* #content table tr.odd {background:#eef2f2;} */
 
-#content table tr:hover {background: #729FCF; color: #FFFFFF;}
+#content table tr:hover {background: #fdfef1;}
 
 #content table th, #content table td {
-  border:1px solid #AAAAAA;
+  border:1px solid #E1E1E3;
+  border-right: 0;
+  border-left: 0;
   padding:0;
   text-align:left;
 }
 
-#content table th {background-color: #F0F0F0;}
+#content table th {background: none;border-top: none;}
 
 #content table div {
-  padding: 0.4ex;
+  padding: 0.5ex;
 }
 
 #content table th a {
@@ -49,31 +92,35 @@
   text-decoration: none;
 }
 
+#content table th a:hover {
+  text-decoration: underline;
+}
+
 .sortup {
-  background: #F0F0F0 url('../../images/Sort_up_11.png') top center no-repeat !important;
+  background: transparent url('/images/Sort_up_11.png') top center no-repeat !important;
 }
 
 .sortdown {
-  background: #F0F0F0 url('../../images/Sort_down_11.png') top center no-repeat !important;
+  background: transparent url('/images/Sort_down_11.png') top center no-repeat !important;
 }
 
-.sortable:hover {background-color: #DDDDDD !important;}
+.sortable:hover {/* background-color: #DDDDDD !important; */}
 
-.selected {background: #337ACC !important; color: #FFFFFF;}
+.selected {background: #fbf0a7 !important;}
 
 .center {text-align:center;}
 
 .pagination {padding-top: 1ex;}
 
-#list-view {}
+#list-view {margin-bottom:2em;}
+
 
 #detail-view {
-  border-top: 3px solid #AAAAAA;
-  margin-top: 2ex;
+  border-top: 2px solid #CECECE;
 }
 
 #graph {
-  border: 1px solid #AAAAAA;
+  border: 1px solid #EFEFEF;
   margin-bottom: 1.5ex;
   height: 15ex;
 }
@@ -84,18 +131,34 @@
   border: 0;
   color: #337ACC;
   cursor: pointer;
+  margin-right:12px;
+  font-size: 1em;
+  text-decoration: underline;
+}
+
+input#submit_for_list {
+	margin:12px 16px 0 0;
+	padding:0;
 }
 
 #detail_header {
-  background-color: #F0F0F0;
-  height: 10ex;
-  margin-bottom: 1.5ex;
+  background-color: #EFEFEF;
+  height: 5em;
+  margin-bottom: 1em;
 }
+
+#detail_header h3 {
+	color:#666666;
+	margin: 8px 12px 12px 16px;
+	display:inline-block;
+	font-size: 1.2em;
+}
+
 
 /* ----- Backgrounds for states ----- */
 .state-container {
   margin-left:5px;
-  text-indent:10px;
+  text-indent:12px;
 }
 
 .task-canceled {background:url(../../images/icon-canceled-11px.png) left center no-repeat;}
@@ -115,52 +178,59 @@
 .instance-creating {background:url(../../images/icon_startup_11px.png) left center no-repeat;}
 
 
-/*  ----- Toolbar Navigation --------  */
-#toolbar_nav {
-  background: #F0F0F0;
+/*  ----- Actions Toolbar --------  */
+#toolbar {
+  background: #e3eaf2;
+  border-top: 1px solid #d1dfee;
+  border-bottom: 1px solid #d1d7de;
+  margin-bottom: 1em;
 }
 
-#toolbar_nav img {
+#toolbar img {
   margin: 0;
 }
 
-#toolbar_nav ul{
+#toolbar ul{
   list-style: none;
+  margin:0;
+  padding:0;
 }
 
-#toolbar_nav li {
+#toolbar li {
   display: inline-block;
   position: relative;
   color: #666666;
-  padding: 0 1ex;
+  padding: 8px 16px;
 }
-#toolbar_nav li:hover {
+
+#toolbar li:hover {
   background: #337ACC;
   color: #FFFFFF;
   cursor: pointer;
 }
 
-#toolbar_nav li.current { /* This is not really needed right now, but will be useful when we add filters. */
+#toolbar li.current { /* This is not really needed right now, but will be useful when we add filters. */
   background: #4B95B8;
 }
 
-#toolbar_nav li ul {
+#toolbar li ul {
   display: none;
   position: absolute;
   top: 1em;
   left: 0;
-  background: #F0F0F0;
+  background: #bec7e0;   /* #F0F0F0; */
+  padding: 4px;
 }
 
-#toolbar_nav li ul li {
+#toolbar li ul li {
   display: block;
   white-space: nowrap;
-  padding-right: 1ex;
+  padding-right: 1em;
 }
 
-#toolbar_nav li > ul {
+#toolbar li > ul {
   top: auto;
   left: auto;
 }
 
-#toolbar_nav li:hover ul {display: block;}
+#toolbar li:hover ul {display: block;}
