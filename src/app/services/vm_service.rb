@@ -22,6 +22,36 @@ module VmService
 
   include ApplicationService
 
+  #FIXME: do we want to include attrs here like for hosts?
+  EQ_ATTRIBUTES = []
+
+  # List vms matching criteria described by +params+
+  #
+  # === Instance variables
+  # [<tt>@vms</tt>] stores list of vms matching criteria
+  # === Required permissions
+  # [<tt>Privilege::VIEW</tt>] no exception raised, <tt>@vms</tt>
+  #                            is filtered by privilege
+  def svc_list(params = {})
+    conditions = []
+    EQ_ATTRIBUTES.each do |attr|
+      if params[attr]
+        conditions << "vms.#{attr} = :#{attr}"
+      end
+    end
+    # Add permission check
+    params = params.dup
+    params[:user] = get_login_user
+    params[:priv] = Privilege::VIEW
+    conditions << "privileges.name=:priv"
+    conditions << "permissions.uid=:user"
+    incl = [{ :vm_resource_pool => { :permissions => { :role => :privileges}}}]
+    @vms = Vm.find(:all,
+                   :include => incl,
+                   :conditions => [conditions.join(" and "), params],
+                   :order => "vms.id")
+  end
+
   # Load the Vm with +id+ for viewing
   #
   # === Instance variables
@@ -175,6 +205,7 @@ module VmService
   #
   # === Instance variables
   # [<tt>@vm</tt>] stores the Vm with +id+
+  # [<tt>@task</tt>] stores the task queued
   # === Required permissions
   # permission is action-specific as determined by
   #   <tt>VmTask.action_privilege(@action)</tt>
@@ -182,7 +213,8 @@ module VmService
     @vm = Vm.find(id)
     authorized!(VmTask.action_privilege(vm_action),
                 VmTask.action_privilege_object(vm_action,@vm))
-    unless @vm.queue_action(@user, vm_action, action_args)
+    @task = @vm.queue_action(@user, vm_action, action_args)
+    unless @task
       raise ActionError.new("#{vm_action} is an invalid action.")
     end
     return "#{vm_action} was successfully queued."

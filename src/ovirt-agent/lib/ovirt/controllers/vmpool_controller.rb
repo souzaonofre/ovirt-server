@@ -84,6 +84,7 @@ class VmPoolController < AgentController
   def create_vm_def
     extend VmService
 
+    # FIXME: any hope of implementing to_hash on the qmf hash in args?
     vm_hash = {}
     args.each do |key, value|
       vm_hash[key] = value
@@ -92,7 +93,8 @@ class VmPoolController < AgentController
     vm_hash.delete('uuid') if args['uuid'] == ''
     vm_hash.delete('vnic_mac_addr') if args['vnic_mac_addr'] == ''
     vm_hash['vm_resource_pool_id'] = id
-    # FIXME: This needs to come from the service layer too..
+    # FIXME: Current svc/model API expects provisioning_and_boot_settings to be
+    #        set here rather than setting boot_device directly to hd, pxe, etc.
     vm_hash['boot_device'] = '/dev/sda1'
 
     svc_create(vm_hash, false)

@@ -26,15 +26,10 @@ class VmController < ApplicationController
          :redirect_to => { :controller => 'dashboard' }
 
   def index
-    @vms = Vm.find(:all,
-                   :include => [{:vm_resource_pool =>
-                                  {:permissions => {:role => :privileges}}}],
-                   :conditions => ["privileges.name=:priv
-                               and permissions.uid=:user",
-                             { :user => get_login_user, :priv => Privilege::VIEW }])
-      respond_to do |format|
-          format.xml  { render :xml => @vms.to_xml(:include => :host) }
-      end
+    svc_list(params)
+    respond_to do |format|
+      format.xml  { render :xml => @vms.to_xml(:include => :host) }
+    end
   end
 
   def terminal

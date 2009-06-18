@@ -303,7 +303,7 @@ class Vm < ActiveRecord::Base
                         :action      => action,
                         :args        => data})
     task.save!
-    return true
+    return task
   end
 
   def has_console
