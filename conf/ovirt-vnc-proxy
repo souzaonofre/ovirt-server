@@ -14,7 +14,7 @@
 export RAILS_ENV="${RAILS_ENV:-production}"
 export OVIRT_VNC_PROXY_PORT="${OVIRT_VNC_PROXY_PORT:-5900}"
 
-DAEMON=src/vnc-proxy/vnc-proxy.rb
+DAEMON=/usr/share/ovirt-server/vnc-proxy/vnc-proxy.rb
 
 . /etc/init.d/functions
 
