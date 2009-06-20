@@ -41,7 +41,8 @@ class postgres::bundled{
         service {"postgresql" :
 		ensure => running,
 		enable => true,
-		require => Single_exec[initialize_db]
+		require => Single_exec[initialize_db],
+                hasstatus => true
         }
 
         single_exec {"create_ovirt_db":
