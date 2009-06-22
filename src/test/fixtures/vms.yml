@@ -65,6 +65,19 @@ foobar_prod1_vm:
   boot_device: cdrom
   host: fedoraworkstation_foobar_com
   vm_resource_pool: corp_com_production_vmpool
+corp_com_qa_postgres_vm:
+  uuid: f6059569-a81f-4728-bb61-6f16b1c594e7
+  description: corp.com qa postgres vm
+  num_vcpus_allocated: 2
+  num_vcpus_used: 2
+  memory_allocated: 262144
+  memory_used: 131072
+  vnic_mac_addr: 00:16:3e:04:de:c8
+  state: running
+  needs_restart: 0
+  boot_device: hd
+  host: macworkstation_qa_corp_com
+  vm_resource_pool: corp_qa_vmpool
 foobar_prod2_vm:
   uuid: 24b9a994-d415-481d-ace8-1d810b601eb6
   description: foobar prod2

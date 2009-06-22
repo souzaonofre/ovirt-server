@@ -1,6 +1,7 @@
 #
 # Copyright (C) 2008 Red Hat, Inc.
-# Written by Scott Seago <sseago@redhat.com>
+# Written by Scott Seago <sseago@redhat.com>,
+#            Jason Guiditta <jguiditt@redhat.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +20,7 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class VmTest < Test::Unit::TestCase
+class VmTest < ActiveSupport::TestCase
   fixtures :vms
   fixtures :pools
 
@@ -171,6 +172,24 @@ class VmTest < Test::Unit::TestCase
 
   def test_get_pending_state
     assert_equal 'stopped', vms(:production_httpd_vm).get_pending_state
+  end
+
+  def test_get_action_list_with_no_user
+    empty_array = []
+    assert_equal(empty_array, vms(:production_httpd_vm).get_action_list)
+  end
+
+  def test_queue_action_returns_false_with_invalid_action
+    assert_equal(false, vms(:production_httpd_vm).queue_action('ovirtadmin', 'stop_vm'))
+  end
+
+  def test_valid_action_with_invalid_param
+    assert_equal(false, vms(:production_httpd_vm).valid_action?('stop_vm'))
+  end
+
+  # Ensure valid_action? returns true
+  def test_valid_action_with_valid_param
+    assert_equal(true, vms(:production_httpd_vm).valid_action?('shutdown_vm'))
   end
 
   def test_paginated_results

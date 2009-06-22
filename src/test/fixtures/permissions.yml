@@ -35,5 +35,9 @@ ovirtadmin_prodops_pool:
 ovirtadmin_corp_com_qa_pool:
   role:  monitor
   uid: ovirtadmin
-  pool: corp_com_qa
+  pool: corp_qa_vmpool
   parent_permission: ovirtadmin_root
+testuser_corp_com_qa_pool:
+  role:  user
+  uid: testuser
+  pool: corp_qa_vmpool

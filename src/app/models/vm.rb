@@ -280,6 +280,13 @@ class Vm < ActiveRecord::Base
     actions
   end
 
+  # Provide method to check if requested action exists, so caller can decide
+  # if they want to throw an error of some sort before continuing
+  # (ie in service api)
+  def valid_action?(action)
+    return VmTask::ACTIONS.include?(action) ? true : false
+  end
+
   # these resource checks are made at VM start/restore time
   # use pending here by default since this is used for queueing VM
   # creation/start operations

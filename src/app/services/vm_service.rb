@@ -211,13 +211,42 @@ module VmService
   #   <tt>VmTask.action_privilege(@action)</tt>
   def svc_vm_action(id, vm_action, action_args)
     @vm = Vm.find(id)
+    unless @vm.valid_action?(vm_action)
+      raise ActionError.new("#{vm_action} is an invalid action.")
+    end
     authorized!(VmTask.action_privilege(vm_action),
                 VmTask.action_privilege_object(vm_action,@vm))
     @task = @vm.queue_action(@user, vm_action, action_args)
     unless @task
-      raise ActionError.new("#{vm_action} is an invalid action.")
+      raise ActionError.new("#{vm_action} cannot be performed on this vm.")
     end
-    return "#{vm_action} was successfully queued."
+    return "#{@vm.description}: #{vm_action} was successfully queued."
+  end
+
+  # Perform action +vm_action+ on vms identified by +vm_id+
+  #
+  # === Instance variables
+  # * <tt>@vms</tt> VMs identified by +vm_ids+
+  # === Required permissions
+  # permission is action-specific as determined by
+  # <tt>VmTask.action_privilege(@action)</tt>
+  # This method can be called to initiate an action on one or more vms
+  def svc_vm_actions(vm_ids, vm_action, action_args)
+    vm_ids = [vm_ids] unless vm_ids.is_a?(Array)
+    successful_vms = []
+    failed_vms = {}
+    vm_ids.each do |vm_id|
+      begin
+        successful_vms << svc_vm_action(vm_id, vm_action, action_args)
+      rescue Exception => ex
+        failed_vms[@vm.description] = ex.message
+      end
+    end
+    unless failed_vms.empty?
+      raise PartialSuccessError.new("Your request to #{vm_action} encountered the following errors: ",
+                                    failed_vms, successful_vms)
+    end
+    return "#{vm_action} submitted."
   end
 
   #  Cancels queued tasks for for Vm with +id+
