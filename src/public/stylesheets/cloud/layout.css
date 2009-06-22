@@ -3,7 +3,7 @@
 html {min-width:640px;}
 
 #head h1 a {
-	background:transparent url(/images/mystery_cloud.png) no-repeat scroll 20px 50%;
+	background:transparent url(../../images/mystery_cloud.png) no-repeat scroll 20px 50%;
   /*
     TODO: change this back to a real logo when we have one.
   */
@@ -26,6 +26,14 @@ html {min-width:640px;}
 
 #login-box a {
   color: #337ACC;
+}
+
+/* Make buttons look like links */
+.button_as_link {
+  background: none;
+  color: #666666;
+  border: none;
+  cursor: pointer;
 }
 
 #navcontainer {
@@ -61,7 +69,7 @@ html {min-width:640px;}
 
 #navcontainer ul li a.current {
 	border-top: solid 2px #337acc;
-	background: #e0eeff url(/images/tab_bg.png) repeat-x;
+	background: #e0eeff url(../../images/tab_bg.png) repeat-x;
 	color: #404552;
 }
 
@@ -97,11 +105,11 @@ html {min-width:640px;}
 }
 
 .sortup {
-  background: transparent url('/images/Sort_up_11.png') top center no-repeat !important;
+  background: transparent url('../../images/Sort_up_11.png') top center no-repeat !important;
 }
 
 .sortdown {
-  background: transparent url('/images/Sort_down_11.png') top center no-repeat !important;
+  background: transparent url('../../images/Sort_down_11.png') top center no-repeat !important;
 }
 
 .sortable:hover {/* background-color: #DDDDDD !important; */}
@@ -205,8 +213,10 @@ input#submit_for_list {
 
 #toolbar li:hover {
   background: #337ACC;
+}
+
+#toolbar li:hover > .button_as_link {
   color: #FFFFFF;
-  cursor: pointer;
 }
 
 #toolbar li.current { /* This is not really needed right now, but will be useful when we add filters. */
@@ -234,3 +244,64 @@ input#submit_for_list {
 }
 
 #toolbar li:hover ul {display: block;}
+
+/****** Notification styles ******/
+#notification {
+  -webkit-border-radius: 0.2em;
+  -moz-border-radius: 0.2em;
+  position: absolute;
+  z-index: 1;
+  top: 2em;
+  left: 35%;
+  margin: 0 auto;
+  padding: 1.5em;
+  background: #337ACC;
+  border: solid 0.2em;
+}
+
+.error-align {left: 25% !important;}
+
+#notification > div {
+  margin-bottom: 1em;
+}
+
+#notification h4 {
+  text-indent: 3em;
+}
+
+#close-notify {
+  position: absolute;
+  right: 0.2em;
+  top: 0.2em;
+  width:11px;
+  height:11px;
+  background: url(../../images/closebox-11px.png) no-repeat;
+}
+
+.success {
+  width: 100%;
+  background:url(../../images/icon_conf_success.png) left center no-repeat #CCFFCC;
+  border: solid 0.2em green;
+  -webkit-border-radius: 0.2em;
+  -moz-border-radius: 0.2em;
+}
+
+.success li, .error li {
+  margin-left:3em;
+}
+
+.error {
+  width: 100%;
+  background:url(../../images/icon_conf_error.png) left center no-repeat #EC9999;
+  border: solid 0.2em red;
+  -webkit-border-radius: 0.2em;
+  -moz-border-radius: 0.2em;
+}
+
+.warning {
+  width: 100%;
+  background:url(../../images/icon_conf_warning.png) left center no-repeat #FFFFCC;
+  border: solid 0.2em yellow;
+  -webkit-border-radius: 0.2em;
+  -moz-border-radius: 0.2em;
+}

@@ -26,9 +26,27 @@ class Cloud::CloudController < ApplicationController
 
   protected
 
+  # Override the default in ApplicationController, cloud has its own
+  # template for rendering these errors
+  def html_error_page(title, msg)
+    flash[:error] = msg
+    redirect_to params
+  end
+
+  # Override the default in ApplicationController, cloud has its own
+  # way of handling these (hooked into VmService::svc_vm_actions
+  def handle_partial_success_error(error)
+    handle_error(:error => error, :status => :ok,
+                 :message => {:summary => error.message,
+                              :failures => error.failures,
+                              :successes => error.successes},
+                 :title => "Some actions failed")
+  end
 
   # NOTE: This probably will/should be moved to use set_perms in
-  # ApplicationService once that is ready to go.
+  # ApplicationService once that is ready to go. Only problem with that
+  # idea is that there is currently no before filter to make sure that
+  # gets called.
   def set_vars
     @user = get_login_user
   end

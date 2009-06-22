@@ -44,7 +44,7 @@ class Cloud::InstanceController < Cloud::CloudController
     task_order = find_in_params_or_default(:task_order, "tasks.id")
     @vm_details = Vm.find(ids) if ids
     if @vm_details
-      @tasks = VmTask.paginate(:conditions => ["task_target_id in (:ids)",{:ids => ids}],
+      @tasks = VmTask.paginate(:include => :vm, :conditions => ["task_target_id in (:ids)",{:ids => ids}],
                              :per_page => 5, :page => task_page, :order => task_order)
     end
   end
@@ -76,19 +76,18 @@ class Cloud::InstanceController < Cloud::CloudController
     return params[key] && params[key] != "" ? params[key] : default
   end
 
-# This redirects the user to a get url if they are just trying to view details for one or more
-# instances.
-# TODO: if the user is trying to submit an acton on selected instances, call the service
-# layer and display the :flash (might still want to do :get redirect to keep pagination/sorting
-# correct.
+# This implements the Post/Redirect/Get pattern, and redirects the user to
+# a get url so an action is not accidentally posted twice.
   def handle_form
-    case params[:submit_for_list]
-      when "Show Selected"
-        params.delete(:submit_for_list)
-        redirect_to :action => "index", :params => params
-        return
-#    Do this if we have submitted an action on one or more vms.
-#    svc_vm_action(params[:ids], params[:vm_action], params[:action_args])
+    if params[:submit_for_list]
+      submit_type = params[:submit_for_list]
+      params.delete(:submit_for_list)
+      if params[:ids].nil?
+        flash[:warning] = "You must select at least one instance to perform an action."
+      elsif submit_type != "Show Selected"
+        flash[:notice] = svc_vm_actions(params[:ids], submit_type.downcase << '_vm', params[:action_args])
+      end
+      redirect_to params
     end
   end
 
