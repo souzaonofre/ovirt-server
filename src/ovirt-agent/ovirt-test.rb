@@ -1,9 +1,10 @@
 #!/usr/bin/ruby
 
-$: << File.join(File.dirname(__FILE__), "./dutils")
+$: << File.join(File.dirname(__FILE__), "../dutils")
 
-require "rubygems"
-require "qpid"
+require 'rubygems'
+require 'qpid'
+require 'dutils'
 
 if ARGV.size == 1
   srv = ARGV[0]
@@ -11,9 +12,12 @@ else
   srv = "amqp://localhost"
 end
 
+
+get_credentials('qpidd')
+
 puts "Connecting to #{srv}.."
 s = Qpid::Qmf::Session.new()
-b = s.add_broker(srv)
+b = s.add_broker(srv, :mechanism => 'GSSAPI')
 
 # This segfaults in F10 (ruby-1.8.6.287-2.fc10.x86_64)
 # p s.objects(:class => "Ovirt")
