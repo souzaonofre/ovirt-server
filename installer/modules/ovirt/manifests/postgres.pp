@@ -41,7 +41,7 @@ class postgres::bundled{
         service {"postgresql" :
 		ensure => running,
 		enable => true,
-		require => Single_exec[initialize_db],
+                require => [Single_exec[initialize_db],Exec[postgres_add_localhost_trust],Exec[postgres_add_all_trust]],
                 hasstatus => true
         }
 
