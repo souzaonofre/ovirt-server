@@ -18,6 +18,7 @@ require 'ovirt'
 require 'ovirt/agent_controller'
 require 'ovirt/controllers/ovirt_controller'
 require 'ovirt/controllers/vmdef_controller'
+require 'ovirt/controllers/task_controller'
 
 
 include Daemonize
@@ -116,7 +117,7 @@ class OvirtAgent < Qmf::AgentHandler
     # refers to.
     @controller_classes = @schema_classes.inject({}) do |map, klass|
       begin
-        controller_class = "#{klass.name}Controller".constantize
+        controller_class = "Ovirt::#{klass.name}Controller".constantize
         raise NameError unless controller_class < AgentController
         map[klass.id] = controller_class
         controller_class.schema_class = klass

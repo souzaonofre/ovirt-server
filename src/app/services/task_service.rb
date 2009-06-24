@@ -30,6 +30,20 @@ module TaskService
     lookup(id,Privilege::VIEW)
   end
 
+  # Cancel the the Task with +id+
+  #
+  # === Instance variables
+  # [<tt>@task</tt>] stores the Task with +id+
+  # === Required permissions
+  # [<tt>Privilege::MODIFY</tt>] on task target's Pool
+  def svc_cancel(id)
+    lookup(id,Privilege::MODIFY)
+    unless @task.state == Task::STATE_QUEUED
+      raise ActionError.new("Task state is #{@task.state} instead of queued.")
+    end
+    @task.cancel
+  end
+
   private
   def lookup(id, priv)
     @task = Task.find(id)

@@ -70,6 +70,34 @@ else
   puts "VM ovirt-test-vm already exists"
 end
 
+def task_result_test(s, action, result)
+  puts "result for #{action} is #{result.status}"
+  puts "Error for #{action}: #{result.text}" if result.status != 0
+  if result.status == 0
+    puts "New Task: #{result.task}"
+    task = s.object(:object_id => result.task)
+    puts "New Task state: #{task.state}"
+    task_retries = 0
+    while task_retries < 5 and Task::WORKING_STATES.include?(task.state)
+      task_retries +=1
+      sleep 10
+      task.update
+      puts "Task state after #{task_retries*10} seconds: #{task.state}"
+    end
+  end
+end
+
+task_result_test(s, "Start", vm.start)
+task_result_test(s, "Suspend", vm.suspend)
+task_result_test(s, "Resume", vm.resume)
+task_result_test(s, "Poweroff", vm.poweroff)
+
+result = vm.delete
+puts "result is #{result.status}"
+puts "Error: #{result.text}" if result.status != 0
+vm = s.object(:object_id => vm.object_id)
+puts "VM deleted" if !vm
+
 
 vms = s.objects(:class => 'VmDef')
 vms.each do |vm|
