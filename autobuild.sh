@@ -94,7 +94,7 @@ sudo virsh undefine ovirt-server-test || true
 
 # create new vm for server, configuring via kickstart, boot it
 sudo appliance-creator --config ovirt-server-test.ks --name ovirt-server-test \
-                       -f qcow2 -p tar -d -v
+                       -f raw --vmem=2048 -p tar -d -v
 
 # restore original kickstart
 mv ovirt-server-test.ks.orig ovirt-server-test.ks
