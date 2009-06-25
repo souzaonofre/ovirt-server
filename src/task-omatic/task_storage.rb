@@ -132,7 +132,7 @@ class LibvirtPool
 
     if @remote_pool == nil
       @logger.debug("Defining new storage pool: #{@xml.to_s} on host: #{node.hostname}")
-      result = node.storagePoolDefineXML(@xml.to_s, :timeout => 60 * 2)
+      result = node.storagePoolDefineXML(@xml.to_s, :timeout => 60 * 10)
       raise "Error creating pool: #{result.text}" unless result.status == 0
       @remote_pool = session.object(:object_id => result.pool)
       raise "Error finding newly created remote pool." unless @remote_pool
@@ -141,7 +141,7 @@ class LibvirtPool
       # destroy existing data
       if @build_on_start
         @logger.debug("Building remote pool #{@remote_pool.name}")
-        result = @remote_pool.build(:timeout => 60 * 2)
+        result = @remote_pool.build(:timeout => 60 * 10)
         raise "Error building pool: #{result.text}" unless result.status == 0
       end
       @remote_pool_defined = true
@@ -155,7 +155,7 @@ class LibvirtPool
     if @remote_pool.state == "inactive"
       # only try to start the pool if it is currently inactive; in all other
       # states, assume it is already running
-      result = @remote_pool.create(:timeout => 60 * 2)
+      result = @remote_pool.create(:timeout => 60 * 10)
       raise "Error defining pool: #{result.text}" unless result.status == 0
 
       # Refresh qpid object with new properties.

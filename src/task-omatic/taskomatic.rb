@@ -258,14 +258,14 @@ class TaskOmatic
       # libvirt-qpid sets parentVolume to the name of the parent volume
       # if this is an LVM pool, else it leaves it empty.
       if pool.parentVolume != ''
-        result = pool.destroy
-        result = pool.undefine
+        result = pool.destroy(:timeout => 60 * 2)
+        result = pool.undefine(:timeout => 60 * 2)
       end
     end
 
     pools.each do |pool|
-      result = pool.destroy
-      result = pool.undefine
+      result = pool.destroy(:timeout => 60 * 2)
+      result = pool.undefine(:timeout => 60 * 2)
     end
   end
 
@@ -534,7 +534,7 @@ class TaskOmatic
       dest_uri = "qemu+tcp://" + dest_node.hostname + "/system"
       @logger.debug("Migrating from #{src_uri} to #{dest_uri}")
 
-      result = vm.migrate(dest_uri, Libvirt::Domain::MIGRATE_LIVE, '', '', 0, :timeout => 60 * 4)
+      result = vm.migrate(dest_uri, Libvirt::Domain::MIGRATE_LIVE, '', '', 0, :timeout => 60 * 10)
       @logger.error "Error migrating VM: #{result.text}" unless result.status == 0
 
       # undefine can fail, for instance, if we live migrated from A -> B, and
