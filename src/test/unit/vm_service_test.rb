@@ -84,7 +84,7 @@ class VmServiceTest < ActiveSupport::TestCase
   # (should be the same message if one or more, so we have one test for
   # each of those cases)
   def test_success_message_from_single_vm
-    assert_equal("shutdown_vm successful.",
+    assert_equal("shutdown_vm submitted.",
       svc_vm_actions(vms(:production_mysqld_vm).id, 'shutdown_vm', nil))
   end
 
@@ -92,7 +92,7 @@ class VmServiceTest < ActiveSupport::TestCase
   # (should be the same message if one or more, so we have one test for
   # each of those cases)
   def test_success_message_for_multiple_vms
-    assert_equal("shutdown_vm successful.",
+    assert_equal("shutdown_vm submitted.",
       svc_vm_actions([vms(:production_postgresql_vm).id,
                       vms(:production_mysqld_vm).id,
                       vms(:foobar_prod1_vm).id], 'shutdown_vm', nil))
@@ -111,7 +111,7 @@ class VmServiceTest < ActiveSupport::TestCase
   # each of those cases)
   def test_success_message_from_single_vm_with_less_privileged_user
     set_login_user('testuser')
-    assert_equal("shutdown_vm successful.",
+    assert_equal("shutdown_vm submitted.",
       svc_vm_actions(vms(:corp_com_qa_postgres_vm).id, 'shutdown_vm', nil))
   end
 

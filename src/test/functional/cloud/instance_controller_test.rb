@@ -50,7 +50,7 @@ class Cloud::InstanceControllerTest < ActionController::TestCase
 
   def test_add_valid_task
     post(:index,{:submit_for_list => 'Shutdown', :ids => [vms(:production_mysqld_vm).id]})
-    assert_equal('shutdown_vm successful.', flash[:notice])
+    assert_equal('shutdown_vm submitted.', flash[:notice])
     assert_redirected_to :action => :index, :ids => vms(:production_mysqld_vm).id
   end
 
