@@ -82,7 +82,7 @@ Rails::Initializer.run do |config|
 
   # Activate observers that should always be running
   # config.active_record.observers = :cacher, :garbage_collector
-  config.active_record.observers = :host_observer
+  config.active_record.observers = :host_observer, :vm_observer
 end
 
 # Add new inflection rules using the following format

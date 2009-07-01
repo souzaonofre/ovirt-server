@@ -41,6 +41,14 @@ class Vm < ActiveRecord::Base
            :order => 'time_started DESC',
            :dependent => :destroy
 
+
+  has_many :vm_state_change_events,
+           :order => 'created_at' do
+    def previous_state_with_type(state_type)
+      find(:first, :conditions=> { :to_state => state_type }, :order=> 'created_at DESC')
+    end
+  end
+
   alias history vm_host_histories
 
   validates_presence_of :uuid, :description, :num_vcpus_allocated,
@@ -138,6 +146,25 @@ class Vm < ActiveRecord::Base
   STATE_CREATE_FAILED  = "create_failed"
   STATE_INVALID        = "invalid"
 
+  ALL_STATES = [STATE_PENDING,
+                STATE_CREATING,
+                STATE_RUNNING,
+                STATE_UNREACHABLE,
+                STATE_POWERING_OFF,
+                STATE_STOPPING,
+                STATE_STOPPED,
+                STATE_STARTING,
+                STATE_SUSPENDING,
+                STATE_SUSPENDED,
+                STATE_RESUMING,
+                STATE_SAVING,
+                STATE_SAVED,
+                STATE_RESTORING,
+                STATE_MIGRATING,
+                STATE_CREATE_FAILED,
+                STATE_INVALID]
+
+
   DESTROYABLE_STATES   = [STATE_PENDING,
                           STATE_STOPPED,
                           STATE_CREATE_FAILED,
@@ -176,6 +203,13 @@ class Vm < ActiveRecord::Base
   validates_inclusion_of :state,
      :in => EFFECTIVE_STATE.keys
 
+  def get_calculated_uptime
+    if VmObserver::AUDIT_RUNNING_STATES.include?(state)
+      total_uptime_timestamp ? (total_uptime + (Time.now - total_uptime_timestamp)).to_i : 0
+    else
+      total_uptime
+    end
+  end
 
   def get_vm_pool
     vm_resource_pool
