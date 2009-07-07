@@ -42,6 +42,7 @@ Requires: qpidd
 Requires: ruby-qpid >= 0.5.776856
 Requires: qpidc
 Requires: qmf
+Requires: ruby-qmf
 Requires(post):  /sbin/chkconfig
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
