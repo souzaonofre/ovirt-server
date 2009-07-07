@@ -6,14 +6,10 @@ require 'rubygems'
 require 'qpid'
 require 'dutils'
 
-if ARGV.size == 1
-  srv = ARGV[0]
-else
-  srv = "amqp://localhost"
-end
-
+server, port = get_srv('qpidd', 'tcp')
 
 get_credentials('qpidd')
+srv = "amqp://#{server}:#{port}"
 
 puts "Connecting to #{srv}.."
 s = Qpid::Qmf::Session.new()
