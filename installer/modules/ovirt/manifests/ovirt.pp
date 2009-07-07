@@ -172,6 +172,12 @@ class ovirt::setup {
                 ensure => running
         }
 
+        service {"ovirt-agent" :
+                enable => true,
+		require => [Package[ovirt-server],Single_Exec[db_migrate]],
+                ensure => running
+        }
+
         service {"qpidd" :
                 enable => true,
                 ensure => running,

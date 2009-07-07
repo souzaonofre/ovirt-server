@@ -23,6 +23,12 @@ require 'ovirt/controllers/task_controller'
 
 include Daemonize
 
+class Logger
+  def format_message(severity, timestamp, progname, msg)
+    "#{severity} #{timestamp} (#{$$}) #{msg}\n"
+  end
+end
+
 # Monkey patch
 class Qmf::SchemaObjectClass
   attr_reader :id
@@ -80,16 +86,47 @@ class OvirtAgent < Qmf::AgentHandler
 
   include Ovirt::SchemaParser
 
-  def initialize(host)
+  $logfile = '/var/log/ovirt-server/ovirt-agent.log'
+
+  def initialize()
 
     ensure_credentials
 
-    # FIXME: Use RAILS_DEFAULT_LOGGER
-    @logger = Logger.new(STDERR)
-    @logger.level = Logger::DEBUG
-
     server, port = nil
     sleepy = 5
+
+    do_daemon = true
+
+    opts = OptionParser.new do |opts|
+      opts.on("-h", "--help", "Print help message") do
+        puts opts
+        exit
+      end
+      opts.on("-n", "--nodaemon", "Run interactively (useful for debugging)") do |n|
+        do_daemon = false
+      end
+    end
+    begin
+      opts.parse!(ARGV)
+    rescue OptionParser::InvalidOption
+      puts opts
+      exit
+    end
+
+    if do_daemon
+      # This gets around a problem with paths for the database stuff.
+      # Normally daemonize would chdir to / but the paths for the database
+      # stuff are relative so it breaks it.. It's either this or rearrange
+      # things so the db stuff is included after daemonizing.
+      pwd = Dir.pwd
+      daemonize
+      Dir.chdir(pwd)
+      @logger = Logger.new($logfile)
+    else
+      @logger = Logger.new(STDERR)
+    end
+    @logger.level = Logger::DEBUG
+
     while true do
       server, port = get_srv('qpidd', 'tcp')
       break if server
@@ -99,12 +136,12 @@ class OvirtAgent < Qmf::AgentHandler
     end
 
     @settings = Qmf::ConnectionSettings.new
-    #@settings.server = server
+    @settings.host = server
+    # FIXME: Bug in swig!
     #@settings.port = port
-    #@settings.mechanism = 'GSSAPI'
+    @settings.mechanism = 'GSSAPI'
 
-    @settings.host = host
-    @logger.info "Connect to broker on #{@settings.host}"
+    @logger.info "Connecting to broker on #{@settings.host}.."
 
     @connection = Qmf::Connection.new(@settings)
     @agent = Qmf::Agent.new(self)
@@ -243,11 +280,5 @@ class OvirtAgent < Qmf::AgentHandler
   end
 end
 
-if ARGV.size == 1
-  broker = ARGV[0]
-else
-  broker = "localhost"
-end
-ovirt_agent = OvirtAgent.new(broker)
-
+ovirt_agent = OvirtAgent.new
 ovirt_agent.mainloop
