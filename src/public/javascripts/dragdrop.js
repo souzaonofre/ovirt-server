@@ -1,6 +1,6 @@
 // Copyright (c) 2005-2008 Thomas Fuchs (http://script.aculo.us, http://mir.aculo.us)
-//           (c) 2005-2007 Sammi Williams (http://www.oriontransfer.co.nz, sammi@oriontransfer.co.nz)
-// 
+//           (c) 2005-2008 Sammi Williams (http://www.oriontransfer.co.nz, sammi@oriontransfer.co.nz)
+//
 // script.aculo.us is freely distributable under the terms of an MIT-style license.
 // For details, see the script.aculo.us web site: http://script.aculo.us/
 
@@ -32,7 +32,7 @@ var Droppables = {
         options._containers.push($(containment));
       }
     }
-    
+
     if(options.accept) options.accept = [options.accept].flatten();
 
     Element.makePositioned(element); // fix IE
@@ -40,34 +40,34 @@ var Droppables = {
 
     this.drops.push(options);
   },
-  
+
   findDeepestChild: function(drops) {
     deepest = drops[0];
-      
+
     for (i = 1; i < drops.length; ++i)
       if (Element.isParent(drops[i].element, deepest.element))
         deepest = drops[i];
-    
+
     return deepest;
   },
 
   isContained: function(element, drop) {
     var containmentNode;
     if(drop.tree) {
-      containmentNode = element.treeNode; 
+      containmentNode = element.treeNode;
     } else {
       containmentNode = element.parentNode;
     }
     return drop._containers.detect(function(c) { return containmentNode == c });
   },
-  
+
   isAffected: function(point, element, drop) {
     return (
       (drop.element!=element) &&
       ((!drop._containers) ||
         this.isContained(element, drop)) &&
       ((!drop.accept) ||
-        (Element.classNames(element).detect( 
+        (Element.classNames(element).detect(
           function(v) { return drop.accept.include(v) } ) )) &&
       Position.within(drop.element, point[0], point[1]) );
   },
@@ -87,12 +87,12 @@ var Droppables = {
   show: function(point, element) {
     if(!this.drops.length) return;
     var drop, affected = [];
-    
+
     this.drops.each( function(drop) {
       if(Droppables.isAffected(point, element, drop))
         affected.push(drop);
     });
-        
+
     if(affected.length>0)
       drop = Droppables.findDeepestChild(affected);
 
@@ -101,7 +101,7 @@ var Droppables = {
       Position.within(drop.element, point[0], point[1]);
       if(drop.onHover)
         drop.onHover(element, drop.element, Position.overlap(drop.overlap, drop.element));
-      
+
       if (drop != this.last_active) Droppables.activate(drop);
     }
   },
@@ -121,25 +121,25 @@ var Droppables = {
     if(this.last_active)
       this.deactivate(this.last_active);
   }
-}
+};
 
 var Draggables = {
   drags: [],
   observers: [],
-  
+
   register: function(draggable) {
     if(this.drags.length == 0) {
       this.eventMouseUp   = this.endDrag.bindAsEventListener(this);
       this.eventMouseMove = this.updateDrag.bindAsEventListener(this);
       this.eventKeypress  = this.keyPress.bindAsEventListener(this);
-      
+
       Event.observe(document, "mouseup", this.eventMouseUp);
       Event.observe(document, "mousemove", this.eventMouseMove);
       Event.observe(document, "keypress", this.eventKeypress);
     }
     this.drags.push(draggable);
   },
-  
+
   unregister: function(draggable) {
     this.drags = this.drags.reject(function(d) { return d==draggable });
     if(this.drags.length == 0) {
@@ -148,24 +148,24 @@ var Draggables = {
       Event.stopObserving(document, "keypress", this.eventKeypress);
     }
   },
-  
+
   activate: function(draggable) {
-    if(draggable.options.delay) { 
-      this._timeout = setTimeout(function() { 
-        Draggables._timeout = null; 
-        window.focus(); 
-        Draggables.activeDraggable = draggable; 
-      }.bind(this), draggable.options.delay); 
+    if(draggable.options.delay) {
+      this._timeout = setTimeout(function() {
+        Draggables._timeout = null;
+        window.focus();
+        Draggables.activeDraggable = draggable;
+      }.bind(this), draggable.options.delay);
     } else {
       window.focus(); // allows keypress events if window isn't currently focused, fails for Safari
       this.activeDraggable = draggable;
     }
   },
-  
+
   deactivate: function() {
     this.activeDraggable = null;
   },
-  
+
   updateDrag: function(event) {
     if(!this.activeDraggable) return;
     var pointer = [Event.pointerX(event), Event.pointerY(event)];
@@ -173,36 +173,36 @@ var Draggables = {
     // the same coordinates, prevent needless redrawing (moz bug?)
     if(this._lastPointer && (this._lastPointer.inspect() == pointer.inspect())) return;
     this._lastPointer = pointer;
-    
+
     this.activeDraggable.updateDrag(event, pointer);
   },
-  
+
   endDrag: function(event) {
-    if(this._timeout) { 
-      clearTimeout(this._timeout); 
-      this._timeout = null; 
+    if(this._timeout) {
+      clearTimeout(this._timeout);
+      this._timeout = null;
     }
     if(!this.activeDraggable) return;
     this._lastPointer = null;
     this.activeDraggable.endDrag(event);
     this.activeDraggable = null;
   },
-  
+
   keyPress: function(event) {
     if(this.activeDraggable)
       this.activeDraggable.keyPress(event);
   },
-  
+
   addObserver: function(observer) {
     this.observers.push(observer);
     this._cacheObserverCallbacks();
   },
-  
+
   removeObserver: function(element) {  // element instead of observer fixes mem leaks
     this.observers = this.observers.reject( function(o) { return o.element==element });
     this._cacheObserverCallbacks();
   },
-  
+
   notify: function(eventName, draggable, event) {  // 'onStart', 'onEnd', 'onDrag'
     if(this[eventName+'Count'] > 0)
       this.observers.each( function(o) {
@@ -210,7 +210,7 @@ var Draggables = {
       });
     if(draggable.options[eventName]) draggable.options[eventName](draggable, event);
   },
-  
+
   _cacheObserverCallbacks: function() {
     ['onStart','onEnd','onDrag'].each( function(eventName) {
       Draggables[eventName+'Count'] = Draggables.observers.select(
@@ -218,7 +218,7 @@ var Draggables = {
       ).length;
     });
   }
-}
+};
 
 /*--------------------------------------------------------------------------*/
 
@@ -234,12 +234,12 @@ var Draggable = Class.create({
       },
       endeffect: function(element) {
         var toOpacity = Object.isNumber(element._opacity) ? element._opacity : 1.0;
-        new Effect.Opacity(element, {duration:0.2, from:0.7, to:toOpacity, 
+        new Effect.Opacity(element, {duration:0.2, from:0.7, to:toOpacity,
           queue: {scope:'_draggable', position:'end'},
-          afterFinish: function(){ 
-            Draggable._dragging[element] = false 
+          afterFinish: function(){
+            Draggable._dragging[element] = false
           }
-        }); 
+        });
       },
       zindex: 1000,
       revert: false,
@@ -250,57 +250,57 @@ var Draggable = Class.create({
       snap: false,  // false, or xy or [x,y] or function(x,y){ return [x,y] }
       delay: 0
     };
-    
+
     if(!arguments[1] || Object.isUndefined(arguments[1].endeffect))
       Object.extend(defaults, {
         starteffect: function(element) {
           element._opacity = Element.getOpacity(element);
           Draggable._dragging[element] = true;
-          new Effect.Opacity(element, {duration:0.2, from:element._opacity, to:0.7}); 
+          new Effect.Opacity(element, {duration:0.2, from:element._opacity, to:0.7});
         }
       });
-    
+
     var options = Object.extend(defaults, arguments[1] || { });
 
     this.element = $(element);
-    
+
     if(options.handle && Object.isString(options.handle))
       this.handle = this.element.down('.'+options.handle, 0);
-    
+
     if(!this.handle) this.handle = $(options.handle);
     if(!this.handle) this.handle = this.element;
-    
+
     if(options.scroll && !options.scroll.scrollTo && !options.scroll.outerHTML) {
       options.scroll = $(options.scroll);
       this._isScrollChild = Element.childOf(this.element, options.scroll);
     }
 
-    Element.makePositioned(this.element); // fix IE    
+    Element.makePositioned(this.element); // fix IE
 
     this.options  = options;
-    this.dragging = false;   
+    this.dragging = false;
 
     this.eventMouseDown = this.initDrag.bindAsEventListener(this);
     Event.observe(this.handle, "mousedown", this.eventMouseDown);
-    
+
     Draggables.register(this);
   },
-  
+
   destroy: function() {
     Event.stopObserving(this.handle, "mousedown", this.eventMouseDown);
     Draggables.unregister(this);
   },
-  
+
   currentDelta: function() {
     return([
       parseInt(Element.getStyle(this.element,'left') || '0'),
       parseInt(Element.getStyle(this.element,'top') || '0')]);
   },
-  
+
   initDrag: function(event) {
     if(!Object.isUndefined(Draggable._dragging[this.element]) &&
       Draggable._dragging[this.element]) return;
-    if(Event.isLeftClick(event)) {    
+    if(Event.isLeftClick(event)) {
       // abort on form elements, fixes a Firefox issue
       var src = Event.element(event);
       if((tag_name = src.tagName.toUpperCase()) && (
@@ -309,34 +309,34 @@ var Draggable = Class.create({
         tag_name=='OPTION' ||
         tag_name=='BUTTON' ||
         tag_name=='TEXTAREA')) return;
-        
+
       var pointer = [Event.pointerX(event), Event.pointerY(event)];
       var pos     = Position.cumulativeOffset(this.element);
       this.offset = [0,1].map( function(i) { return (pointer[i] - pos[i]) });
-      
+
       Draggables.activate(this);
       Event.stop(event);
     }
   },
-  
+
   startDrag: function(event) {
     this.dragging = true;
     if(!this.delta)
       this.delta = this.currentDelta();
-    
+
     if(this.options.zindex) {
       this.originalZ = parseInt(Element.getStyle(this.element,'z-index') || 0);
       this.element.style.zIndex = this.options.zindex;
     }
-    
+
     if(this.options.ghosting) {
       this._clone = this.element.cloneNode(true);
-      this.element._originallyAbsolute = (this.element.getStyle('position') == 'absolute');
-      if (!this.element._originallyAbsolute)
+      this._originallyAbsolute = (this.element.getStyle('position') == 'absolute');
+      if (!this._originallyAbsolute)
         Position.absolutize(this.element);
       this.element.parentNode.insertBefore(this._clone, this.element);
     }
-    
+
     if(this.options.scroll) {
       if (this.options.scroll == window) {
         var where = this._getWindowScroll(this.options.scroll);
@@ -347,15 +347,15 @@ var Draggable = Class.create({
         this.originalScrollTop = this.options.scroll.scrollTop;
       }
     }
-    
+
     Draggables.notify('onStart', this, event);
-        
+
     if(this.options.starteffect) this.options.starteffect(this.element);
   },
-  
+
   updateDrag: function(event, pointer) {
     if(!this.dragging) this.startDrag(event);
-    
+
     if(!this.options.quiet){
       Position.prepare();
       Droppables.show(pointer, this.element);
@@ -403,9 +403,9 @@ var Draggable = Class.create({
     }
 
     if(this.options.ghosting) {
-      if (!this.element._originallyAbsolute)
+      if (!this._originallyAbsolute)
         Position.relativize(this.element);
-      delete this.element._originallyAbsolute;
+      delete this._originallyAbsolute;
       Element.remove(this._clone);
       this._clone = null;
     }
@@ -433,7 +433,7 @@ var Draggable = Class.create({
     if(this.options.zindex)
       this.element.style.zIndex = this.originalZ;
 
-    if(this.options.endeffect) 
+    if(this.options.endeffect)
       this.options.endeffect(this.element);
 
     Draggables.deactivate(this);
@@ -468,8 +468,8 @@ var Draggable = Class.create({
       pos[1] -= this.options.scroll.scrollTop-this.originalScrollTop;
     }
 
-    var p = [0,1].map(function(i){ 
-      return (point[i]-pos[i]-this.offset[i]) 
+    var p = [0,1].map(function(i){
+      return (point[i]-pos[i]-this.offset[i])
     }.bind(this));
 
     if(this.options.snap) {
@@ -478,10 +478,10 @@ var Draggable = Class.create({
       } else {
       if(Object.isArray(this.options.snap)) {
         p = p.map( function(v, i) {
-          return (v/this.options.snap[i]).round()*this.options.snap[i] }.bind(this))
+          return (v/this.options.snap[i]).round()*this.options.snap[i] }.bind(this));
       } else {
         p = p.map( function(v) {
-          return (v/this.options.snap).round()*this.options.snap }.bind(this))
+          return (v/this.options.snap).round()*this.options.snap }.bind(this));
       }
     }}
 
@@ -560,7 +560,7 @@ var Draggable = Class.create({
         H = documentElement.clientHeight;
       } else {
         W = body.offsetWidth;
-        H = body.offsetHeight
+        H = body.offsetHeight;
       }
     }
     return { top: T, left: L, width: W, height: H };
@@ -591,9 +591,9 @@ var SortableObserver = Class.create({
 
 var Sortable = {
   SERIALIZE_RULE: /^[^_\-](?:[A-Za-z0-9\-\_]*)[_](.*)$/,
-  
+
   sortables: { },
-  
+
   _findRootElement: function(element) {
     while (element.tagName.toUpperCase() != "BODY") {
       if(element.id && Sortable.sortables[element.id]) return element;
@@ -608,7 +608,8 @@ var Sortable = {
   },
 
   destroy: function(element){
-    var s = Sortable.options(element);
+    element = $(element);
+    var s = Sortable.sortables[element.id];
 
     if(s) {
       Draggables.removeObserver(s.element);
@@ -689,14 +690,14 @@ var Sortable = {
       tree:        options.tree,
       hoverclass:  options.hoverclass,
       onHover:     Sortable.onHover
-    }
+    };
 
     var options_for_tree = {
       onHover:      Sortable.onEmptyHover,
       overlap:      options.overlap,
       containment:  options.containment,
       hoverclass:   options.hoverclass
-    }
+    };
 
     // fix for gecko engine
     Element.cleanWhitespace(element);
@@ -832,7 +833,7 @@ var Sortable = {
         Sortable._marker.setStyle({left: (offsets[0]+dropon.clientWidth) + 'px'});
       else
         Sortable._marker.setStyle({top: (offsets[1]+dropon.clientHeight) + 'px'});
-    
+
     Sortable._marker.show();
   },
 
@@ -851,11 +852,11 @@ var Sortable = {
         children: [],
         position: parent.children.length,
         container: $(children[i]).down(options.treeTag)
-      }
+      };
 
       /* Get the element containing the children and recurse over it */
       if (child.container)
-        this._tree(child.container, options, child)
+        this._tree(child.container, options, child);
 
       parent.children.push (child);
     }
@@ -880,7 +881,7 @@ var Sortable = {
       children: [],
       container: element,
       position: 0
-    }
+    };
 
     return Sortable._tree(element, options, root);
   },
@@ -931,7 +932,7 @@ var Sortable = {
 
     if (options.tree) {
       return Sortable.tree(element, arguments[1]).children.map( function (item) {
-        return [name + Sortable._constructIndex(item) + "[id]=" + 
+        return [name + Sortable._constructIndex(item) + "[id]=" +
                 encodeURIComponent(item.id)].concat(item.children.map(arguments.callee));
       }).flatten().join('&');
     } else {
@@ -940,14 +941,14 @@ var Sortable = {
       }).join('&');
     }
   }
-}
+};
 
 // Returns true if child is contained within element
 Element.isParent = function(child, element) {
   if (!child.parentNode || child == element) return false;
   if (child.parentNode == element) return true;
   return Element.isParent(child.parentNode, element);
-}
+};
 
 Element.findChildren = function(element, only, recursive, tagName) {
   if(!element.hasChildNodes()) return null;
@@ -965,8 +966,8 @@ Element.findChildren = function(element, only, recursive, tagName) {
   });
 
   return (elements.length>0 ? elements.flatten() : []);
-}
+};
 
 Element.offsetSize = function (element, type) {
   return element['offset' + ((type=='vertical' || type=='height') ? 'Height' : 'Width')];
-}
+};

@@ -25,8 +25,6 @@ class ApplicationController < ActionController::Base
   # FIXME: once all controller classes include this, remove here
   include ApplicationService
 
-  # Pick a unique cookie name to distinguish our session data from others'
-  session :session_key => '_ovirt_session_id'
   init_gettext "ovirt"
   layout :choose_layout
 
