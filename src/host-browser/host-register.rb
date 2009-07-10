@@ -92,7 +92,7 @@ class HostRegister < Qpid::Qmf::Console
             end
 
             @logger.info "Connecting to amqp://#{server}:#{port}"
-            @session = Qpid::Qmf::Session.new(:console => self, :manage_connections => true)
+            @session = Qpid::Qmf::Session.new(:console => self, :manage_connections => false)
             @broker = @session.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
 
          rescue Exception => ex
