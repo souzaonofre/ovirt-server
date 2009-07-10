@@ -102,6 +102,7 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 %{__install} -p -m0644 %{pbuild}/conf/%{name}.crontab %{buildroot}%{_sysconfdir}/cron.d/%{name}
 
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-host-browser %{buildroot}%{_initrddir}
+%{__install} -Dp -m0755 %{pbuild}/conf/ovirt-host-register %{buildroot}%{_initrddir}
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-db-omatic %{buildroot}%{_initrddir}
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-agent %{buildroot}%{_initrddir}
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-host-collect %{buildroot}%{_initrddir}
@@ -183,6 +184,7 @@ fi
 # on; otherwise, we respect the choices the administrator already has made.
 # check this by seeing if each daemon is already installed
 %daemon_chkconfig_post -d ovirt-host-browser
+%daemon_chkconfig_post -d ovirt-host-register
 %daemon_chkconfig_post -d ovirt-db-omatic
 %daemon_chkconfig_post -d ovirt-agent
 %daemon_chkconfig_post -d ovirt-host-collect
@@ -193,6 +195,7 @@ fi
 %preun
 if [ "$1" = 0 ] ; then
   /sbin/service ovirt-host-browser stop > /dev/null 2>&1
+  /sbin/service ovirt-host-register stop > /dev/null 2>&1
   /sbin/service ovirt-db-omatic stop > /dev/null 2>&1
   /sbin/service ovirt-agent stop > /dev/null 2>&1
   /sbin/service ovirt-host-collect stop > /dev/null 2>&1
@@ -200,6 +203,7 @@ if [ "$1" = 0 ] ; then
   /sbin/service ovirt-taskomatic stop > /dev/null 2>&1
   /sbin/service ovirt-vnc-proxy stop > /dev/null 2>&1
   /sbin/chkconfig --del ovirt-host-browser
+  /sbin/chkconfig --del ovirt-host-register
   /sbin/chkconfig --del ovirt-db-omatic
   /sbin/chkconfig --del ovirt-agent
   /sbin/chkconfig --del ovirt-host-collect
@@ -215,6 +219,7 @@ fi
 %{_bindir}/ovirt-add-host
 %{_bindir}/ovirt-vm2node
 %{_initrddir}/ovirt-host-browser
+%{_initrddir}/ovirt-host-register
 %{_initrddir}/ovirt-db-omatic
 %{_initrddir}/ovirt-agent
 %{_initrddir}/ovirt-host-collect
