@@ -22,7 +22,6 @@ $: << File.join(File.dirname(__FILE__), "../dutils")
 $: << File.join(File.dirname(__FILE__), "../")
 
 require 'rubygems'
-require 'libvirt'
 require 'dutils'
 
 require 'socket'
@@ -35,9 +34,7 @@ include Socket::Constants
 
 $logfile = '/var/log/ovirt-server/host-browser.log'
 
-# +HostBrowser+ communicates with the a managed node. It retrieves specific information
-# about the node and then updates the list of active nodes for the Server.
-#
+# +HostBrowser+ provides kerberos related services to a managed node.
 class HostBrowser
     attr_accessor :logfile
     attr_accessor :keytab_dir
@@ -76,245 +73,6 @@ class HostBrowser
         puts "#{prefix(@session)} MODE=#{response}" unless defined?(TESTING)
 
         response
-    end
-
-    # Requests node information from the remote system.
-    #
-    def get_remote_info
-        puts "#{prefix(@session)} Begin remote info collection" unless defined?(TESTING)
-        result = Hash.new
-        result['HOSTNAME'] = @session.peeraddr[2]
-        result['IPADDR']   = @session.peeraddr[3]
-        result['NICINFO']  = Array.new
-
-        @session.write("INFO?\n")
-
-        loop do
-            info = @session.readline.chomp
-
-            puts "Received info='#{info}'"
-
-            break if info == "ENDINFO"
-
-            case info
-            when "CPU"
-                cpu = get_cpu_info
-                cpu_info = result['CPUINFO']
-
-                if(cpu_info == nil)
-                    cpu_info = Array.new
-                    result['CPUINFO'] = cpu_info
-                end
-
-                cpu_info << cpu
-            when "NIC"
-                nic = get_nic_info
-                nic_info = result['NICINFO']
-
-                if(nic_info == nil)
-                    nic_info = Array.new
-                    result['NICINFO'] = nic_info
-                end
-
-                nic_info << nic
-            else
-
-                raise Exception.new("ERRINFO! Expected key=value : #{info}\n") unless info =~ /[\w]+[\s]*=[\w]+/
-
-                key, value = info.split("=")
-
-                puts "#{prefix(@session)} ::Received - #{key}:#{value}" unless defined?(TESTING)
-                result[key] = value
-
-                @session.write("ACK #{key}\n")
-            end
-        end
-
-        return result
-    end
-
-    # Extracts CPU details from the managed node.
-    #
-    def get_cpu_info
-        puts "Begin receiving CPU details"
-
-        result = Hash.new
-
-        @session.write("CPUINFO?\n")
-
-        loop do
-            info = @session.readline.chomp
-
-            break if info == "ENDCPU"
-
-            raise Exception.new("ERRINFO! Excepted key=value : #{info}\n") unless info =~ /[\w]+[\s]*=[\w]/
-
-            key, value = info.split("=")
-
-            puts "#{prefix(@session)} ::Received - #{key}:#{value}" unless defined?(TESTING)
-            result[key] = value
-
-            @session.write("ACK #{key}\n")
-        end
-
-        @session.write("ACK CPU\n");
-
-        return result
-    end
-
-    # Extracts NIC details from the managed node.
-    #
-    def get_nic_info
-        puts "Begin receiving NIC details"
-
-        result = Hash.new
-
-        @session.write("NICINFO?\n")
-
-        loop do
-            info = @session.readline.chomp
-
-            break if info == "ENDNIC"
-
-            raise Exception.new("ERRINFO! Excepted key=value : #{info}\n") unless info =~ /[\w]+[\s]*=[\w]*/
-
-            key, value = info.split("=")
-
-            puts "#{prefix(@session)} ::Received - #{key}:#{value}" unless defined?(TESTING)
-            result[key] = value
-
-            @session.write("ACK #{key}\n")
-        end
-
-        @session.write("ACK NIC\n");
-
-        return result
-    end
-
-    # Writes the supplied host information to the database.
-    #
-    def write_host_info(host_info)
-        ensure_present(host_info,'HOSTNAME')
-        ensure_present(host_info,'ARCH')
-        ensure_present(host_info,'MEMSIZE')
-        ensure_present(host_info,'CPUINFO')
-        ensure_present(host_info,'NICINFO')
-
-        cpu_info = host_info['CPUINFO']
-        nic_info = host_info['NICINFO']
-
-        cpu_info.each do |cpu|
-            ensure_present(cpu,'CPUNUM')
-            ensure_present(cpu,'CORENUM')
-            ensure_present(cpu,'NUMCORES')
-            ensure_present(cpu,'VENDOR')
-            ensure_present(cpu,'MODEL')
-            ensure_present(cpu,'FAMILY')
-            ensure_present(cpu,'CPUIDLVL')
-            ensure_present(cpu,'SPEED')
-            ensure_present(cpu,'CACHE')
-            ensure_present(cpu,'FLAGS')
-        end
-
-        puts "Searching for existing host record..." unless defined?(TESTING)
-        host = Host.find(:first, :conditions => ["hostname = ?", host_info['HOSTNAME']])
-
-        if host == nil
-            begin
-                puts "Creating a new record for #{host_info['HOSTNAME']}..." unless defined?(TESTING)
-
-                host = Host.create(
-                    "uuid"            => host_info['UUID'],
-                    "hostname"        => host_info['HOSTNAME'],
-                    "hypervisor_type" => host_info['HYPERVISOR_TYPE'],
-                    "arch"            => host_info['ARCH'],
-                    "memory"          => host_info['MEMSIZE'],
-                    "is_disabled"     => 0,
-                    "hardware_pool"   => HardwarePool.get_default_pool,
-                    # Let host-status mark it available when it
-                    # successfully connects to it via libvirt.
-                    "state"           => Host::STATE_UNAVAILABLE)
-            rescue Exception => error
-                puts "Error while creating record: #{error.message}" unless defined?(TESTING)
-            end
-        else
-            host.uuid         = host_info['UUID']
-            host.hostname     = host_info['HOSTNAME']
-            host.arch         = host_info['ARCH']
-            host.memory       = host_info['MEMSIZE']
-        end
-
-        # delete an existing CPUs and create new ones based on the data
-        puts "Deleting any existing CPUs"
-        Cpu.delete_all(['host_id = ?', host.id])
-
-        puts "Saving new CPU records"
-        cpu_info.each do |cpu|
-            detail = Cpu.new(
-                "cpu_number"      => cpu['CPUNUM'].to_i,
-                "core_number"     => cpu['CORENUM]'].to_i,
-                "number_of_cores" => cpu['NUMCORES'].to_i,
-                "vendor"          => cpu['VENDOR'],
-                "model"           => cpu['MODEL'],
-                "family"          => cpu['FAMILY'],
-                "cpuid_level"     => cpu['CPUIDLVL'].to_i,
-                "speed"           => cpu['SPEED'],
-                "cache"           => cpu['CACHE'],
-                "flags"           => cpu['FLAGS'])
-
-            host.cpus << detail
-         end
-
-        # Update the NIC details for this host:
-        # -if the NIC exists, then update the IP address
-        # -if the NIC does not exist, create it
-        # -any nic not in this list is deleted
-
-        puts "Updating NIC records for the node"
-        nics = Array.new
-        nics_to_delete = Array.new
-
-        host.nics.each do |nic|
-            found = false
-
-            nic_info.each do |detail|
-                # if we have a match, then update the database and remove
-                # the received data to avoid creating a dupe later
-                puts "Searching for existing record for: #{detail['MAC'].upcase}"
-                if detail['MAC'].upcase == nic.mac
-                  puts "Updating details for: #{detail['IFACE_NAME']} [#{nic.mac}]}"
-                  nic.bandwidth = detail['BANDWIDTH'].to_i
-                  nic.interface_name = detail['IFACE_NAME']
-                  nic.save!
-                  found = true
-                  nic_info.delete(detail)
-                end
-            end
-
-            # if the record wasn't found, then remove it from the database
-            unless found
-              puts "Marking NIC for removal: #{nic.interface_name} [#{nic.mac}]"
-                nics_to_delete << nic
-            end
-        end
-
-        nics_to_delete.each { |nic| puts "Removing NIC: #{nic.interface_name} []#{nic.mac}]"; host.nics.delete(nic) }
-
-        # iterate over any nics left and create new records for them.
-        nic_info.each do |nic|
-            puts "Creating a new nic: #{nic['IFACE_NAME']} [#{nic['MAC']}]"
-            detail = Nic.new(
-                'mac'          => nic['MAC'].upcase,
-                'bandwidth'    => nic['BANDWIDTH'].to_i,
-                'interface_name'    => nic['IFACE_NAME'],
-                'usage_type'   => 1)
-
-            host.nics << detail
-        end
-
-        host.save!
-
-        return host
     end
 
     # Creates a keytab if one is needed, returning the filename.
@@ -359,12 +117,6 @@ class HostBrowser
 
     private
 
-    # Private method to ensure that a required field is present.
-    #
-    def ensure_present(info,key)
-        raise Exception.new("ERROR! Missing '#{key}'...") if info[key] == nil
-    end
-
     # Executes an external program to support the keytab function.
     #
     def kadmin_local(command)
@@ -379,17 +131,12 @@ def entry_point(server)
 
             puts "Connected to #{remote}" unless defined?(TESTING)
 
-            # This is needed because we just forked a new process
-            # which now needs its own connection to the database.
-            database_connect
-
             begin
                 browser = HostBrowser.new(session)
 
                 browser.begin_conversation
                 case browser.get_mode
                     when "AWAKEN": browser.create_keytab(remote,session.peeraddr[3])
-                    when "IDENTIFY": browser.write_host_info(browser.get_remote_info)
                 end
 
                 browser.end_conversation
