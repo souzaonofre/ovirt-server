@@ -41,7 +41,7 @@ class postgres::bundled{
         service {"postgresql" :
 		ensure => running,
 		enable => true,
-                require => [Single_exec[initialize_db],Exec[postgres_add_localhost_trust],Exec[postgres_add_all_trust]],
+                require => [Single_exec[initialize_db],Exec[postgres_add_localhost_trust],Exec[postgres_add_all_trust],Exec[postgres_add_ipv6_loopback_trust]],
                 hasstatus => true
         }
 
@@ -76,6 +76,12 @@ class postgres::bundled{
 	exec {"postgres_add_localhost_trust":
 		command => "/bin/echo 'host all all 127.0.0.1 255.255.255.0 trust' >> /var/lib/pgsql/data/pg_hba.conf",
 		require => Exec[postgres_add_all_trust],
+                notify => Service[postgresql]
+        }
+
+        exec {"postgres_add_ipv6_loopback_trust":
+                command => "/bin/echo 'host all all ::1/128 trust' >> /var/lib/pgsql/data/pg_hba.conf",
+                require => Exec[postgres_add_all_trust],
                 notify => Service[postgresql]
         }
 
