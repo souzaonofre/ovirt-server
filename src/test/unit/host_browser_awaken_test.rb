@@ -31,7 +31,7 @@ require 'host-browser'
 # +HostBrowserAwakenTest+ ensures that the host-browser daemon works correctly
 # during the identify phase of operation.
 #
-class HostBrowserAwakenTest < Test::Unit::TestCase
+class HostBrowserAwakenTest < ActiveSupport::TestCase
 
   def setup
     @session = flexmock('session')

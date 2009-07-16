@@ -19,7 +19,7 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class QuotaTest < Test::Unit::TestCase
+class QuotaTest < ActiveSupport::TestCase
   fixtures :quotas
   fixtures :pools
 

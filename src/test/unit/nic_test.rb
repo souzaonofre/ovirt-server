@@ -19,7 +19,7 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class NicTest < Test::Unit::TestCase
+class NicTest < ActiveSupport::TestCase
   fixtures :ip_addresses
   fixtures :nics
   fixtures :hosts

@@ -19,7 +19,7 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class PoolTest < Test::Unit::TestCase
+class PoolTest < ActiveSupport::TestCase
   fixtures :pools
 
   def setup

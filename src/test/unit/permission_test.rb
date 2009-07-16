@@ -19,7 +19,7 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class PermissionTest < Test::Unit::TestCase
+class PermissionTest < ActiveSupport::TestCase
   fixtures :privileges, :roles, :permissions
   fixtures :pools
 

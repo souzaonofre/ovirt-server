@@ -19,7 +19,7 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class TaskTest < Test::Unit::TestCase
+class TaskTest < ActiveSupport::TestCase
   fixtures :pools, :hosts, :vms, :privileges, :roles, :permissions, :tasks
 
   def setup

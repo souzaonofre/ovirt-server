@@ -19,7 +19,7 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class HostTest < Test::Unit::TestCase
+class HostTest < ActiveSupport::TestCase
   fixtures :hosts
   fixtures :pools
   fixtures :vms
