@@ -13,3 +13,5 @@ missing
 stamp-h1
 ovirt-server*.gz
 ovirt-server.spec
+schema.rb
+log/
