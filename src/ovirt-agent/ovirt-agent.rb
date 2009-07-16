@@ -139,7 +139,7 @@ class OvirtAgent < Qmf::AgentHandler
     @settings.host = server
     # FIXME: Bug in swig!
     #@settings.port = port
-    @settings.mechanism = 'GSSAPI'
+    #@settings.mechanism = 'GSSAPI'
 
     @logger.info "Connecting to broker on #{@settings.host}.."
 
@@ -165,7 +165,7 @@ class OvirtAgent < Qmf::AgentHandler
     end
 
     @controller_classes.values.each do |controller_class|
-      @logger.info "Register #{controller_class.schema_class.name} => #{controller_class.name}"
+      @logger.info "Register #{controller_class.schema_class.name} => #{controller_class.name}, id #{controller_class.schema_class.id}"
       @agent.register_class(controller_class.schema_class)
     end
   end

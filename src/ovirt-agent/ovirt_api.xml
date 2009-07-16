@@ -20,6 +20,20 @@
     </doc:desc>
     <property name="version" type="sstr" access="RC" desc="Ovirt version string"/>
 
+    <method name="create_physical_network">
+      <arg name="name" dir="I" type="sstr" desc="Name of the new network"/>
+      <arg name="proto" dir="I" type="sstr" desc="The boot protocol on this network, 'static', 'dhcp', or 'bootp'."/>
+      <arg name="network" dir="O" type="objId" desc="The newly created network definition object."/>
+    </method>
+
+    <method name="create_vlan_network">
+      <arg name="name" dir="I" type="sstr" desc="Name of the new network"/>
+      <arg name="proto" dir="I" type="sstr" desc="The boot protocol on this network, 'static', 'dhcp', or 'bootp'."/>
+      <arg name="number" dir="I" type="uint32" desc="VLAN network number."/>
+      <arg name="network" dir="O" type="objId" desc="The newly created network definition object."/>
+    </method>
+
+
   </class>
 
   <class name="HardwarePool">
@@ -73,10 +87,23 @@
     </doc:desc>
     <property name="name" type="sstr" desc="The name of the network"/>
     <property name="proto" type="sstr" desc="The boot protocol on this network, one of 'static', 'dhcp' or 'bootp'"/>
+    <property name="impl" type="objId" access="RC" desc="References a VlanImpl or PhysicalNetworkImpl."/>
+    <!-- FIXME: What about IP addresses, usages, and VMs references -->
     <method name="create_vm_nic_def" desc="Create a new NIC for a VM">
       <arg name="mac" type="sstr" dir="I" desc="The MAC address for the new NIC"/>
       <arg name="nic" dir="O" type="objId" references="VmNicDef" desc="Newly created VM NIC"/>
     </method>
+  </class>
+
+  <!-- FIXME: This needs to use inheritance when QMF infrastructure is available -->
+  <class name="VlanImpl">
+    <property name="network" type="objId" references="Network" access="RC" desc="Reference to the network this implementation is for."/>
+    <property name="number" type="uint32" access="RW" desc="VLAN Number"/>
+    <!-- FIXME: Bondings ref needed once Bondings are added to the API -->
+  </class>
+  <class name="PhysicalNetworkImpl">
+    <property name="network" type="objId" references="Network" access="RC" desc="Reference to the network this implementation is for."/>
+    <!-- FIXME: NICs ref needed once the VM/Host NIC model is finalized -->
   </class>
 
   <class name="VmNicDef">

@@ -35,7 +35,7 @@ module Ovirt
       puts "pool_hash: #{pool_hash.inspect}"
 
       svc_create(pool_hash, id, {})
-      args['vm_pool'] = encode_id(@pool.id)
+      args['vm_pool'] = @agent.encode_id(VmResourcePoolService.schema_class.id, @pool.id)
     end
   end
 end

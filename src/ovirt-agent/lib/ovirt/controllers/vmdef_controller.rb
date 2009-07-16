@@ -3,6 +3,11 @@ module Ovirt
 
     include VmService
 
+    def description(desc)
+      puts "description property set for vmdef."
+      svc_update(id, { :description => desc }, false, false)
+    end
+
     def find(id)
       svc_show(id)
       render(@vm)

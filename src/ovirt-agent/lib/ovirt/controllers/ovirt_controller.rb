@@ -27,6 +27,31 @@ module Ovirt
       [ @@instance ]
     end
 
+    def create_vlan_network
+      extend NetworkService
+
+      boot_type = BootType.find(:first, :conditions => ["proto = ?", args['proto']])
+      raise "Unknown boot protocol #{args['proto']}." if not boot_type
+      puts "in create_vlan_network, boot_type id is #{boot_type.id}"
+      hash = { :name => args['name'], :number => args['number'], :type => 'Vlan', :boot_type_id => boot_type.id }
+
+      svc_create(hash)
+
+      args['network'] = @agent.encode_id(NetworkController.schema_class.id, @network.id)
+    end
+
+    def create_physical_network
+      extend NetworkService
+
+      boot_type = BootType.find(:first, :conditions => ["proto = ?", args['proto']])
+      raise "Unknown boot protocol #{args['proto']}." if not boot_type
+      puts "in create_physical_network, boot_type id is #{boot_type.id}"
+      hash = { :name => args['name'], :type => 'PhysicalNetwork', :boot_type_id => boot_type.id }
+
+      svc_create(hash)
+
+      args['network'] = @agent.encode_id(NetworkController.schema_class.id, @network.id)
+    end
   end
 end
 

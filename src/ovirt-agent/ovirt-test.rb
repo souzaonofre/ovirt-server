@@ -18,12 +18,44 @@ b = s.add_broker(srv, :mechanism => 'GSSAPI')
 # This segfaults in F10 (ruby-1.8.6.287-2.fc10.x86_64)
 # p s.objects(:class => "Ovirt")
 
+def print_properties(obj)
+  for (key, val) in obj.properties
+    puts "  property: #{key}, #{val}"
+  end
+end
+
 ovirt = s.object(:class => "Ovirt")
 puts "id is #{ovirt.object_id}"
 raise "ACK! NO ovirt class!" unless ovirt
 puts "ovirt.version is #{ovirt.version}"
 ovirt_by_id = s.object(:object_id => ovirt.object_id)
 puts "ovirt_by_id.version is #{ovirt_by_id.version}"
+
+puts "Networks"
+network = nil
+result = ovirt.create_physical_network('ovirt-test', 'static')
+puts "Error: #{result.text}" if result.status != 0
+if result.status == 0
+  puts "new network created:"
+  network = s.object(:object_id => result.network)
+  puts "network is #{network} - id #{result.network}"
+  print_properties(network)
+  impl = s.object(:object_id => network.impl)
+  puts "impl is #{impl}:"
+  print_properties(impl)
+end
+
+result = ovirt.create_vlan_network('ovirt-test', 'static', 1)
+puts "Error: #{result.text}" if result.status != 0
+if result.status == 0
+  puts "new network created:"
+  network = s.object(:object_id => result.network)
+  puts "network is #{network} - id #{result.network}"
+  print_properties(network)
+  impl = s.object(:object_id => network.impl)
+  puts "impl is #{impl}:"
+  print_properties(impl)
+end
 
 puts "Hardware Pools:"
 hwps = s.objects(:class => "HardwarePool")
@@ -33,9 +65,7 @@ hwps.each do |hwp|
   vmps = s.objects(:class => "VmPool", 'hardware_pool' => hwp.object_id)
   vmps.each do |vmp|
     puts "VM pool: #{vmp.name}"
-    for (key, val) in vmp.properties
-      puts "  property: #{key}, #{val}"
-    end
+    print_properties(vmp)
   end
 end
 
@@ -98,9 +128,7 @@ puts "VM deleted" if !vm
 vms = s.objects(:class => 'VmDef')
 vms.each do |vm|
   puts "VM: #{vm.description}"
-  for (key, val) in vm.properties
-    puts "  property: #{key}, #{val}"
-  end
+  print_properties(vm)
 end
 
 
