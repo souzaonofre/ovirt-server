@@ -14,6 +14,7 @@
 export RAILS_ENV="${RAILS_ENV:-production}"
 
 DAEMON=/usr/share/ovirt-server/host-browser/host-register.rb
+HOST_REGISTER_LOCKFILE="${HOST_REGISTER_LOCKFILE:-/var/lock/subsys/ovirt-host-register }"
 
 . /etc/init.d/functions
 
@@ -22,6 +23,9 @@ start() {
     daemon $DAEMON
     RETVAL=$?
     echo
+    if [ $RETVAL -eq 0 ]; then
+        touch  $HOST_REGISTER_LOCKFILE
+    fi
 }
 
 stop() {
@@ -29,6 +33,9 @@ stop() {
     killproc host-register.rb
     RETVAL=$?
     echo
+    if [ $RETVAL -eq 0 ]; then
+        rm  $HOST_REGISTER_LOCKFILE
+    fi
 }
 
 case "$1" in
@@ -42,6 +49,11 @@ case "$1" in
 	stop
 	start
 	;;
+    reload)
+        ;;
+    force-reload)
+        restart
+        ;;
     status)
 	status $DAEMON
 	RETVAL=$?

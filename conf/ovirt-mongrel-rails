@@ -16,7 +16,7 @@ RAILS_ENV="${RAILS_ENV:-production}"
 OVIRT_DIR="${OVIRT_DIR:-/usr/share/ovirt-server}"
 MONGREL_LOG="${MONGREL_LOG:-/var/log/ovirt-server/mongrel.log}"
 MONGREL_PID="${MONGREL_PID:-/var/run/ovirt-server/mongrel.pid}"
-MONGREL_LOCKFILE="${MONGREL_LOCKFILE:-/var/lock/subsys/ovirt-server}"
+MONGREL_LOCKFILE="${MONGREL_LOCKFILE:-/var/lock/subsys/ovirt-mongrel-rails }"
 USER="${USER:-ovirt}"
 GROUP="${GROUP:-ovirt}"
 PREFIX="${PREFIX:-/ovirt}"
@@ -70,6 +70,11 @@ case "$1" in
 	stop
 	start
 	;;
+    reload)
+        ;;
+    force-reload)
+        restart
+        ;;
     status)
 	status $MONGREL_PROG
 	RETVAL=$?

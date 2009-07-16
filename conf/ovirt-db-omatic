@@ -13,6 +13,7 @@
 export RAILS_ENV="${RAILS_ENV:-production}"
 
 DAEMON=/usr/share/ovirt-server/db-omatic/db_omatic.rb
+DBOMATIC_LOCKFILE="${DBOMATIC_LOCKFILE:-/var/lock/subsys/ovirt-db-omatic }"
 
 . /etc/init.d/functions
 
@@ -21,6 +22,9 @@ start() {
     daemon $DAEMON
     RETVAL=$?
     echo
+    if [ $RETVAL -eq 0 ]; then
+        touch  $DBOMATIC_LOCKFILE
+    fi
 }
 
 stop() {
@@ -28,6 +32,9 @@ stop() {
     killproc db_omatic.rb
     RETVAL=$?
     echo
+    if [ $RETVAL -eq 0 ]; then
+        rm  $DBOMATIC_LOCKFILE
+    fi
 }
 
 case "$1" in
@@ -41,6 +48,11 @@ case "$1" in
 	stop
 	start
 	;;
+    reload)
+        ;;
+    force-reload)
+        restart
+        ;;
     status)
 	status $DAEMON
 	RETVAL=$?

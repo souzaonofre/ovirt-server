@@ -2,15 +2,18 @@
 %define app_root %{_datadir}/%{name}
 %define acehome  %{_datadir}/ace
 
-Summary: oVirt Server Suite
+Summary: The oVirt Server Suite
 Name: ovirt-server
 Version: @VERSION@
 Release: 0%{?dist}%{?extra_release}
+# full source URL will be added with the next oVirt release. This is a pre-release
+# code drop to make sure we get the package approved by f12 feature freeze.
 Source0: %{name}-%{version}.tar.gz
 #Entire source code is GPL except for vendor/plugins/will_paginate and
 #vendor/plugins/betternestedset, which are MIT, and
-#public/javascripts/jquery.*, which is both MIT and GPL
-License: GPLv2+ and MIT
+#public/javascripts/jquery.*, which is both MIT and GPL, and
+#src/flexchart/com/adobe/serialization/json/* which are BSD
+License: GPLv2+ and MIT and BSD
 Group: Applications/System
 Requires: ruby >= 1.8.1
 Requires: ruby(abi) = 1.8
@@ -37,7 +40,6 @@ Requires: ruby-libvirt >= 0.0.2
 Requires: rrdtool-ruby
 Requires: iscsi-initiator-utils
 Requires: cyrus-sasl-gssapi
-Requires: ovirt-docs
 Requires: qpidd
 Requires: ruby-qpid >= 0.5.776856
 Requires: qpidc
@@ -50,7 +52,6 @@ BuildRequires: ruby >= 1.8.1
 BuildRequires: ruby-devel
 BuildRequires: rubygem(gettext)
 BuildRequires: rubygem(rake) >= 0.7
-Provides: ovirt-server
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 URL: http://ovirt.org/
@@ -63,6 +64,7 @@ Requires: ace
 Requires: ace-postgres
 Requires: rubygem(highline)
 Requires: hal
+Requires: %{name} = %{version}-%{release}
 
 %description
 The Server Suite for oVirt.
@@ -76,7 +78,7 @@ The Installer for the ovirt server suite
 %build
 
 %install
-test "x$RPM_BUILD_ROOT" != "x" && rm -rf $RPM_BUILD_ROOT
+test "x%{buildroot}" != "x" && rm -rf %{buildroot}
 mkdir %{buildroot}
 
 %{__install} -d -m0755 %{buildroot}%{_bindir}
@@ -87,6 +89,7 @@ mkdir %{buildroot}
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/httpd/conf.d
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/%{name}
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/%{name}/db
+%{__install} -d -m0755 %{buildroot}%{_sysconfdir}/logrotate.d
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/cron.d
 %{__install} -d -m0755 %{buildroot}%{_localstatedir}/lib/%{name}
 %{__install} -d -m0755 %{buildroot}%{_localstatedir}/log/%{name}
@@ -94,12 +97,17 @@ mkdir %{buildroot}
 %{__install} -d -m0755 %{buildroot}%{app_root}
 %{__install} -d -m0755 %{buildroot}/%{acehome}
 
+# Creating these files now to make sure the logfiles will be owned
+# by ovirt:ovirt. This is a temporary workaround while we've still
+# got root-owned daemon processes. Once we resolve that issue
+# these files will no longer be added explicitly here.
 touch %{buildroot}%{_localstatedir}/log/%{name}/mongrel.log
 touch %{buildroot}%{_localstatedir}/log/%{name}/rails.log
 touch %{buildroot}%{_localstatedir}/log/%{name}/taskomatic.log
 touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 %{__install} -p -m0644 %{pbuild}/conf/%{name}.conf %{buildroot}%{_sysconfdir}/httpd/conf.d
 %{__install} -p -m0644 %{pbuild}/conf/%{name}.crontab %{buildroot}%{_sysconfdir}/cron.d/%{name}
+%{__install} -p -m0644 %{pbuild}/conf/%{name}.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/%{name}
 
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-host-browser %{buildroot}%{_initrddir}
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-host-register %{buildroot}%{_initrddir}
@@ -107,9 +115,9 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-agent %{buildroot}%{_initrddir}
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-host-collect %{buildroot}%{_initrddir}
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-mongrel-rails %{buildroot}%{_initrddir}
-%{__install} -Dp -m0755 %{pbuild}/conf/ovirt-mongrel-rails.sysconf %{buildroot}%{_sysconfdir}/sysconfig/ovirt-mongrel-rails
-%{__install} -Dp -m0755 %{pbuild}/conf/ovirt-rails.sysconf %{buildroot}%{_sysconfdir}/sysconfig/ovirt-rails
-%{__install} -Dp -m0755 %{pbuild}/conf/ovirt-vnc-proxy.sysconf %{buildroot}%{_sysconfdir}/sysconfig/ovirt-vnc-proxy
+%{__install} -Dp -m0644 %{pbuild}/conf/ovirt-mongrel-rails.sysconf %{buildroot}%{_sysconfdir}/sysconfig/ovirt-mongrel-rails
+%{__install} -Dp -m0644 %{pbuild}/conf/ovirt-rails.sysconf %{buildroot}%{_sysconfdir}/sysconfig/ovirt-rails
+%{__install} -Dp -m0644 %{pbuild}/conf/ovirt-vnc-proxy.sysconf %{buildroot}%{_sysconfdir}/sysconfig/ovirt-vnc-proxy
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-taskomatic %{buildroot}%{_initrddir}
 %{__install} -Dp -m0755 %{pbuild}/conf/ovirt-vnc-proxy %{buildroot}%{_initrddir}
 
@@ -118,7 +126,7 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 
 # move Flash movie to the public folder
 %{__install} -d -m0755 %{buildroot}%{app_root}/public/swfs
-%{__mv} %{buildroot}%{app_root}/flexchart/flexchart.swf %{buildroot}%{app_root}/public/swfs
+# not building Flash for now until we've got flex compiler in Fedora
 
 # move configs to /etc, keeping symlinks for Rails
 %{__mv} %{buildroot}%{app_root}/config/database.yml %{buildroot}%{_sysconfdir}/%{name}
@@ -136,6 +144,9 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 
 # remove the files not needed for the installation
 %{__rm} -f %{buildroot}%{app_root}/task-omatic/.gitignore
+%{__rm} -f %{buildroot}%{app_root}/vendor/plugins/will_paginate/.gitignore
+%{__rm} -f %{buildroot}%{app_root}/vendor/plugins/will_paginate/.manifest
+%{__rm} -f %{buildroot}%{app_root}/vendor/plugins/acts_as_xapian/.gitignore
 
 %{__cp} -a %{pbuild}/scripts/ovirt-add-host %{buildroot}%{_bindir}
 %{__cp} -a %{pbuild}/scripts/ovirt-vm2node %{buildroot}%{_bindir}
@@ -158,11 +169,12 @@ for f in anyterm/*.{html,css,js,png,gif}; do
 done
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf %{buildroot}
 
 %pre
-/usr/sbin/groupadd -r ovirt 2>/dev/null || :
-/usr/sbin/useradd -g ovirt -c "oVirt" \
+getent group ovirt >/dev/null || /usr/sbin/groupadd -g 108 -r ovirt 2>/dev/null || :
+getent passwd ovirt >/dev/null || \
+    /usr/sbin/useradd -u 108 -g ovirt -c "oVirt" \
     -s /sbin/nologin -r -d /var/ovirt ovirt 2> /dev/null || :
 
 %post
@@ -172,19 +184,9 @@ rm -rf $RPM_BUILD_ROOT
 LISTRET=$? \
 /sbin/chkconfig --add %{-d*} \
 if [ $LISTRET -ne 0 ]; then \
-	/sbin/chkconfig %{-d*} on \
+    /sbin/chkconfig %{-d*} on \
 fi \
 %{nil}
-
-#removes obsolete services if present
-if [ -e %{_initrddir}/ovirt-server ] ; then
-  /sbin/service ovirt-server stop > /dev/null 2>&1
-  /sbin/service ovirt-host-keyadd stop > /dev/null 2>&1
-  /sbin/chkconfig --del ovirt-server
-  /sbin/chkconfig --del ovirt-host-keyadd
-  %{__rm} %{_initrddir}/ovirt-server
-  %{__rm} %{_initrddir}/ovirt-host-keyadd
-fi
 
 # if this is the initial RPM install, then we want to turn the new services
 # on; otherwise, we respect the choices the administrator already has made.
@@ -233,12 +235,13 @@ fi
 %{_initrddir}/ovirt-mongrel-rails
 %{_initrddir}/ovirt-taskomatic
 %{_initrddir}/ovirt-vnc-proxy
-%{_sysconfdir}/cron.d/%{name}
+%config(noreplace) %{_sysconfdir}/cron.d/%{name}
+%config(noreplace) %{_sysconfdir}/logrotate.d/%{name}
 %config(noreplace) %{_sysconfdir}/sysconfig/ovirt-mongrel-rails
 %config(noreplace) %{_sysconfdir}/sysconfig/ovirt-rails
 %config(noreplace) %{_sysconfdir}/sysconfig/ovirt-vnc-proxy
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
-%doc
+%doc README AUTHORS COPYING
 %attr(-, ovirt, ovirt) %{_localstatedir}/lib/%{name}
 %attr(-, ovirt, ovirt) %{_localstatedir}/run/%{name}
 %attr(-, ovirt, ovirt) %{_localstatedir}/log/%{name}
@@ -254,11 +257,16 @@ fi
 %{_datadir}/ovirt-anyterm
 
 %files installer
+%defattr(-,root,root,0755)
 %{_sbindir}/ovirt-installer
 %{acehome}
+%doc README AUTHORS COPYING
 
 
 %changelog
+* Fri Jul 17 2009 Scott Seago <sseago@redhat.com> - 0.100-1
+- rpmlint fixes for Fedora 12 inclusion
+
 * Thu May 29 2008 Alan Pevec <apevec@redhat.com> - 0.0.5-0
 - use rubygem-krb5-auth
 

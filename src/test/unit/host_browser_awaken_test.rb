@@ -1,4 +1,3 @@
-#!/usr/bin/ruby -Wall
 #
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Darryl L. Pierce <dpierce@redhat.com>

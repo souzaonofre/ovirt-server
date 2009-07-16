@@ -1,0 +1,57 @@
+weekly
+rotate 52
+compress
+missingok
+notifempty
+
+/etc/init.d/ovirt-host-register
+/etc/init.d/ovirt-host-collect
+
+/var/log/ovirt-server/taskomatic.log {
+  postrotate
+      /etc/init.d/ovirt-taskomatic restart
+  endscript
+}
+
+/var/log/ovirt-server/db-omatic.log {
+  postrotate
+      /etc/init.d/ovirt-db-omatic restart
+  endscript
+}
+
+/var/log/ovirt-server/host-browser.log {
+  postrotate
+      /etc/init.d/ovirt-host-browser restart
+  endscript
+}
+
+/var/log/ovirt-server/host-register.log {
+  postrotate
+      /etc/init.d/ovirt-host-register restart
+  endscript
+}
+
+/var/log/ovirt-server/host-collect.log {
+  postrotate
+      /etc/init.d/ovirt-host-collect restart
+  endscript
+}
+
+/var/log/ovirt-server/vnc-proxy.log {
+  postrotate
+      /etc/init.d/ovirt-vnc-proxy restart
+  endscript
+}
+
+/var/log/ovirt-server/ovirt-agent.log {
+  postrotate
+      /etc/init.d/ovirt-agent restart
+  endscript
+}
+
+/var/log/ovirt-server/rails.log /var/log/ovirt-server/mongrel.log {
+  sharedscripts
+  postrotate
+      /etc/init.d/ovirt-mongrel-rails restart
+  endscript
+}

@@ -12,6 +12,7 @@
 export RAILS_ENV="${RAILS_ENV:-production}"
 
 DAEMON=/usr/share/ovirt-server/ovirt-agent/ovirt-agent.rb
+AGENT_LOCKFILE="${AGENT_LOCKFILE:-/var/lock/subsys/ovirt-agent }"
 
 . /etc/init.d/functions
 
@@ -20,6 +21,9 @@ start() {
     daemon $DAEMON
     RETVAL=$?
     echo
+    if [ $RETVAL -eq 0 ]; then
+        touch  $AGENT_LOCKFILE
+    fi
 }
 
 stop() {
@@ -27,6 +31,9 @@ stop() {
     killproc ovirt-agent.rb
     RETVAL=$?
     echo
+    if [ $RETVAL -eq 0 ]; then
+        rm  $AGENT_LOCKFILE
+    fi
 }
 
 case "$1" in
@@ -40,6 +47,11 @@ case "$1" in
 	stop
 	start
 	;;
+    reload)
+        ;;
+    force-reload)
+        restart
+        ;;
     status)
 	status $DAEMON
 	RETVAL=$?
