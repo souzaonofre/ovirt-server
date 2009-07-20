@@ -23,6 +23,7 @@ EXTRA_DIST =			\
   ovirt-server.spec.in	\
   scripts				\
   conf					\
+  anyterm               \
   src					\
   installer
 

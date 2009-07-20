@@ -150,6 +150,11 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 %{__cp} -pr %{pbuild}/installer/appliances %{buildroot}/%{acehome}
 %{__cp} -pr %{pbuild}/installer/bin/ovirt-installer %{buildroot}%{_sbindir}
 
+# setup the anyterm config
+%{__mkdir} -p %{buildroot}%{_datadir}/ovirt-anyterm/
+for f in anyterm/*.{html,css,js,png,gif}; do
+   %{__install} -m644 "$f" %{buildroot}%{_datadir}/ovirt-anyterm/
+done
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -244,10 +249,12 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/development.rb
 %config(noreplace) %{_sysconfdir}/%{name}/production.rb
 %config(noreplace) %{_sysconfdir}/%{name}/test.rb
+%{_datadir}/ovirt-anyterm
 
 %files installer
 %{_sbindir}/ovirt-installer
 %{acehome}
+
 
 %changelog
 * Thu May 29 2008 Alan Pevec <apevec@redhat.com> - 0.0.5-0
