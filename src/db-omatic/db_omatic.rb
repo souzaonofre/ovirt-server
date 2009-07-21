@@ -270,10 +270,10 @@ class DbOmatic < Qpid::Qmf::Console
     end
 
     def object_props(broker, obj)
-        target = obj.klass_key[0]
+        target = obj.schema.klass_key.package
         return if target != "com.redhat.libvirt"
 
-        type = obj.klass_key[1]
+        type = obj.schema.klass_key.klass_name
 
         # I just sync this whole thing because there shouldn't be a lot of contention here..
         synchronize do
@@ -289,7 +289,7 @@ class DbOmatic < Qpid::Qmf::Console
                 values[:broker_bank] = obj.object_id.broker_bank
                 values[:agent_bank] = obj.object_id.agent_bank
                 values[:obj_key] = obj.object_id.to_s
-                values[:class_type] = obj.klass_key[1]
+                values[:class_type] = type
                 values[:timed_out] = false
                 values[:synced] = false
                 @logger.info "New object type #{type}"
@@ -339,9 +339,9 @@ class DbOmatic < Qpid::Qmf::Console
     end
 
     def object_stats(broker, obj)
-        target = obj.klass_key[0]
+        target = obj.schema.klass_key.package
         return if target != "com.redhat.libvirt"
-        type = obj.klass_key[1]
+        type = obj.schema.klass_key.klass_name
 
         synchronize do
             values = @cached_objects[obj.object_id.to_s]
@@ -351,7 +351,7 @@ class DbOmatic < Qpid::Qmf::Console
 
                 values[:broker_bank] = obj.object_id.broker_bank
                 values[:agent_bank] = obj.object_id.agent_bank
-                values[:class_type] = obj.klass_key[1]
+                values[:class_type] = type
                 values[:timed_out] = false
                 values[:synced] = false
             end
