@@ -1,5 +1,14 @@
 module GraphHelper
 
+    def swf_is_present
+        File.exists?(Rails.root.join('public','swfs','flexchart.swf'))
+    end
+
+    def swf_bits_download_url
+        "http://ovirt.org/flexchart/flexchart.swf"
+    end
+
+
     # generate some json for the snapshot graph
     def snapshot_graph_json(target, snapshots)
         data = snapshots[:avg][target]

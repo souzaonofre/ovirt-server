@@ -1,4 +1,7 @@
 <%= javascript_include_tag "jquery.flash.js" %>
+
+<% if swf_is_present %>
+
 <div id="flex_history_chart"></div>
 <script type="text/javascript">
 $(document).ready(function(){
@@ -16,3 +19,7 @@ $('#flex_history_chart').flash(
     );
 });
 </script>
+
+<% else %>
+<div id="flex_history_chart">Missing Performance Chart (/swfs/flexchart.swf), which can be obtained at <%= link_to(swf_bits_download_url,swf_bits_download_url) %></div>
+<% end %>
