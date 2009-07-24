@@ -72,8 +72,8 @@ module ApplicationHelper
 
   def check_box_tag_with_label(label, name, value = "1", checked = false) 
     %{ 
-      <div class="i"><label for="#{name}">#{_(label)}</label>
-      #{check_box_tag name, value, checked}</div>
+      <div class="i">#{check_box_tag name, value, checked}
+      <label for="#{name}">#{_(label)}</label></div>
      }
   end
 

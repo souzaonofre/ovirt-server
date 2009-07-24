@@ -6,15 +6,19 @@
 <%= hidden_field 'vm', 'vm_resource_pool_id' %>
 <%= hidden_field_tag 'hardware_pool_id', @hardware_pool.id if @hardware_pool %>
 
+  <div class="form_heading clickable open">General</div>
+  <div class="vm_form_section">
     <%= text_field_with_label "Name:", "vm", "description", {:style=>"width:250px;"}  %>
     <%= text_field_with_label "UUID:", "vm", "uuid",  {:style=>"width:250px;"} %>
     <%= select_with_label "Operating System:", 'vm', 'provisioning_and_boot_settings', @provisioning_options, :style=>"width:250px;" %>
     <% if controller.action_name == "edit" %><b style="color: #FF0000">*Warning* Editing provision could overwrite vm</b><% end %>
-    <div class="clear_row" style="height:15px;"></div>
 
-    <div class="form_heading">Resources</div>
-    <div class="clear_row"></div>
-    <div class="clear_row"></div>
+    <div class="clear_row" style="height:15px;"></div>
+  </div>
+  <div class="clear_row"></div>
+
+  <div class="form_heading clickable open">Resources</div>
+  <div class="vm_form_section">
     <div style="float:left;width:150px;" >
       <%= text_field_with_label "CPUs:", "vm", "num_vcpus_allocated",  {:style=>"width:100px; margin-bottom:2px;"}, {:style=>"padding-right: 50px;"} %>
       <div class="field_helptext">max to create: <%=create_resources[:cpus]%> </div>
@@ -27,6 +31,11 @@
     </div>
     <div style="clear:both;"></div>
     <div class="clear_row"></div>
+  </div>
+  <div class="clear_row"></div>
+
+  <div class="form_heading clickable closed">Storage</div>
+  <div class="vm_form_section"  style="display:none;">
     <div class="field_title">Storage: </div>
     <div style="height:150px; overflow:auto; border:#CCCCCC solid 1px;">
       <ul id="storage_volumes_tree" class="ovirt-tree"></ul>
@@ -35,10 +44,11 @@
     <!-- FIXME: fill in total here -->
     <div style="background:#F3F3F3; padding:6px; border-left:#CCCCCC solid 1px; border-right:#CCCCCC solid 1px; border-bottom:#CCCCCC solid 1px; ">Total:</div>
     <div class="clear_row" style="height:15px;"></div>
-    <div class="clear_row"></div>
-    <div class="clear_row"></div>
+  </div>
+  <div class="clear_row"></div>
 
-    <div class="form_heading">Network</div>
+  <div class="form_heading clickable closed">Network</div>
+  <div class="vm_form_section" style="display:none;">
     <div class="clear_row"></div>
     <div class="clear_row"></div>
     <div style="float:left;">
@@ -47,12 +57,11 @@
     <div style="float:left;">
       <%= select_with_label "Network:", 'vm', 'network_id', @networks.insert(0, ""), :style=>"width:250px;" %>
     </div>
-    <div style="clear:both;"></div>
-    <div class="clear_row"></div>
     <div class="clear_row"></div>
 
     <%= check_box_tag_with_label "Forward vm's vnc port locally", "forward_vnc", 1, @vm.forward_vnc %>
-    <div class="clear_row"></div>
+  </div>
+  <div class="clear_row"></div>
 
    <%= check_box_tag_with_label "Start VM Now? (pending current resource availability)", "start_now", nil if create or @vm.state == Vm::STATE_STOPPED %>
    <%= check_box_tag_with_label "Restart VM Now? (pending current resource availability)", "restart_now", nil if @vm.state == Vm::STATE_RUNNING %>
@@ -103,7 +112,11 @@ ${htmlList(pools, id)}
         channel: 'STORAGE_VOLUME',
         refresh: VmCreator.returnToVmForm
       });
+
+      $('#vm_form .form_heading').bind('click', function(e){
+          if(this === e.target){
+            $(this).toggleClass('open').toggleClass('closed').next().slideToggle('slow');
+          }
+      });
     });
 </script>
-
-
