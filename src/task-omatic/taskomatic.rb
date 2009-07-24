@@ -168,6 +168,8 @@ class TaskOmatic
          and node.memory >= db_vm.memory_allocated \
          and not curr.is_disabled.nil? and curr.is_disabled == 0 \
          and ((!vm or vm.active == 'false') or vm.node != node.object_id)
+         # FIXME ensure host is on all networks a vm's assigned to
+         # db_vm.nics.each { |nic| ignore if nic.network ! in host }
         possible_hosts.push(curr)
       end
     end
@@ -360,31 +362,32 @@ class TaskOmatic
     @logger.debug("Connecting volumes: #{volumes}")
     storagedevs = connect_storage_pools(node, volumes)
 
-    # determine if vm has been assigned to physical or
-    # virtual network and assign nic / bonding accordingly
-    # FIXME instead of trying to find a nic or bonding here, given
-    # a specified host and network, we should try earlier on to find a host
-    # that has a nic / bonding on the specified network
-
-    net_device = "breth0"  # FIXME remove this default value at some point, tho net_device can't be nil
-    unless db_vm.network.nil?
-      if db_vm.network.class == PhysicalNetwork
+    # loop through each nic/network assigned to vm,
+    #  finding necessary host devices to bridge
+    net_interfaces = []
+    db_vm.nics.each { |nic|
+       device = net_device = nil
+       if nic.network.class == PhysicalNetwork
          device = Nic.find(:first,
-                           :conditions => ["host_id = ? AND physical_network_id = ?",
-                                           db_host.id, db_vm.network_id ])
-         net_device = "br" + device.interface_name unless device.nil?
-
-      else
+               :conditions => ["host_id = ? AND network_id = ?",
+                                    db_host.id, nic.network_id ])
+       else
          device = Bonding.find(:first,
-                               :conditions => ["host_id = ? AND vlan_id = ?",
-                                               db_host.id, db_vm.network_id])
-         net_device = "br" + device.interface_name unless device.nil?
-      end
-    end
+               :conditions => ["host_id = ? AND vlan_id = ?",
+                                    db_host.id, nic.network_id ])
+       end
+
+       unless device.nil?
+          net_device = "br" + device.interface_name
+       else
+          net_device = "breth0" # FIXME remove this default at some point
+       end
+       net_interfaces.push({ :mac => nic.mac, :interface => net_device })
+    }
 
     xml = create_vm_xml(db_vm.description, db_vm.uuid, db_vm.memory_allocated,
               db_vm.memory_used, db_vm.num_vcpus_allocated, db_vm.boot_device,
-              db_vm.vnic_mac_addr, net_device, storagedevs)
+              net_interfaces, storagedevs)
 
     @logger.debug("XML Domain definition: #{xml}")
 

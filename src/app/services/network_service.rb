@@ -205,13 +205,13 @@ module NetworkService
   def svc_modify_nic(id)
     authorize
     @nic = Nic.find(id)
-    @network = @nic.physical_network
+    @network = @nic.network
     network_options
     # filter out networks already assigned to nics on host
     network_conditions = []
-    @nic.host.nics.each { |nic|
-      unless nic.physical_network.nil? || nic.id == @nic.id
-        network_conditions.push(" id != " + nic.physical_network.id.to_s)
+    @nic.parent.nics.each { |nic|
+      unless nic.network.nil? || nic.id == @nic.id
+        network_conditions.push(" id != " + nic.network.id.to_s)
       end
     }
     network_conditions = network_conditions.join(" AND ")
@@ -228,8 +228,8 @@ module NetworkService
   def svc_update_nic(id, nic_hash, ip_hash)
     authorize
     network_options
-    unless nic_hash[:physical_network_id].to_i == 0
-      @network = Network.find(nic_hash[:physical_network_id])
+    unless nic_hash[:network_id].to_i == 0
+      @network = Network.find(nic_hash[:network_id])
       if @network.boot_type.id == @static_boot_type.id
         if ip_hash[:id] == "New"
           svc_create_ip_address(ip_hash)

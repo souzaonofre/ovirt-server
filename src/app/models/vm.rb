@@ -29,7 +29,7 @@ class Vm < ActiveRecord::Base
   end
   has_and_belongs_to_many :storage_volumes
 
-  belongs_to :network
+  has_many :nics, :dependent => :destroy
 
   has_many :smart_pool_tags, :as => :tagged, :dependent => :destroy
   has_many :smart_pools, :through => :smart_pool_tags
@@ -53,8 +53,7 @@ class Vm < ActiveRecord::Base
 
   validates_presence_of :uuid, :description, :num_vcpus_allocated,
                         :boot_device, :memory_allocated_in_mb,
-                        :memory_allocated, :vnic_mac_addr,
-                        :vm_resource_pool_id
+                        :memory_allocated, :vm_resource_pool_id
 
   validates_format_of :uuid,
      :with => %r([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})
@@ -96,7 +95,7 @@ class Vm < ActiveRecord::Base
      :greater_than_or_equal_to => 0,
      :unless => Proc.new{ |vm| vm.memory_allocated.nil? }
 
-  acts_as_xapian :texts => [ :uuid, :description, :vnic_mac_addr, :state ],
+  acts_as_xapian :texts => [ :uuid, :description, :state ],
                  :terms => [ [ :search_users, 'U', "search_users" ] ],
                  :eager_load => :smart_pools
 
@@ -119,8 +118,7 @@ class Vm < ActiveRecord::Base
 
   NEEDS_RESTART_FIELDS = [:uuid,
                           :num_vcpus_allocated,
-                          :memory_allocated,
-                          :vnic_mac_addr]
+                          :memory_allocated]
 
   STATE_PENDING        = "pending"
   STATE_CREATING       = "creating"
@@ -418,6 +416,11 @@ class Vm < ActiveRecord::Base
                i = i + 1
             }
     return i
+  end
+
+  def self.gen_uuid
+    ["%02x"*4, "%02x"*2, "%02x"*2, "%02x"*2, "%02x"*6].join("-") %
+      Array.new(16) {|x| rand(0xff) }
   end
 
   def self.calc_uptime

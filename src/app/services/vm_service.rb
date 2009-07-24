@@ -82,8 +82,8 @@ module VmService
   def svc_new(vm_resource_pool_id)
     raise ActionError.new("VM Resource Pool is required.") unless vm_resource_pool_id
 
-    new_vm_hash = {:vm_resource_pool_id => vm_resource_pool_id}
-    default_mac_and_uuid(new_vm_hash)
+    new_vm_hash = {:vm_resource_pool_id => vm_resource_pool_id,
+                   :uuid => Vm::gen_uuid}
     @vm = Vm.new(new_vm_hash)
     authorized!(Privilege::MODIFY, @vm.vm_resource_pool)
   end
@@ -94,8 +94,8 @@ module VmService
   # [<tt>@vm</tt>] the newly saved Vm
   # === Required permissions
   # [<tt>Privilege::MODIFY</tt>] for the vm's VmResourcePool
-  def svc_create(vm_hash, start_now)
-    default_mac_and_uuid(vm_hash)
+  def svc_create(vm_hash, start_now, nics)
+    vm_hash[:uuid] = Vm::gen_uuid unless vm_hash[:uuid]
     vm_hash[:state] = Vm::STATE_PENDING
     @vm = Vm.new(vm_hash)
     authorized!(Privilege::MODIFY,@vm.vm_resource_pool)
@@ -103,6 +103,10 @@ module VmService
     alert = "VM was successfully created."
     Vm.transaction do
       @vm.save!
+      nics.each{ |nic|
+        nic[:vm_id] = @vm.id
+        Nic.create(nic)
+      }
       vm_provision
       @task = VmTask.new({ :user        => @user,
                            :task_target => @vm,
@@ -129,7 +133,7 @@ module VmService
   # [<tt>@vm</tt>] stores the Vm with +id+
   # === Required permissions
   # [<tt>Privilege::MODIFY</tt>] for the Vm's VmResourcePool
-  def svc_update(id, vm_hash, start_now, restart_now)
+  def svc_update(id, vm_hash, start_now, restart_now, nics)
     lookup(id,Privilege::MODIFY)
 
     #needs restart if certain fields are changed
@@ -153,6 +157,9 @@ module VmService
 
     alert = "VM was successfully updated."
     Vm.transaction do
+      @vm.nics.clear
+      nics.each{ |nic| @vm.nics.push Nic.new(nic) }
+
       @vm.update_attributes!(vm_hash)
       vm_provision
       if start_now
@@ -285,10 +292,15 @@ module VmService
       unless system
         system = Cobbler::System.new("name" => name,
                                      @vm.cobbler_type => @vm.cobbler_name)
-        system.interfaces = [Cobbler::NetworkInterface.new(
-                                    {'mac_address' => @vm.vnic_mac_addr})]
+        system.interfaces = []
+        # do we need to do anything if vm.nics is empty ?
+        @vm.nics.each { |nic|
+           system.interfaces.push Cobbler::NetworkInterface.new(
+                                         {'mac_address' => nic.mac})
+        }
         system.save
       end
+      # TODO update system if found
     end
   end
 
@@ -305,17 +317,4 @@ module VmService
     @vm = Vm.find(id)
     authorized!(priv,@vm.vm_resource_pool)
   end
-
-  def default_mac_and_uuid(vm_hash)
-    unless vm_hash[:uuid]
-      vm_hash[:uuid] = ["%02x"*4, "%02x"*2, "%02x"*2,
-                        "%02x"*2, "%02x"*6].join("-") %
-        Array.new(16) {|x| rand(0xff) }
-    end
-    unless vm_hash[:vnic_mac_addr]
-      vm_hash[:vnic_mac_addr] = [ 0x00, 0x16, 0x3e, rand(0x7f), rand(0xff),
-                                 rand(0xff) ].collect {|x| "%02x" % x}.join(":")
-    end
-  end
-
 end

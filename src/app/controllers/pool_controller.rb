@@ -96,7 +96,7 @@ class PoolController < ApplicationController
   def vms_json(args)
     attr_list = [:id, :description, :uuid,
                  :num_vcpus_allocated, :memory_allocated_in_mb,
-                 :vnic_mac_addr, :state, :calc_uptime, :id]
+                 :state, :calc_uptime, :id]
     if (@pool.is_a? VmResourcePool) and @pool.get_hardware_pool.can_view(@user)
       attr_list.insert(3, [:host, :hostname])
     end
