@@ -38,8 +38,7 @@ class VmTest < ActiveSupport::TestCase
        :num_vcpus_allocated => 1,
        :boot_device => 'hd',
        :memory_allocated_in_mb => 1,
-       :memory_allocated => 1024,
-       :vnic_mac_addr => '11:22:33:44:55:66')
+       :memory_allocated => 1024}
 
     @vm.vm_resource_pool = pools(:corp_com_production_vmpool)
   end
@@ -74,11 +73,6 @@ class VmTest < ActiveSupport::TestCase
   def test_valid_fails_without_memory_allocated_in_mb
        @vm.memory_allocated_in_mb = ''
        flunk 'Vm must specify memory_allocated_in_mb' if @vm.valid?
-  end
-
-  def test_valid_fails_without_vnic_mac_addr
-       @vm.vnic_mac_addr = ''
-       flunk 'Vm must specify vnic_mac_addr' if @vm.valid?
   end
 
   def test_valid_fails_without_vm_resources_pool_id
@@ -200,5 +194,10 @@ class VmTest < ActiveSupport::TestCase
     vms = Vm.paged_with_perms('ovirtadmin', Privilege::VIEW, 1, 'calc_uptime')
     assert_equal(5, vms.size)
     assert_equal('00:00:00',vms[0].calc_uptime)
+  end
+
+  def test_vm_gen_uuid
+      uuid = Vm::gen_uuid
+      flunk 'invalid generated uuid' unless uuid =~ /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/
   end
 end
