@@ -141,6 +141,7 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
 %{__cp} -a %{pbuild}/scripts/ovirt-vm2node %{buildroot}%{_bindir}
 %{__cp} -a %{pbuild}/scripts/ovirt-reindex-search %{buildroot}%{_sbindir}
 %{__cp} -a %{pbuild}/scripts/ovirt-update-search %{buildroot}%{_sbindir}
+%{__cp} -a %{pbuild}/scripts/ovirt_ctl %{buildroot}%{_sbindir}
 %{__rm} -rf %{buildroot}%{app_root}/tmp
 %{__mkdir} %{buildroot}%{_localstatedir}/lib/%{name}/tmp
 %{__ln_s} %{_localstatedir}/lib/%{name}/tmp %{buildroot}%{app_root}/tmp
@@ -223,6 +224,7 @@ fi
 %{_sbindir}/ovirt-update-search
 %{_bindir}/ovirt-add-host
 %{_bindir}/ovirt-vm2node
+%{_sbindir}/ovirt_ctl
 %{_initrddir}/ovirt-host-browser
 %{_initrddir}/ovirt-host-register
 %{_initrddir}/ovirt-db-omatic
