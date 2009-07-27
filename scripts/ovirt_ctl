@@ -6,7 +6,7 @@
 SERVICE_CMD=/sbin/service
 CHKCONFIG_CMD=/sbin/chkconfig
 
-SERVICES=( ovirt-db-omatic ovirt-host-browser \
+SERVICES=( ovirt-db-omatic ovirt-host-browser ovirt-host-register \
            ovirt-host-collect ovirt-mongrel-rails \
            ovirt-taskomatic ovirt-vnc-proxy ovirt-agent )
 
