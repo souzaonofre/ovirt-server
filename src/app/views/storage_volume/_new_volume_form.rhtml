@@ -19,6 +19,7 @@
 
 <%= text_field_with_label "Filename:", 'storage_volume', 'filename' if @storage_volume.get_type_label==StoragePool::NFS %>
 
+<%= text_field_with_label "Filename:", 'storage_volume', 'filename' if @storage_volume.get_type_label==StoragePool::GLUSTERFS %>
 
 <!--[eoform:storage_volume]-->
 

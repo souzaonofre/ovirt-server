@@ -27,6 +27,8 @@
       Target:<br/>
     <% elsif @storage_volume.storage_pool[:type] == "NfsStoragePool" %>
       Export path:<br/>
+    <% elsif @storage_volume.storage_pool[:type] == "GlusterfsStoragePool" %>
+      Export volume:<br/>
     <% end %>
     Type:<br/>
     State:<br/>
@@ -34,6 +36,8 @@
     <% if @storage_volume[:type] == "IscsiStorageVolume" %>
       LUN:<br/>
     <% elsif @storage_volume[:type] == "NfsStorageVolume" %>
+      Filename:<br/>
+    <% elsif @storage_volume[:type] == "GlusterfsStorageVolume" %>
       Filename:<br/>
     <% elsif @storage_volume[:type] == "LvmStorageVolume" %>
       Volume Group:<br/>
@@ -51,6 +55,8 @@
       <%=h @storage_volume.storage_pool[:target] %><br/>
     <% elsif @storage_volume.storage_pool[:type] == "NfsStoragePool" %>
       <%=h @storage_volume.storage_pool.export_path %><br/>
+    <% elsif @storage_volume.storage_pool[:type] == "GlusterfsStoragePool" %>
+      <%=h @storage_volume.storage_pool.export_path %><br/>
     <% end %>
     <%=h @storage_volume.storage_pool.get_type_label %><br/>
     <%=h @storage_volume.state %><br/>
@@ -58,6 +64,8 @@
     <% if @storage_volume[:type] == "IscsiStorageVolume" %>
       <%=h @storage_volume.lun %><br/>
     <% elsif @storage_volume[:type] == "NfsStorageVolume" %>
+      <%=h @storage_volume.filename %><br/>
+    <% elsif @storage_volume[:type] == "GlusterfsStorageVolume" %>
       <%=h @storage_volume.filename %><br/>
     <% elsif @storage_volume[:type] == "LvmStorageVolume" %>
       <%=h @storage_volume.storage_pool.vg_name %><br/>
