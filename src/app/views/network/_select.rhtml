@@ -1,5 +1,5 @@
 <% target = 'nic' unless target
-   network_id = 'physical_network_id' if target == 'nic'
+   network_id = 'network_id' if target == 'nic'
    network_id = 'vlan_id' if target == 'bonding'
 
  %>

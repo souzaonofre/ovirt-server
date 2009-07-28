@@ -106,7 +106,7 @@
 	Num vcpus used:<br/>
 	Memory allocated:<br/>
 	Memory used:<br/>
-	vNIC MAC address:<br/>
+	vNIC MAC addresses:<br/>
 	Boot device:<br/>
         Provisioning source:<br/>
 	State:<br/>
@@ -122,7 +122,9 @@
        <%=h @vm.num_vcpus_used %><br/>
        <%=h @vm.memory_allocated_in_mb %> MB<br/>
        <%=h @vm.memory_used_in_mb %> MB<br/>
-       <%=h @vm.vnic_mac_addr %><br/>
+       <% nic_macs = ""
+          @vm.nics.each { |nic| nic_macs += nic.mac + " " } %>
+       <%=h nic_macs %><br/>
        <%=h @vm.boot_device %><br/>
        <%=h @vm.provisioning_and_boot_settings %><br/>
        <%=h @vm.state %>

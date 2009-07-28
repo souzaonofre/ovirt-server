@@ -340,3 +340,42 @@
 }
 
 .vm_form_section {padding-left: 2em;}
+
+#vm_network_config .i {
+  float: left;
+}
+
+#vm_network_config_header_network {
+  float: left;
+  width: 20%;
+}
+#vm_network_config_header_mac, #vm_network_config_header_ip{
+  float: left;
+  width: 33%;
+}
+
+.vm_network_config_net {
+  float: left;
+  width: 20%;
+}
+.vm_network_config_mac, .vm_network_config_ip{
+  float: left;
+  width: 33%;
+  min-width: 100px;
+}
+
+.vm_network_config_remove {
+  float: left;
+  padding-top: 5px;
+  color: #0033CC;
+}
+.vm_network_config_remove:hover {
+  cursor: pointer;
+}
+
+#vm_network_config_add {
+  color: #0033CC;
+}
+#vm_network_config_add:hover {
+  cursor: pointer;
+}
