@@ -55,14 +55,14 @@ define dns::common($guest_ipaddr="", $admin_ipaddr="",$guest_dev="",$admin_dev="
         notify => Service[dnsmasq]
     }
 
-    file {"/etc/dhclient.conf":
+    file {"/etc/dhcp/dhclient.conf":
         ensure => present
     }
 
     file_append {"dhclient_config":
-        file => "/etc/dhclient.conf",
+        file => "/etc/dhcp/dhclient.conf",
         line => "prepend domain-name-servers $admin_ipaddr;",
-        require => [Single_exec["set_hostname"], Package["dnsmasq"], File["/etc/dhclient.conf"]]  ,
+        require => [Single_exec["set_hostname"], Package["dnsmasq"], File["/etc/dhcp/dhclient.conf"]]  ,
         notify => Service[dnsmasq],
     }
 
