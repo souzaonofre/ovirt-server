@@ -50,28 +50,60 @@
   <div class="form_heading clickable closed">Network</div>
   <div class="vm_form_section" style="display:none;">
     <div class="clear_row"></div>
+
     <% if @nics.size > 0 %>
       <div id="vm_network_config_header">
-        <div id="vm_network_config_header_network">
-          Network:
-        </div>
-        <div id="vm_network_config_header_mac">
-          MAC Address:
-        </div>
-        <div id="vm_network_config_header_ip">
-          <%# this column is only populated if a static ip network is selected: %>
-          IP Address:
-        </div>
+        <div id="vm_network_config_header_network">Network:</div>
+        <div id="vm_network_config_header_mac">MAC Address:</div>
+
+        <%# this column is only populated if a static ip network is selected: %>
+        <div id="vm_network_config_header_ip" style="display: none;">IP Address:</div>
         <div class="clear_row"></div><div style="clear:both;"></div>
       </div>
-        <%# populated with jquery below: %>
-        <div id="vm_network_config_networks"></div>
-        <div id="vm_network_config_add">
-          Add Another Network
-        </div>
+
+      <div id="vm_network_config_networks">
+        <%# add number of rows equal to nics.size, initially only show first %>
+        <% (0...@nics.size).each { |i| %>
+	        <div id="vm_network_config_row_<%= i %>" class="vm_network_config_row"
+	            <% if i != 0 %>style="display: none;"<%end%> >
+
+              <div class="vm_network_config_net">
+                <select name="networks[]" id="vm_network_config_select_<%= i %>" class="vm_network_config_select">
+                   <option value="">None</option>
+	               <% @nics.each { |nic| %>
+                      <option value="<%= nic.network_id %>"><%= nic.network.name %></option>
+	               <% } %>
+                </select>
+              </div>
+
+              <div class="vm_network_config_mac">
+                <input name="macs[]" id="vm_network_config_mac_<%= i %>" ></input>
+              </div>
+
+              <div class="vm_network_config_ip">
+                &nbsp;
+              </div>
+
+              <% if i != 0 %>
+                <div id="vm_network_config_remove_<%= i %>" class="vm_network_config_remove">
+                  Remove
+                </div>
+              <% end %>
+
+              <div class="clear_row"></div><div class="clear_row"></div>
+	          <div style="clear:both;"></div>
+            </div>
+	    <% } %>
+      </div>
+
+      <div id="vm_network_config_add">
+        Add Another Network
+      </div>
+
     <% else %>
         &nbsp;<b>No networks available</b>
     <% end %>
+
     <div style="clear:both;"></div>
     <div class="clear_row"></div>
 
@@ -134,189 +166,152 @@ ${htmlList(pools, id)}
             $(this).toggleClass('open').toggleClass('closed').next().slideToggle('slow');
           }
       });
-    });
 
     /////////////////////////////////////////////////// vm networks config
 
-    // number of rows which we are currently displaying in net config
-    var vm_network_config_rows = 0;
+      // create list of nics
+      var nics = new Array();
+      <% @nics.each { |rnic| %>
+       jnic = new Object;
+       jnic.network_id  = "<%= rnic.network_id.to_s %>";
+       jnic.name        = "<%= rnic.network.name %>";
+       jnic.mac         = "<%= rnic.mac %>";
+       jnic.ip          = "<%= rnic.ip_address %>";
+       jnic.static_ip   = <%= rnic.network.boot_type.proto == 'static' %>;
+       jnic.selected    = false;
+       jnic.row         = null;
+       nics.push(jnic);
+      <% } %>
 
-    // last row currently being displayed
-    var vm_network_config_last_row = 0;
-
-    // value of current selectbox
-    var current_selectbox_value = 0;
-
-    // create list of nics
-    var nics = new Array();
-    <% @nics.each { |rnic| %>
-     jnic = new Object;
-     jnic.network_id = "<%= rnic.network_id.to_s %>";
-     jnic.name = "<%= rnic.network.name %>";
-     jnic.mac  = "<%= rnic.mac %>";
-     jnic.ip   = "<%= rnic.ip_address %>";
-     jnic.static_ip   = <%= rnic.network.boot_type.proto == 'static' %>;
-     jnic.selected = false;
-     nics.push(jnic);
-    <% } %>
-
-    // adds unselected network back to selectboxes indicated by selector
-    function add_unselected_network(selector, network_id){
-        for(j = 0; j < nics.length; ++j){
-          if(nics[j].network_id == network_id){
-               nics[j].selected = false;
-               $(selector).append('<option value="' + nics[j].network_id + '">' + nics[j].name + '</option>');
-               break;
+      // find nic in nics array matching network id
+      function find_nic_by_id(network_id){
+          for(j = 0; j < nics.length; ++j){
+            if(nics[j].network_id == network_id){
+               return nics[j];
+            }
           }
-        }
-    }
+          return null;
+      }
 
-    // show / hide ip address column
-    function toggle_ip_address_column(){
-       for(i = 0; i < nics.length; ++i){
-         if(nics[i].selected && nics[i].static_ip){
-            $('#vm_network_config_header_ip').show();
-            return;
-         }
-       }
-       $('#vm_network_config_header_ip').hide();
-    }
+      // parses a row out of a div id
+      function get_row_from_div_id(id){
+         return parseInt(id.substr(id.lastIndexOf('_') + 1));
+      }
 
-    // show a new network config row
-    function add_network_config_row(no_remove_link){
-
-       // if the number of rows is equal to the number of
-       // networks, don't show any more rows
-       if(vm_network_config_rows == nics.length)
-          return;
-
-       vm_network_config_rows += 1;
-       vm_network_config_last_row = vm_network_config_rows;
-
-       // create the content for another row to be added to the vm_network_config_networks div above.
-       // currently a row has a network select box, a mac text field, and an ip address field if a static network is selected
-       var content = '<div id="vm_network_config_row_'+vm_network_config_rows+'" class="vm_network_config_row">';
-       content    += ' <div class="vm_network_config_net">';
-       content    += '   <select id="vm_network_config_network_select_'+vm_network_config_rows+'" class="vm_network_config_network_select">';
-       content    += '     <option value="">None</option>';
-       for(i = 0; i < nics.length; ++i){
-        if(!nics[i].selected)
-         content  += '     <option value="' + nics[i].network_id + '">' + nics[i].name + '</option>';
-       }
-       content    += '   </select>';
-       content    += ' </div>';
-       content    += ' <div id="vm_network_config_mac_'+vm_network_config_rows+'" class="vm_network_config_mac">';
-       content    +=  '  <input style="width: 130px;"></input>';
-       content    += ' </div>';
-       content    += ' <div id="vm_network_config_ip_'+vm_network_config_rows+'" class="vm_network_config_ip">';
-       content    += '    &nbsp;';
-       content    += ' </div>';
-
-       if(!no_remove_link){
-         content  += ' <div id="vm_network_config_remove_'+vm_network_config_rows+'" class="vm_network_config_remove">';
-         content  += '  Remove';
-         content  += ' </div>';
-       }
-       content    += ' <div class="clear_row"></div><div class="clear_row"></div><div style="clear:both;"></div>';
-       content    += '</div>';
-
-       $('#vm_network_config_networks').append(content);
-
-       $('#vm_network_config_networks').ready(function(){
-         // when vm_network_config_remove link is click remove target row
-         $('#vm_network_config_remove_'+vm_network_config_rows).bind('click', function(e){
-             remove_network_config_row(e.target.id.substr(25)); // remove vm_network_config_remove_ bit to get row num
-         });
-
-         // when select box clicked, store current value for use on change
-         $('#vm_network_config_network_select_'+vm_network_config_rows).bind('click', function(e){
-            current_selectbox_value = e.target.value;
-         });
-
-         // when value of network select box is switched
-         $('#vm_network_config_network_select_'+vm_network_config_rows).bind('change', function(e){
-         row = e.target.id.substr(33)
-
-              // find nic w/ selected network id
+      // show / hide ip address column header
+      // depending if any static networks
+      // are selected
+      function toggle_ip_address_column(){
          for(i = 0; i < nics.length; ++i){
-           if(nics[i].network_id == e.target.value){
-              nics[i].selected = true;
+           if(nics[i].selected && nics[i].static_ip){
+              $('#vm_network_config_header_ip').show();
 
-              // fill in mac / ip address textfields as necessary
-              $('#vm_network_config_mac_'+row).html('<input id="vm_network_config_mac_field_'+nics[i].network_id+'" style="width: 130px" value="'+nics[i].mac+'"/>');
-              if(nics[i].static_ip != ""){
-                $('#vm_network_config_ip_'+row).html('<input id="vm_network_config_ip_field_'+nics[i].ip+'" style="width: 130px" value="'+nics[i].ip+'"/>');
-              }else{
-                $('#vm_network_config_ip_'+row).html('&nbsp;');
-             }
+	          // set the min width, for the columns that don't have static_ips
+	          $('.vm_network_config_ip').css('min-width', '140px')
 
-             // for the other select boxes, removed selected network
-             $('.vm_network_config_network_select:not(#vm_network_config_network_select_'+row+') option[@value='+nics[i].network_id+']').remove();
-
-             break;
+              return;
            }
          }
+         $('#vm_network_config_header_ip').hide();
+         $('.vm_network_config_ip').css('min-width', '')
+      }
 
-         // if we are clearing the row, do so
-         if(e.target.value == ""){
-           $('#vm_network_config_mac_'+row).html('<input id="vm_network_config_mac_field_'+row+'" style="width: 130px" value=""/>');
-           $('#vm_network_config_ip_'+row).html('&nbsp;');
-         }
 
-         // add unselected network back to other selectboxes.
-         add_unselected_network('.vm_network_config_network_select:not(#vm_network_config_network_select_'+row+')', current_selectbox_value);
-
-         // show / hide ip address column
-         toggle_ip_address_column();
-
-         // only add a new blank row if last row's select box was changed
-         if(e.target.value != "" && row == vm_network_config_last_row){
-           // add row
-           add_network_config_row();
-         }
-        });
+      // register the value of current selectbox,
+      //  so we can easily add it back to the others
+      var current_network_selectbox_value = 0;
+      $('.vm_network_config_net select').bind('click', function(e){
+           current_network_selectbox_value = e.target.value;
       });
 
-      // show / hide ip address column
-      toggle_ip_address_column();
-   }
+      // event handler for network select box changes
+      $('.vm_network_config_net select').bind('change', function(e){
+          row = get_row_from_div_id(e.target.id);
 
+         // if we've selected a network
+         if(e.target.value != ""){
 
+	         // update nic attributes
+             nic = find_nic_by_id(e.target.value);
+             nic.selected = true;
+             nic.row = row;
 
-   // remove a network config row
-   function remove_network_config_row(row_num){
-      // if trying to remove the first row or a nonexistant one, fail to do so
-      if(row_num < 2 || row_num > vm_network_config_last_row)
-          return;
+	         // update old nic attributes if neccessary
+	         if(current_network_selectbox_value != ""){
+                old_nic = find_nic_by_id(current_network_selectbox_value);
+                old_nic.selected = false;
+                old_nic.row = null;
+	         }
 
-      // get selected network, add it to other selectboxes
-      network_id = $('#vm_network_config_network_select_' + row_num).val();
-      add_unselected_network('.vm_network_config_network_select:not(#vm_network_config_network_select_'+row_num+')', network_id);
+             // remove the value from all other selectboxes
+             $('.vm_network_config_select:not(#vm_network_config_select_'+row+') option[@value='+nic.network_id+']').hide();
 
-      // remove the row
-      $('#vm_network_config_row_' + row_num).remove();
+             // fill in mac
+             $('#vm_network_config_mac_'+row).attr('value', nic.mac);
 
-      // when removed, set global params
-      $('#vm_network_config_networks').ready(function(){
-        vm_network_config_rows -= 1;
-        rows = $('#vm_network_config_networks').children();
-        vm_network_config_last_row = rows[rows.length - 1].id.substr(22);
+             // show / hide ip address textbox
+             ip_div = $('#vm_network_config_mac_'+row).parent().next();
+             if(nic.static_ip){
+	           ip_div.html('<input name="ip_addresses[]" id="#vm_network_config_ip_'+row+'" value="'+nic.ip+'" />');
+             }else{
+               ip_div.html('&nbsp;');
+	         }
 
-        // show / hide ip address column
-        toggle_ip_address_column();
-      });
-   }
+             // show new row only if last row's select box was
+             // previously empty, and if all are not shown
+	         displayed_rows = $('.vm_network_config_row:visible').size();
+	         if(current_network_selectbox_value == "" && displayed_rows != nics.length){
+	           $('#vm_network_config_row_' + (row+1)).show();
+	         }
 
-   // intially show only one vm network config row
-   $(document).ready(function(){
-      add_network_config_row(true);
-   });
+         // if we've unselected a network
+         }else{
+	        // update old nic attributes if neccessary
+	        if(current_network_selectbox_value != ""){
+              old_nic = find_nic_by_id(current_network_selectbox_value);
+              old_nic.selected = false;
+              old_nic.row = null;
 
-   // when vm_network_config_add link is clicked show new row
-   $('#vm_network_config_add').bind('click', function(){
-       // TODO check if there exists an empty row
-       // TODO check to see if we've already added as many rows as there are nets
-       add_network_config_row();
-   });
+              // add network back to others
+	          $('.vm_network_config_select:not(#vm_network_config_select_'+row+') option[@value='+old_nic.network_id+']').show();
+	        }
 
+            // clear row mac and ip addresses
+            $('#vm_network_config_mac_'+row).attr('value', '');
+            $('#vm_network_config_mac_'+row).parent().next().html('&nbsp;');
+
+            // hide row if not the first
+	        if(row != 0){
+	           $('#vm_network_config_row_' + row).hide();
+	        }
+         }
+
+          toggle_ip_address_column();
+       });
+
+       // wire up add link
+       $('#vm_network_config_add').bind('click', function(){
+           // show new row if we're not currently display the max
+           displayed_rows = $('.vm_network_config_row:visible').size();
+           if(displayed_rows != nics.length){
+	          row = get_row_from_div_id($('.vm_network_config_row:hidden').get(0).id);
+              $('#vm_network_config_row_' + (row)).show();
+           }
+       });
+
+       // wire up remove links
+       $('.vm_network_config_remove').bind('click', function(e){
+	       // unselect network if selected
+           row = get_row_from_div_id(e.target.id);
+	       current_network_selectbox_value = $('#vm_network_config_select_' + row).val();
+           $('#vm_network_config_select_' + row).val("").trigger('change');
+       });
+
+       // finally if the vm has nics, preselect them
+       <% unless @vm.nil?
+           (0...@vm.nics.size).each { |i| %>
+	          $('#vm_network_config_select_<%= i %>').val("<%= @vm.nics[i].network_id %>").trigger('change');
+       <%  }
+	     end %>
+    });
 </script>

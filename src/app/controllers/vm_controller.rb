@@ -177,9 +177,10 @@ class VmController < ApplicationController
          nnic = Nic.new(:mac => nic.mac,
                         :vm_id => @vm.id,
                         :network => nic.network)
-    if(nic.network.boot_type.proto == 'static')
-      nnic.ip_addresses << IpAddress.new(:address => nic.ip_address)
-    end
+
+         if(nic.network.boot_type.proto == 'static')
+           nnic.ip_addresses << IpAddress.new(:address => nic.ip_address)
+         end
          @nics.push nnic
 
          net_conditions += (net_conditions == "" ? "" : " AND ") +
@@ -191,9 +192,9 @@ class VmController < ApplicationController
 
     networks.each{ |net|
         nnic = Nic.new(:mac => Nic::gen_mac, :network => net)
-   if(net.boot_type.proto == 'static')
-      nnic.ip_addresses << IpAddress.new(:address => '127.0.0.1') # FIXME
-   end
+        if(net.boot_type.proto == 'static')
+           nnic.ip_addresses << IpAddress.new(:address => '127.0.0.1') # FIXME
+        end
         @nics.push nnic
     }
 
@@ -201,14 +202,32 @@ class VmController < ApplicationController
 
   # merges vm / network parameters as submitted on the vm form
   def _parse_network_params(params)
+     # 'params' subarrays 'networks', 'macs', and 'ip_addresses' all
+     # correspond to each other such that networks[i] corresponds
+     # to macs[i] and networks.static_networks_subset[j] corresponds
+     # to ip_addresses[j]
+     ip_counter = 0
      params[:nics] = []
+
      unless params[:networks].nil?
-       params[:networks].each { |network, id|
-         params[:nics].push({ :mac => params[("nic_"+network.to_s).intern],
-                              :network_id => network,
-                 :bandwidth => 0})
+       (0...params[:networks].length).each { |i|
+
+          network_id = params[:networks][i]
+          unless network_id.nil? || network_id == ""
+             nic = { :mac => params[:macs][i],
+                     :network_id => network_id, :bandwidth => 0 }
+
+             if(Network.find(network_id).boot_type.proto == 'static')
+                # FIXME make this able to be v4 or v6 address
+                nic[:ip_addresses] = [IpV4Address.new({ :address => params[:ip_addresses][ip_counter] })]
+                ip_counter += 1
+             end
+
+             params[:nics].push(nic)
+          end
+
        }
-     end
+    end
   end
 
 end

@@ -61,7 +61,6 @@ class VmControllerTest < ActionController::TestCase
                :description =>     'descript',
                :num_vcpus_allocated => 4,
                :memory_allocated => 262144,
-               :vnic_mac_addr => 'AA:BB:CC:DD:EE:FF',
                :boot_device => 'network' }
 
     assert_response :success
