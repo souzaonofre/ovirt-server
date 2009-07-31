@@ -40,7 +40,7 @@ class StorageVolume < ActiveRecord::Base
      :unless => Proc.new { |storage_volume| storage_volume.nil? }
 
   validates_inclusion_of :type,
-    :in => %w( IscsiStorageVolume LvmStorageVolume NfsStorageVolume )
+    :in => %w( IscsiStorageVolume LvmStorageVolume NfsStorageVolume GlusterfsStorageVolume )
 
   STATE_PENDING_SETUP    = "pending_setup"
   STATE_PENDING_DELETION = "pending_deletion"
@@ -56,6 +56,8 @@ class StorageVolume < ActiveRecord::Base
       return IscsiStorageVolume.new(params)
     when StoragePool::NFS
       return NfsStorageVolume.new(params)
+    when StoragePool::GLUSTERFS
+      return GlusterfsStorageVolume.new(params)
     when StoragePool::LVM
       return LvmStorageVolume.new(params)
     else

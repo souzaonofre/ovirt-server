@@ -40,7 +40,7 @@ class StoragePool < ActiveRecord::Base
   validates_presence_of :hardware_pool_id
 
   validates_inclusion_of :type,
-    :in => %w( IscsiStoragePool LvmStoragePool NfsStoragePool )
+    :in => %w( IscsiStoragePool LvmStoragePool NfsStoragePool GlusterfsStoragePool )
 
 
   validates_numericality_of :capacity,
@@ -52,9 +52,11 @@ class StoragePool < ActiveRecord::Base
                  :eager_load => :smart_pools
   ISCSI = "iSCSI"
   NFS   = "NFS"
+  GLUSTERFS = "GLUSTERFS"
   LVM   = "LVM"
   STORAGE_TYPES = { ISCSI => "Iscsi",
                     NFS   => "Nfs",
+                    GLUSTERFS => "Glusterfs",
                     LVM   => "Lvm" }
   STORAGE_TYPE_PICKLIST = STORAGE_TYPES.keys - [LVM]
 
@@ -72,6 +74,8 @@ class StoragePool < ActiveRecord::Base
       return IscsiStoragePool.new(params)
     when NFS
       return NfsStoragePool.new(params)
+    when GLUSTERFS
+      return GlusterfsStoragePool.new(params)
     when LVM
       return LvmStoragePool.new(params)
     else
