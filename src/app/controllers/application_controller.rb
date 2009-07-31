@@ -185,12 +185,16 @@ class ApplicationController < ActionController::Base
 
   def instance_errors
     hash = {}
+    arr = Array.new
     instance_variables.each do |ivar|
       val = instance_variable_get(ivar)
       if val && val.respond_to?(:errors) && val.errors.size > 0
         hash[:object] = ivar[1, ivar.size]
         hash[:errors] ||= []
-        hash[:errors] += val.errors.localize_error_messages.to_a
+        val.errors.each {|key,msg|
+          arr.push([key, val.errors.on_with_gettext_activerecord(key).to_a].to_a)
+        }
+        hash[:errors] += arr
       end
     end
     return hash
