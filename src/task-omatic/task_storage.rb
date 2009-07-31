@@ -202,6 +202,8 @@ class LibvirtPool
       return IscsiLibvirtPool.new(pool.ip_addr, pool[:target], pool[:port], logger)
     elsif pool[:type] == "NfsStoragePool"
       return NFSLibvirtPool.new(pool.ip_addr, pool.export_path, logger)
+    elsif pool[:type] == "GlusterfsStoragePool"
+      return GLUSTERFSLibvirtPool.new(pool.ip_addr, pool.export_path, logger)
     elsif pool[:type] == "LvmStoragePool"
       # OK, if this is LVM storage, there are two cases we need to care about:
       # 1) this is a LUN with LVM already on it.  In this case, all we need to
@@ -290,6 +292,54 @@ class NFSLibvirtPool < LibvirtPool
     return (docroot.attributes['type'] == @type and
         docroot.elements['source'].elements['host'].attributes['name'] == @host and
         docroot.elements['source'].elements['dir'].attributes['path'] == @remote_path)
+  end
+end
+
+class GLUSTERFSLibvirtPool < LibvirtPool
+  def initialize(ip_addr, export_path, logger)
+    target = "#{ip_addr}-#{export_path.tr('/', '_')}"
+    super('netfs', target, logger)
+
+    @type = 'netfs'
+    @host = ip_addr
+    @remote_vol = export_path
+
+    @xml.root.elements["source"].add_element("host", {"name" => @host})
+    @xml.root.elements["source"].add_element("dir", {"path" => @remote_vol})
+    @xml.root.elements["source"].add_element("format", {"type" => "glusterfs"})
+
+    @xml.root.elements["target"].elements["path"].text = "/mnt/" + @name
+  end
+
+  def create_vol(name, size, owner, group, mode)
+    # FIXME: this can actually take some time to complete (since we aren't
+    # doing sparse allocations at the moment).  During that time, whichever
+    # libvirtd we chose to use is completely hung up.  The solution is 3-fold:
+    # 1.  Allow sparse allocations in the WUI front-end
+    # 2.  Make libvirtd multi-threaded
+    # 3.  Make taskomatic multi-threaded
+    super("netfs", name, size, owner, group, mode)
+
+    # FIXME: we have to add the format as raw here because of a bug in libvirt;
+    # if you specify a volume with no format, it will crash libvirtd
+    @vol_xml.root.elements["target"].add_element("format", {"type" => "qcow2"})
+
+    # FIXME: Add allocation 0 element so that we create a sparse file.
+    # This was done because qmf was timing out waiting for the create
+    # operation to complete.  This needs to be fixed in a better way
+    # however.  We want to have non-sparse files for performance reasons.
+    @vol_xml.root.add_element("allocation").add_text('0')
+
+    @logger.debug("Creating new volume on pool #{@remote_pool.name} - XML: #{@vol_xml.to_s}")
+    result = @remote_pool.createVolumeXML(@vol_xml.to_s)
+    raise "Error creating remote pool: #{result.text}" unless result.status == 0
+    return result.volume
+  end
+
+  def xmlequal?(docroot)
+    return (docroot.attributes['type'] == @type and
+            docroot.elements['source'].elements['host'].attributes['name'] == @host and
+            docroot.elements['source'].elements['dir'].attributes['path'] == @remote_vol)
   end
 end
 
