@@ -464,6 +464,8 @@ class Vm < ActiveRecord::Base
       self.storage_volumes=@storage_volumes_pending
       @storage_volumes_pending = []
     end
+    errors.add("nics", "must specify at least one network if pxe booting off a network") unless boot_device == BOOT_DEV_NETWORK && nics.size > 0
+
   end
 
 end
