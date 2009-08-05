@@ -19,8 +19,6 @@
 class Vlan < Network
    has_many :bondings
 
-   has_many :nics
-
   validates_presence_of :number,
     :message => 'A number must be specified.'
 
