@@ -98,15 +98,16 @@ module VmService
     vm_hash[:uuid] = Vm::gen_uuid unless vm_hash[:uuid]
     vm_hash[:state] = Vm::STATE_PENDING
     @vm = Vm.new(vm_hash)
+    nics.each{ |nic|
+      nnic = Nic.new(nic)
+      nnic.vm = @vm
+      @vm.nics.push nnic
+    }
     authorized!(Privilege::MODIFY,@vm.vm_resource_pool)
 
     alert = "VM was successfully created."
     Vm.transaction do
       @vm.save!
-      nics.each{ |nic|
-        nic[:vm_id] = @vm.id
-        Nic.create(nic)
-      }
       vm_provision
       @task = VmTask.new({ :user        => @user,
                            :task_target => @vm,
@@ -158,7 +159,11 @@ module VmService
     alert = "VM was successfully updated."
     Vm.transaction do
       @vm.nics.clear
-      nics.each{ |nic| @vm.nics.push Nic.new(nic) }
+      nics.each{ |nic|
+        nnic = Nic.new(nic)
+        @vm.nics.push nnic
+        vm_hash[:nics].push nnic
+      }
 
       @vm.update_attributes!(vm_hash)
       vm_provision

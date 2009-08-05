@@ -207,6 +207,7 @@ class VmController < ApplicationController
      # to macs[i] and networks.static_networks_subset[j] corresponds
      # to ip_addresses[j]
      ip_counter = 0
+     params[:vm][:nics] = []
      params[:nics] = []
 
      unless params[:networks].nil?
