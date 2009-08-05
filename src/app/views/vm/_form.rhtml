@@ -52,7 +52,7 @@
     <div class="clear_row"></div>
 
     <%# display network errors at the top of the section %>
-    <div class="field_title"><label for="vm_nics" /></div>
+    <%= text_field_with_label "", "vm", "nics", {:style=>"display:none;"} %>
 
     <% if @nics.size > 0 %>
       <div id="vm_network_config_header">
