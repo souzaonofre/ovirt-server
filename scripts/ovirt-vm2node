@@ -10,7 +10,7 @@ $stdin.each{ |vmname| # get vm name from stdin
   begin
     vmname.chomp!  # remove the newline
     puts Vm.find(:first, :conditions => ['description = ?', vmname]).host.hostname
-  rescue Exception => e
+  rescue Exception => ex
     puts "Error looking node with VM: #{ex.class}: #{ex.message}"
     puts ex.backtrace
   end
