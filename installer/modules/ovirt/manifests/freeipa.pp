@@ -60,12 +60,12 @@ class freeipa::bundled{
 	}
 
         single_exec {"ipa_server_install":
-                command => "/usr/sbin/ipa-server-install -r $realm_name -p $freeipa_password -P $freeipa_password -a $freeipa_password --hostname $ipa_host -u dirsrv -U",
+                command => "/usr/sbin/ipa-server-install -r $realm_name -p '$freeipa_password' -P '$freeipa_password' -a '$freeipa_password' --hostname $ipa_host -u dirsrv -U",
                 require => [Exec[set_kdc_defaults],Single_exec[dnsmasq_restart]]
         }
 
         exec {"get_krb5_tkt":
-                command => "/bin/echo $freeipa_password|/usr/kerberos/bin/kinit admin",
+                command => "/bin/echo '$freeipa_password'|/usr/kerberos/bin/kinit admin",
                 require => Single_Exec[ipa_server_install]
         }
 
@@ -75,7 +75,7 @@ class freeipa::bundled{
         }
 
         single_exec {"ipa_add_ovirtadmin_user":
-                command => "/usr/sbin/ipa-adduser -f Ovirt -l Admin -p $freeipa_password ovirtadmin",
+                command => "/usr/sbin/ipa-adduser -f Ovirt -l Admin -p '$freeipa_password' ovirtadmin",
                 require => Single_exec[ipa_modify_username_length]
         }
 
