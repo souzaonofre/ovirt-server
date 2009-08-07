@@ -202,7 +202,18 @@ class DbOmatic < Qpid::Qmf::Console
                     set_vm_stopped(vm)
                 end
             end
+        # If we are running, update the node that the domain is running on
+        elsif state == Vm::STATE_RUNNING
+            @logger.info "VM is running, determine the node it is running on"
+            qmf_vm = @session.object(:class => "domain", 'uuid' => vm.uuid)
+            if qmf_vm
+                qmf_host = @session.object(:class => "node", :object_id => qmf_vm.node)
+                db_host = Host.find(:first, :conditions => ['hostname = ?', qmf_host.hostname])
+                @logger.info "VM #{vm.description} is running on node #{db_host.hostname}"
+                vm.host_id = db_host.id
+            end
         end
+
         vm.state = state
         vm.save!
 
