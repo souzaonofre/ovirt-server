@@ -160,7 +160,9 @@ class DbOmatic < Qpid::Qmf::Console
         end
 
         begin
-          # find open vm host history for this vm,
+          # find open vm host history for this vm
+          # NOTE: db-omatic is currently the only user for VmHostHistory, so
+          # using optimistic locking is fine. Someday this might need changing.
           history = VmHostHistory.find(:first, :conditions => ["vm_id = ? AND time_ended is NULL", vm.id])
 
           if state == Vm::STATE_RUNNING
@@ -215,7 +217,16 @@ class DbOmatic < Qpid::Qmf::Console
         end
 
         vm.state = state
-        vm.save!
+
+        begin
+            vm.save!
+        rescue ActiveRecord::StaleObjectError => e
+            @logger.error "Optimistic locking failed for VM #{vm.description}, retrying."
+            @logger.error e.backtrace
+            # don't retry now until it's been tested.
+            # return update_domain_state(domain, state_override)
+            return
+        end
 
         domain[:synced] = true
     end
@@ -234,7 +245,16 @@ class DbOmatic < Qpid::Qmf::Console
             #db_host.lock_version = 2
             # XXX: This would just be for init..
             #db_host.is_disabled = 0
-            db_host.save!
+
+            begin
+                db_host.save!
+            rescue ActiveRecord::StaleObjectError => e
+                @logger.error "Optimistic locking failure on host #{host_info['hostname']}, retrying."
+                @logger.error e.backtrace
+                # don't retry now until it's been tested.
+                #return update_host_state(host_info, state)
+                return
+            end
             host_info[:synced] = true
 
             if state == Host::STATE_AVAILABLE
@@ -266,6 +286,7 @@ class DbOmatic < Qpid::Qmf::Console
                         end
                     rescue Exception => e # just log any errors here
                         @logger.info "Exception checking for dead VMs (could be normal): #{e.message}"
+                        @logger.info e.backtrace
                     end
                 end
             end
