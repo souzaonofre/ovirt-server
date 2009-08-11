@@ -31,7 +31,7 @@ class LDAPConnection
     host = @@config[ENV['RAILS_ENV']]["host"] if host == nil
     port = @@config[ENV['RAILS_ENV']]["port"] if port == nil
 
-    ActiveLdap::Base.establish_connection(:host => host,
+    ActiveLdap::Base.setup_connection(:host => host,
 					  :port => port,
 					  :base => base) if LDAPConnection.connected? == false
   end

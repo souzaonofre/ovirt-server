@@ -29,7 +29,7 @@ class Vm < ActiveRecord::Base
   end
   has_and_belongs_to_many :storage_volumes
 
-  belongs_to :network
+  has_many :nics, :dependent => :destroy
 
   has_many :smart_pool_tags, :as => :tagged, :dependent => :destroy
   has_many :smart_pools, :through => :smart_pool_tags
@@ -41,12 +41,19 @@ class Vm < ActiveRecord::Base
            :order => 'time_started DESC',
            :dependent => :destroy
 
+
+  has_many :vm_state_change_events,
+           :order => 'created_at' do
+    def previous_state_with_type(state_type)
+      find(:first, :conditions=> { :to_state => state_type }, :order=> 'created_at DESC')
+    end
+  end
+
   alias history vm_host_histories
 
   validates_presence_of :uuid, :description, :num_vcpus_allocated,
                         :boot_device, :memory_allocated_in_mb,
-                        :memory_allocated, :vnic_mac_addr,
-                        :vm_resource_pool_id
+                        :memory_allocated, :vm_resource_pool_id
 
   validates_format_of :uuid,
      :with => %r([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})
@@ -88,7 +95,7 @@ class Vm < ActiveRecord::Base
      :greater_than_or_equal_to => 0,
      :unless => Proc.new{ |vm| vm.memory_allocated.nil? }
 
-  acts_as_xapian :texts => [ :uuid, :description, :vnic_mac_addr, :state ],
+  acts_as_xapian :texts => [ :uuid, :description, :state ],
                  :terms => [ [ :search_users, 'U', "search_users" ] ],
                  :eager_load => :smart_pools
 
@@ -111,8 +118,7 @@ class Vm < ActiveRecord::Base
 
   NEEDS_RESTART_FIELDS = [:uuid,
                           :num_vcpus_allocated,
-                          :memory_allocated,
-                          :vnic_mac_addr]
+                          :memory_allocated]
 
   STATE_PENDING        = "pending"
   STATE_CREATING       = "creating"
@@ -137,6 +143,25 @@ class Vm < ActiveRecord::Base
 
   STATE_CREATE_FAILED  = "create_failed"
   STATE_INVALID        = "invalid"
+
+  ALL_STATES = [STATE_PENDING,
+                STATE_CREATING,
+                STATE_RUNNING,
+                STATE_UNREACHABLE,
+                STATE_POWERING_OFF,
+                STATE_STOPPING,
+                STATE_STOPPED,
+                STATE_STARTING,
+                STATE_SUSPENDING,
+                STATE_SUSPENDED,
+                STATE_RESUMING,
+                STATE_SAVING,
+                STATE_SAVED,
+                STATE_RESTORING,
+                STATE_MIGRATING,
+                STATE_CREATE_FAILED,
+                STATE_INVALID]
+
 
   DESTROYABLE_STATES   = [STATE_PENDING,
                           STATE_STOPPED,
@@ -176,6 +201,13 @@ class Vm < ActiveRecord::Base
   validates_inclusion_of :state,
      :in => EFFECTIVE_STATE.keys
 
+  def get_calculated_uptime
+    if VmObserver::AUDIT_RUNNING_STATES.include?(state)
+      total_uptime_timestamp ? (total_uptime + (Time.now - total_uptime_timestamp)).to_i : 0
+    else
+      total_uptime
+    end
+  end
 
   def get_vm_pool
     vm_resource_pool
@@ -280,6 +312,13 @@ class Vm < ActiveRecord::Base
     actions
   end
 
+  # Provide method to check if requested action exists, so caller can decide
+  # if they want to throw an error of some sort before continuing
+  # (ie in service api)
+  def valid_action?(action)
+    return VmTask::ACTIONS.include?(action) ? true : false
+  end
+
   # these resource checks are made at VM start/restore time
   # use pending here by default since this is used for queueing VM
   # creation/start operations
@@ -303,7 +342,7 @@ class Vm < ActiveRecord::Base
                         :action      => action,
                         :args        => data})
     task.save!
-    return true
+    return task
   end
 
   def has_console
@@ -379,14 +418,28 @@ class Vm < ActiveRecord::Base
     return i
   end
 
+  def self.gen_uuid
+    ["%02x"*4, "%02x"*2, "%02x"*2, "%02x"*2, "%02x"*6].join("-") %
+      Array.new(16) {|x| rand(0xff) }
+  end
+
+  def self.calc_uptime
+    "vms.*, case when state='running' then
+       (cast(total_uptime || ' sec' as interval) +
+        (now() - total_uptime_timestamp))
+     else cast(total_uptime || ' sec' as interval)
+     end as calc_uptime"
+  end
+
   # Make method for calling paginated vms easier for clients.
   # TODO: Might want to have an optional param for per_page var
   def self.paged_with_perms(user, priv, page, order)
-    Vm.paginate(:include => [{:vm_resource_pool =>
+    Vm.paginate(:joins => [{:vm_resource_pool =>
                               {:permissions => {:role => :privileges}}}],
                 :conditions => ["privileges.name=:priv
                            and permissions.uid=:user",
                          { :user => user, :priv => priv }],
+                :select => calc_uptime,
                 :per_page => 5,
                 :page => page,
                 :order => order)
@@ -411,6 +464,8 @@ class Vm < ActiveRecord::Base
       self.storage_volumes=@storage_volumes_pending
       @storage_volumes_pending = []
     end
+    errors.add("nics", "must specify at least one network if pxe booting off a network") unless boot_device != BOOT_DEV_NETWORK || nics.size > 0
+
   end
 
 end

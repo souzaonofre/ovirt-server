@@ -43,7 +43,7 @@ module VmResourcePoolService
   # [<tt>Privilege::MODIFY</tt>] for the parent pool
   def svc_new(parent_id, attributes=nil)
     @pool = VmResourcePool.new(attributes)
-    super(parent_id)
+    pool_new(parent_id)
   end
 
   # Save a new VmResourcePool

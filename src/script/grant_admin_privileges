@@ -9,7 +9,7 @@ ldap_config = YAML::load(File.open(File.dirname(__FILE__) +"/../config/ldap.yml"
 uid = ARGV[0]
 base, host = ldap_config["production"]["base"], ldap_config["production"]["host"]
 
-ActiveLdap::Base.establish_connection :base => base, :host => host, :try_sasl => false
+ActiveLdap::Base.setup_connection :base => base, :host => host, :try_sasl => false
 
 if Account.exists?("uid=#{uid}")
   puts "Creating an admin account for #{uid}..."

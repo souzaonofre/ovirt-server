@@ -21,7 +21,7 @@ module WillPaginate
       super "#{page.inspect} given as value, which translates to '#{page_num}' as page number"
     end
   end
-  
+
   # = The key to pagination
   # Arrays returned from paginating finds are, in fact, instances of this little
   # class. You may think of WillPaginate::Collection as an ordinary array with
@@ -51,7 +51,7 @@ module WillPaginate
       raise InvalidPage.new(page, @current_page) if @current_page < 1
       @per_page = per_page.to_i
       raise ArgumentError, "`per_page` setting cannot be less than 1 (#{@per_page} given)" if @per_page < 1
-      
+
       self.total_entries = total if total
     end
 
@@ -82,7 +82,7 @@ module WillPaginate
     #
     # The Array#paginate API has since then changed, but this still serves as a
     # fine example of WillPaginate::Collection usage.
-    def self.create(page, per_page, total = nil, &block)
+    def self.create(page, per_page, total = nil)
       pager = new(page, per_page, total)
       yield pager
       pager

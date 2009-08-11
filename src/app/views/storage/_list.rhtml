@@ -11,6 +11,8 @@
   <th>target</th>
 <%elsif type == StoragePool::NFS -%>
   <th>export path</th>
+<%elsif type == StoragePool::GLUSTERFS -%>
+  <th>export path</th>
 <% end -%>
   <th class="empty"></th>
 </tr>
@@ -27,6 +29,8 @@
 <%if type == StoragePool::ISCSI -%>
   <td><%= storage_pool[:target] %></td>
 <%elsif type == StoragePool::NFS -%>
+  <td><%= storage_pool[:export_path] %></td>
+<%elsif type == StoragePool::GLUSTERFS -%>
   <td><%= storage_pool[:export_path] %></td>
 <% end -%>
   <%- if defined?(remove_from_pool) &&  remove_from_pool -%>

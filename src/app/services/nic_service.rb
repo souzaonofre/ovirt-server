@@ -33,7 +33,7 @@ module NicService
   private
   def lookup(id, priv)
     @nic = Nic.find(id)
-    authorized!(priv,@nic.host.hardware_pool)
+    authorized!(priv,@nic.parent_pool)
   end
 
 end

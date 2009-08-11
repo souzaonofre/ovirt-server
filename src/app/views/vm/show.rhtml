@@ -106,11 +106,12 @@
 	Num vcpus used:<br/>
 	Memory allocated:<br/>
 	Memory used:<br/>
-	vNIC MAC address:<br/>
+	vNIC MAC addresses:<br/>
 	Boot device:<br/>
         Provisioning source:<br/>
 	State:<br/>
 	Pending State:<br/>
+	Total Run Time:<br/>
     </div>
     <div class="selection_value">
        <%=h @vm.uuid %><br/>
@@ -121,14 +122,17 @@
        <%=h @vm.num_vcpus_used %><br/>
        <%=h @vm.memory_allocated_in_mb %> MB<br/>
        <%=h @vm.memory_used_in_mb %> MB<br/>
-       <%=h @vm.vnic_mac_addr %><br/>
+       <% nic_macs = ""
+          @vm.nics.each { |nic| nic_macs += nic.mac + " " } %>
+       <%=h nic_macs %><br/>
        <%=h @vm.boot_device %><br/>
        <%=h @vm.provisioning_and_boot_settings %><br/>
        <%=h @vm.state %>
        <%unless @vm.needs_restart.nil? or @vm.needs_restart == 0  -%>
          (needs restart)
        <% end -%><br/>
-       <%=h @vm.get_pending_state %>
+       <%=h @vm.get_pending_state %><br/>
+       <%=h number_to_duration(@vm.get_calculated_uptime) %>
     </div>
 
 <!-- FIXME: show storage volumes

@@ -23,7 +23,7 @@ require 'quota_controller'
 # Re-raise errors caught by the controller.
 class QuotaController; def rescue_action(e) raise e end; end
 
-class QuotaControllerTest < Test::Unit::TestCase
+class QuotaControllerTest < ActionController::TestCase
   fixtures :quotas, :pools
 
   def setup

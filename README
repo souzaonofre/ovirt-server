@@ -1,0 +1,10 @@
+The oVirt Server is an open cross-platform virtualization management
+system. It provides a web-based management interface that enables
+users to manage hosts and storage, install and remove virtual machines
+and level resources across a large group of machines. The oVirt Server
+manages hosts running the oVirt Node Image. oVirt Server Suite scales
+from a small group of users with little need for access control and
+quota management, all the way up to hundreds of hosts with robust
+control over grouping, permissions, and quotas.
+
+For further docs see: http://ovirt.org

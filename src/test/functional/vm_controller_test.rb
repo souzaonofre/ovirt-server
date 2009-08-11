@@ -23,7 +23,7 @@ require 'vm_controller'
 # Re-raise errors caught by the controller.
 class VmController; def rescue_action(e) raise e end; end
 
-class VmControllerTest < Test::Unit::TestCase
+class VmControllerTest < ActionController::TestCase
   fixtures :privileges, :roles, :permissions, :pools, :vms
 
   def setup
@@ -61,7 +61,6 @@ class VmControllerTest < Test::Unit::TestCase
                :description =>     'descript',
                :num_vcpus_allocated => 4,
                :memory_allocated => 262144,
-               :vnic_mac_addr => 'AA:BB:CC:DD:EE:FF',
                :boot_device => 'network' }
 
     assert_response :success

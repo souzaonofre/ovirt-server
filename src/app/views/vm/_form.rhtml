@@ -6,15 +6,19 @@
 <%= hidden_field 'vm', 'vm_resource_pool_id' %>
 <%= hidden_field_tag 'hardware_pool_id', @hardware_pool.id if @hardware_pool %>
 
+  <div class="form_heading clickable open">General</div>
+  <div class="vm_form_section">
     <%= text_field_with_label "Name:", "vm", "description", {:style=>"width:250px;"}  %>
     <%= text_field_with_label "UUID:", "vm", "uuid",  {:style=>"width:250px;"} %>
     <%= select_with_label "Operating System:", 'vm', 'provisioning_and_boot_settings', @provisioning_options, :style=>"width:250px;" %>
     <% if controller.action_name == "edit" %><b style="color: #FF0000">*Warning* Editing provision could overwrite vm</b><% end %>
-    <div class="clear_row" style="height:15px;"></div>
 
-    <div class="form_heading">Resources</div>
-    <div class="clear_row"></div>
-    <div class="clear_row"></div>
+    <div class="clear_row" style="height:15px;"></div>
+  </div>
+  <div class="clear_row"></div>
+
+  <div class="form_heading clickable open">Resources</div>
+  <div class="vm_form_section">
     <div style="float:left;width:150px;" >
       <%= text_field_with_label "CPUs:", "vm", "num_vcpus_allocated",  {:style=>"width:100px; margin-bottom:2px;"}, {:style=>"padding-right: 50px;"} %>
       <div class="field_helptext">max to create: <%=create_resources[:cpus]%> </div>
@@ -27,6 +31,11 @@
     </div>
     <div style="clear:both;"></div>
     <div class="clear_row"></div>
+  </div>
+  <div class="clear_row"></div>
+
+  <div class="form_heading clickable closed">Storage</div>
+  <div class="vm_form_section"  style="display:none;">
     <div class="field_title">Storage: </div>
     <div style="height:150px; overflow:auto; border:#CCCCCC solid 1px;">
       <ul id="storage_volumes_tree" class="ovirt-tree"></ul>
@@ -35,25 +44,76 @@
     <!-- FIXME: fill in total here -->
     <div style="background:#F3F3F3; padding:6px; border-left:#CCCCCC solid 1px; border-right:#CCCCCC solid 1px; border-bottom:#CCCCCC solid 1px; ">Total:</div>
     <div class="clear_row" style="height:15px;"></div>
-    <div class="clear_row"></div>
+  </div>
+  <div class="clear_row"></div>
+
+  <div class="form_heading clickable closed">Network</div>
+  <div class="vm_form_section" style="display:none;">
     <div class="clear_row"></div>
 
-    <div class="form_heading">Network</div>
-    <div class="clear_row"></div>
-    <div class="clear_row"></div>
-    <div style="float:left;">
-      <%= text_field_with_label "VNIC:", "vm", "vnic_mac_addr",  {:style=>"width:250;"} %>
-    </div>
-    <div style="float:left;">
-      <%= select_with_label "Network:", 'vm', 'network_id', @networks.insert(0, ""), :style=>"width:250px;" %>
-    </div>
+    <%# display network errors at the top of the section %>
+    <%= text_field_with_label "", "vm", "nics", {:style=>"display:none;"} %>
+
+    <% if @nics.size > 0 %>
+      <div id="vm_network_config_header">
+        <div id="vm_network_config_header_network">Network:</div>
+        <div id="vm_network_config_header_mac">MAC Address:</div>
+
+        <%# this column is only populated if a static ip network is selected: %>
+        <div id="vm_network_config_header_ip" style="display: none;">IP Address:</div>
+        <div class="clear_row"></div><div style="clear:both;"></div>
+      </div>
+
+      <div id="vm_network_config_networks">
+        <%# add number of rows equal to nics.size, initially only show first %>
+        <% (0...@nics.size).each { |i| %>
+	        <div id="vm_network_config_row_<%= i %>" class="vm_network_config_row"
+	            <% if i != 0 %>style="display: none;"<%end%> >
+
+              <div class="vm_network_config_net">
+                <select name="networks[]" id="vm_network_config_select_<%= i %>" class="vm_network_config_select">
+                   <option value="">None</option>
+	               <% @nics.each { |nic| %>
+                      <option value="<%= nic.network_id %>"><%= nic.network.name %></option>
+	               <% } %>
+                </select>
+              </div>
+
+              <div class="vm_network_config_mac">
+                <input name="macs[]" id="vm_network_config_mac_<%= i %>" ></input>
+              </div>
+
+              <div class="vm_network_config_ip">
+                &nbsp;
+              </div>
+
+              <% if i != 0 %>
+                <div id="vm_network_config_remove_<%= i %>" class="vm_network_config_remove">
+                  Remove
+                </div>
+              <% end %>
+
+              <div class="clear_row"></div><div class="clear_row"></div>
+	          <div style="clear:both;"></div>
+            </div>
+	    <% } %>
+      </div>
+
+      <div id="vm_network_config_add">
+        Add Another Network
+      </div>
+
+    <% else %>
+        &nbsp;<b>No networks available</b>
+    <% end %>
+
     <div style="clear:both;"></div>
     <div class="clear_row"></div>
-    <div class="clear_row"></div>
 
-    <%= check_box_tag_with_label "Forward vm's vnc port locally", "forward_vnc", 1, @vm.forward_vnc %>
-    <div class="clear_row"></div>
+  </div>
+  <div class="clear_row"></div>
 
+   <div class="form_heading"/>
    <%= check_box_tag_with_label "Start VM Now? (pending current resource availability)", "start_now", nil if create or @vm.state == Vm::STATE_STOPPED %>
    <%= check_box_tag_with_label "Restart VM Now? (pending current resource availability)", "restart_now", nil if @vm.state == Vm::STATE_RUNNING %>
 
@@ -103,7 +163,178 @@ ${htmlList(pools, id)}
         channel: 'STORAGE_VOLUME',
         refresh: VmCreator.returnToVmForm
       });
+
+      $('#vm_form .form_heading').bind('click', function(e){
+          if(this === e.target){
+            $(this).toggleClass('open').toggleClass('closed').next().slideToggle('slow');
+          }
+      });
+
+    /////////////////////////////////////////////////// vm networks config
+
+      // create list of nics
+      var nics = new Array();
+      <% @nics.each { |rnic| %>
+       jnic = new Object;
+       jnic.network_id  = "<%= rnic.network_id.to_s %>";
+       jnic.name        = "<%= rnic.network.name %>";
+       jnic.mac         = "<%= rnic.mac %>";
+       jnic.ip          = "<%= rnic.ip_address %>";
+       jnic.static_ip   = <%= rnic.network.boot_type.proto == 'static' %>;
+       jnic.selected    = false;
+       jnic.row         = null;
+       nics.push(jnic);
+      <% } %>
+
+      // find nic in nics array matching network id
+      function find_nic_by_id(network_id){
+          for(j = 0; j < nics.length; ++j){
+            if(nics[j].network_id == network_id){
+               return nics[j];
+            }
+          }
+          return null;
+      }
+
+      // parses a row out of a div id
+      function get_row_from_div_id(id){
+         return parseInt(id.substr(id.lastIndexOf('_') + 1));
+      }
+
+      // show / hide ip address column header
+      // depending if any static networks
+      // are selected
+      function toggle_ip_address_column(){
+         for(i = 0; i < nics.length; ++i){
+           if(nics[i].selected && nics[i].static_ip){
+              $('#vm_network_config_header_ip').show();
+
+	          // set the min width, for the columns that don't have static_ips
+	          $('.vm_network_config_ip').css('min-width', '140px')
+
+              return;
+           }
+         }
+         $('#vm_network_config_header_ip').hide();
+         $('.vm_network_config_ip').css('min-width', '')
+      }
+
+
+      // register the value of current selectbox,
+      //  so we can easily add it back to the others
+      var current_network_selectbox_value = 0;
+      $('.vm_network_config_net select').bind('click', function(e){
+           current_network_selectbox_value = e.target.value;
+      });
+
+      // event handler for network select box changes
+      $('.vm_network_config_net select').bind('change', function(e){
+          row = get_row_from_div_id(e.target.id);
+
+         // if we've selected a network
+         if(e.target.value != ""){
+
+	         // update nic attributes
+             nic = find_nic_by_id(e.target.value);
+             nic.selected = true;
+             nic.row = row;
+
+	         // update old nic attributes if neccessary
+	         if(current_network_selectbox_value != ""){
+                old_nic = find_nic_by_id(current_network_selectbox_value);
+                old_nic.selected = false;
+                old_nic.row = null;
+	         }
+
+             // remove the value from all other selectboxes
+             $('.vm_network_config_select:not(#vm_network_config_select_'+row+') option[@value='+nic.network_id+']').hide();
+
+             // fill in mac
+             $('#vm_network_config_mac_'+row).attr('value', nic.mac);
+
+             // show / hide ip address textbox
+             ip_div = $('#vm_network_config_mac_'+row).parent().next();
+             if(nic.static_ip){
+	           ip_div.html('<input name="ip_addresses[]" id="#vm_network_config_ip_'+row+'" value="'+nic.ip+'" />');
+             }else{
+               ip_div.html('&nbsp;');
+	         }
+
+             // show new row only if last row's select box was
+             // previously empty, and if all are not shown
+	         displayed_rows = $('.vm_network_config_row:visible').size();
+	         if(current_network_selectbox_value == "" && displayed_rows != nics.length){
+	           $('#vm_network_config_row_' + (row+1)).show();
+	         }
+
+         // if we've unselected a network
+         }else{
+	        // update old nic attributes if neccessary
+	        if(current_network_selectbox_value != ""){
+              old_nic = find_nic_by_id(current_network_selectbox_value);
+              old_nic.selected = false;
+              old_nic.row = null;
+
+              // add network back to others
+	          $('.vm_network_config_select:not(#vm_network_config_select_'+row+') option[@value='+old_nic.network_id+']').show();
+	        }
+
+            // clear row mac and ip addresses
+            $('#vm_network_config_mac_'+row).attr('value', '');
+            $('#vm_network_config_mac_'+row).parent().next().html('&nbsp;');
+
+            // hide row if not the first
+	        if(row != 0){
+	           $('#vm_network_config_row_' + row).hide();
+	        }
+         }
+
+          toggle_ip_address_column();
+       });
+
+       // wire up add link
+       $('#vm_network_config_add').bind('click', function(){
+           // show new row if we're not currently display the max
+           displayed_rows = $('.vm_network_config_row:visible').size();
+           if(displayed_rows != nics.length){
+	          row = get_row_from_div_id($('.vm_network_config_row:hidden').get(0).id);
+              $('#vm_network_config_row_' + (row)).show();
+           }
+       });
+
+       // wire up remove links
+       $('.vm_network_config_remove').bind('click', function(e){
+	       // unselect network if selected
+           row = get_row_from_div_id(e.target.id);
+	       current_network_selectbox_value = $('#vm_network_config_select_' + row).val();
+           $('#vm_network_config_select_' + row).val("").trigger('change');
+       });
+
+       // finally if the vm has nics, preselect them
+       <% unless @vm.nil?
+           (0...@vm.nics.size).each { |i| %>
+	          $('#vm_network_config_select_<%= i %>').val("<%= @vm.nics[i].network_id %>").trigger('change');
+       <%  }
+	     end %>
+
+       // wire up provision select box to autoselect a network if necessary
+       $('#vm_provisioning_and_boot_settings').bind('change', function(e){
+
+         // if at least one network is already selected do nothing
+         for(i = 0; i < nics.length; ++i){
+           if(nics[i].selected){
+              return;
+           }
+         }
+
+         // only set value if we have a network to set it to and we've
+         // selected a provision type requiring a net
+         if(nics.length > 0 &&
+           (e.target.value == "<%= Vm::PXE_OPTION_VALUE %>" ||
+            e.target.value.indexOf("<%= Vm::PROFILE_PREFIX %>@<%= Vm::COBBLER_PREFIX %>") == 0)){
+              $('#vm_network_config_select_0').val(nics[0].network_id).trigger('change');
+         }
+       }).trigger('change'); // make sure whatever we have at first is handled
+
     });
 </script>
-
-

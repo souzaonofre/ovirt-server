@@ -13,6 +13,7 @@
 export RAILS_ENV="${RAILS_ENV:-production}"
 
 DAEMON=/usr/share/ovirt-server/host-collect/host-collect.rb
+HOST_COLLECT_LOCKFILE="${HOST_COLLECT_LOCKFILE:-/var/lock/subsys/ovirt-host-collect }"
 
 . /etc/init.d/functions
 
@@ -21,6 +22,9 @@ start() {
     daemon $DAEMON
     RETVAL=$?
     echo
+    if [ $RETVAL -eq 0 ]; then
+        touch  $HOST_COLLECT_LOCKFILE
+    fi
 }
 
 stop() {
@@ -28,6 +32,9 @@ stop() {
     killproc host-collect.rb
     RETVAL=$?
     echo
+    if [ $RETVAL -eq 0 ]; then
+        rm  $HOST_COLLECT_LOCKFILE
+    fi
 }
 
 case "$1" in
@@ -41,6 +48,11 @@ case "$1" in
 	stop
 	start
 	;;
+    reload)
+        ;;
+    force-reload)
+        restart
+        ;;
     status)
 	status $DAEMON
 	RETVAL=$?

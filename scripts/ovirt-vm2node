@@ -9,17 +9,10 @@ require 'dutils'
 $stdin.each{ |vmname| # get vm name from stdin
   begin
     vmname.chomp!  # remove the newline
-
-    # specially handle 'anyterm' to just return
-    # first host (for css/js/etc which aren't
-    # vm dependent)
-    if vmname == 'anyterm'
-      puts Host.find(:first, :conditions => "state = 'available'").hostname
-    else
-      puts Vm.find(:first, :conditions => ['description = ?', vmname]).host.hostname
-    end
-  rescue Exception => e
-      puts
+    puts Vm.find(:first, :conditions => ['description = ?', vmname]).host.hostname
+  rescue Exception => ex
+    puts "Error looking node with VM: #{ex.class}: #{ex.message}"
+    puts ex.backtrace
   end
 
   $stdout.flush

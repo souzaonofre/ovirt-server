@@ -12,7 +12,9 @@
   </head>
 
   <body>
+  <div id="wrapper">
     <div id="head">
+    <h1><a href="#">The name of our project goes here</a></h1>
       <!-- Header stuff! -->
       <div id="login-box">
         Hi, <%= @user %>
@@ -21,8 +23,9 @@
                 {:controller => 'help', :action => @help_section, :anchor => @anchor},
                 :id=>"help-link", :popup => true, :title => "Help" %>
       </div>
-      <div id="nav">
-        <ul class="toolbar">
+     </div>
+     <div id="navcontainer">
+        <ul class="navlist">
           <li>
             <%=
                 link_to_unless(controller.controller_name == 'dashboard', "Dashboard", { :controller => 'cloud/dashboard' }) do |name|
@@ -47,9 +50,9 @@
           </li>-->
         </ul>
       </div>
-    </div>
     <div id="content">
       <%= yield %>
     </div>
+  </div>
   </body>
 </html>

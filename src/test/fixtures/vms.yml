@@ -5,14 +5,13 @@ production_httpd_vm:
   num_vcpus_used: 2
   memory_allocated: 262144
   memory_used: 131072
-  vnic_mac_addr: 23:51:90:A1:13:37
   state: stopped
   needs_restart: 0
   boot_device: hd
   host: prod_corp_com
   vm_resource_pool: corp_com_production_vmpool
   forward_vnc: true
-  forward_vnc_port: 5900
+  forward_vnc_port: 5901
 production_mysqld_vm:
   uuid: 89e62d32-04d9-4351-b573-b1a253397296
   description: production mysqld appliance
@@ -20,7 +19,6 @@ production_mysqld_vm:
   num_vcpus_used: 1
   memory_allocated: 2048
   memory_used: 512
-  vnic_mac_addr: 15:99:FE:ED:11:EE
   state: running
   needs_restart: 0
   boot_device: network
@@ -33,7 +31,6 @@ production_ftpd_vm:
   num_vcpus_used: 1
   memory_allocated: 1024
   memory_used: 512
-  vnic_mac_addr: FF:AA:BB:00:11:55
   state: stopped
   needs_restart: 1
   boot_device: cdrom
@@ -46,7 +43,6 @@ production_postgresql_vm:
   num_vcpus_used: 2
   memory_allocated: 2048
   memory_used: 1536
-  vnic_mac_addr: 48:24:12:93:42:11
   state: running
   needs_restart: 0
   boot_device: hd
@@ -59,12 +55,23 @@ foobar_prod1_vm:
   num_vcpus_used: 2
   memory_allocated: 4096 
   memory_used: 4096
-  vnic_mac_addr: FF:FF:FF:EE:EE:EE
   state: running
   needs_restart: 0
   boot_device: cdrom
   host: fedoraworkstation_foobar_com
   vm_resource_pool: corp_com_production_vmpool
+corp_com_qa_postgres_vm:
+  uuid: f6059569-a81f-4728-bb61-6f16b1c594e7
+  description: corp.com qa postgres vm
+  num_vcpus_allocated: 2
+  num_vcpus_used: 2
+  memory_allocated: 262144
+  memory_used: 131072
+  state: running
+  needs_restart: 0
+  boot_device: hd
+  host: macworkstation_qa_corp_com
+  vm_resource_pool: corp_qa_vmpool
 foobar_prod2_vm:
   uuid: 24b9a994-d415-481d-ace8-1d810b601eb6
   description: foobar prod2
@@ -72,7 +79,6 @@ foobar_prod2_vm:
   num_vcpus_used: 2
   memory_allocated: 4096 
   memory_used: 4096
-  vnic_mac_addr: EE:EE:EE:FF:FF:FF
   state: running
   needs_restart: 0
   boot_device: cdrom
@@ -85,7 +91,6 @@ corp_com_errata_vm:
   num_vcpus_used: 2
   memory_allocated: 2048 
   memory_used: 2048
-  vnic_mac_addr: 77:77:77:77:77:77
   state: running
   needs_restart: 0
   boot_device: network
@@ -98,7 +103,6 @@ corp_com_bugzilla_vm:
   num_vcpus_used: 2
   memory_allocated: 2048 
   memory_used: 2048
-  vnic_mac_addr: 77:77:77:77:77:77
   state: running
   needs_restart: 0
   boot_device: network

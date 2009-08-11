@@ -19,7 +19,7 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class StoragePoolTest < Test::Unit::TestCase
+class StoragePoolTest < ActiveSupport::TestCase
   fixtures :storage_pools
   fixtures :pools
   fixtures :vms

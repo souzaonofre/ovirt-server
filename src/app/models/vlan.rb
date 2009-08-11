@@ -23,7 +23,17 @@ class Vlan < Network
     :message => 'A number must be specified.'
 
   def is_destroyable?
-    bondings.empty?
+    bondings.empty? && nics.empty?
   end
 
+  protected
+   def validate
+     # ensure that any assigned nics only belong to vms, not hosts
+     nics.each{ |nic|
+       if nic.parent.class == Host
+         errors.add("nics", "must only be assigned to vms")
+         break
+       end
+     }
+   end
 end

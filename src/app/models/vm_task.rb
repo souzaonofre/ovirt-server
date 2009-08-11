@@ -146,10 +146,10 @@ class VmTask < Task
   end
 
   def self.action_privilege(action)
-    return ACTIONS[action][:privilege][0]
+    return ACTIONS[action].nil? ? nil : ACTIONS[action][:privilege][0]
   end
   def self.action_privilege_object(action, obj)
-    return obj.send(ACTIONS[action][:privilege][1])
+    return ACTIONS[action].nil? ? nil : obj.send(ACTIONS[action][:privilege][1])
   end
   def self.action_label(action)
     return ACTIONS[action][:label]

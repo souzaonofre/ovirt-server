@@ -1,4 +1,3 @@
-#!/usr/bin/ruby
 # 
 # Copyright (C) 2008 Red Hat, Inc.
 # Written by Mark Wagner <mwagner@redhat.com>

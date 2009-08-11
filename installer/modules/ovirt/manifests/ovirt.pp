@@ -146,6 +146,12 @@ class ovirt::setup {
                 ensure => running
         }
 
+        service {"ovirt-host-register" :
+                enable => true,
+                require => [Package[ovirt-server],Single_Exec[db_migrate]],
+                ensure => running
+        }
+
         service {"ovirt-host-collect" :
                 enable => true,
 		require => [Package[ovirt-server],Single_Exec[db_migrate]],
@@ -167,6 +173,12 @@ class ovirt::setup {
         }
 
 	service {"ovirt-db-omatic" :
+                enable => true,
+		require => [Package[ovirt-server],Single_Exec[db_migrate]],
+                ensure => running
+        }
+
+        service {"ovirt-agent" :
                 enable => true,
 		require => [Package[ovirt-server],Single_Exec[db_migrate]],
                 ensure => running

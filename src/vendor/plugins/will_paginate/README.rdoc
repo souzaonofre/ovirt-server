@@ -104,4 +104,3 @@ More reading about pagination as design pattern:
 
 Want to discuss, request features, ask questions? Join the
 {Google group}[http://groups.google.com/group/will_paginate].
-

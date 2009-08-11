@@ -7,7 +7,7 @@ module WillPaginate
   # pagination links for the given collection. The helper itself is lightweight
   # and serves only as a wrapper around LinkRenderer instantiation; the
   # renderer then does all the hard work of generating the HTML.
-  # 
+  #
   # == Global options for helpers
   #
   # Options for pagination helpers are optional and get their default values from the
@@ -66,7 +66,7 @@ module WillPaginate
     #
     # All options not recognized by will_paginate will become HTML attributes on the container
     # element for pagination links (the DIV). For example:
-    # 
+    #
     #   <%= will_paginate @posts, :style => 'font-size: small' %>
     #
     # ... will result in:
@@ -99,7 +99,7 @@ module WillPaginate
 
       options = options.symbolize_keys.reverse_merge WillPaginate::ViewHelpers.pagination_options
       if options[:prev_label]
-        WillPaginate::Deprecation::warn(":prev_label view parameter is now :previous_label; the old name has been deprecated.")
+        WillPaginate::Deprecation::warn(":prev_label view parameter is now :previous_label; the old name has been deprecated", caller)
         options[:previous_label] = options.delete(:prev_label)
       end
 
@@ -141,8 +141,15 @@ module WillPaginate
     # blocks of pagination links sharing the same ID (which is invalid HTML).
     def paginated_section(*args, &block)
       pagination = will_paginate(*args).to_s
-      content = pagination + capture(&block) + pagination
-      concat content, block.binding
+
+      unless ActionView::Base.respond_to? :erb_variable
+        concat pagination
+        yield
+        concat pagination
+      else
+        content = pagination + capture(&block) + pagination
+        concat(content, block.binding)
+      end
     end
 
     # Renders a helpful message with numbers of displayed vs. total entries.
@@ -178,12 +185,11 @@ module WillPaginate
 
     def self.total_pages_for_collection(collection) #:nodoc:
       if collection.respond_to?('page_count') and !collection.respond_to?('total_pages')
-        WillPaginate::Deprecation.warn <<-MSG
+        WillPaginate::Deprecation.warn %{
           You are using a paginated collection of class #{collection.class.name}
           which conforms to the old API of WillPaginate::Collection by using
           `page_count`, while the current method name is `total_pages`. Please
-          upgrade yours or 3rd-party code that provides the paginated collection.
-        MSG
+          upgrade yours or 3rd-party code that provides the paginated collection}, caller
         class << collection
           def total_pages; page_count; end
         end
@@ -226,7 +232,7 @@ module WillPaginate
       # previous/next buttons
       links.unshift page_link_or_span(@collection.previous_page, 'disabled prev_page', @options[:previous_label])
       links.push    page_link_or_span(@collection.next_page,     'disabled next_page', @options[:next_label])
-      
+
       html = links.join(@options[:separator])
       @options[:container] ? @template.content_tag(:div, html, html_attributes) : html
     end
@@ -242,7 +248,7 @@ module WillPaginate
       end
       @html_attributes
     end
-    
+
   protected
 
     # Collects link items for visible page numbers.
@@ -264,7 +270,7 @@ module WillPaginate
       inner_window, outer_window = @options[:inner_window].to_i, @options[:outer_window].to_i
       window_from = current_page - inner_window
       window_to = current_page + inner_window
-      
+
       # adjust lower or upper limit if other is out of bounds
       if window_to > total_pages
         window_from -= window_to - total_pages
@@ -275,7 +281,7 @@ module WillPaginate
         window_from = 1
         window_to = total_pages if window_to > total_pages
       end
-      
+
       visible   = (1..total_pages).to_a
       left_gap  = (2 + outer_window)...window_from
       right_gap = (window_to + 1)...(total_pages - outer_window)
@@ -284,7 +290,7 @@ module WillPaginate
 
       visible
     end
-    
+
     def page_link_or_span(page, span_class, text = nil)
       text ||= page.to_s
 
@@ -315,8 +321,7 @@ module WillPaginate
         stringified_merge @url_params, @options[:params] if @options[:params]
 
         if complex = param_name.index(/[^\w-]/)
-          page_param = (defined?(CGIMethods) ? CGIMethods : ActionController::AbstractRequest).
-            parse_query_parameters("#{param_name}=#{page}")
+          page_param = parse_query_parameters("#{param_name}=#{page}")
 
           stringified_merge @url_params, page_param
         else
@@ -327,21 +332,21 @@ module WillPaginate
         return url if page_one
 
         if complex
-          @url_string = url.sub(%r!((?:\?|&amp;)#{CGI.escape param_name}=)#{page}!, '\1@')
+          @url_string = url.sub(%r!((?:\?|&amp;)#{CGI.escape param_name}=)#{page}!, "\\1\0")
           return url
         else
           @url_string = url
           @url_params[param_name] = 3
           @template.url_for(@url_params).split(//).each_with_index do |char, i|
             if char == '3' and url[i, 1] == '2'
-              @url_string[i] = '@'
+              @url_string[i] = "\0"
               break
             end
           end
         end
       end
       # finally!
-      @url_string.sub '@', page.to_s
+      @url_string.sub "\0", page.to_s
     end
 
   private
@@ -377,6 +382,22 @@ module WillPaginate
         else
           target[key] = value
         end
+      end
+    end
+
+    def parse_query_parameters(params)
+      if defined? Rack::Utils
+        # For Rails > 2.3
+        Rack::Utils.parse_nested_query(params)
+      elsif defined?(ActionController::AbstractRequest)
+        ActionController::AbstractRequest.parse_query_parameters(params)
+      elsif defined?(ActionController::UrlEncodedPairParser)
+        # For Rails > 2.2
+        ActionController::UrlEncodedPairParser.parse_query_parameters(params)
+      elsif defined?(CGIMethods)
+        CGIMethods.parse_query_parameters(params)
+      else
+        raise "unsupported ActionPack version"
       end
     end
   end

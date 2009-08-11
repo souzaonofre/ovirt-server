@@ -168,6 +168,8 @@ class TaskOmatic
          and node.memory >= db_vm.memory_allocated \
          and not curr.is_disabled.nil? and curr.is_disabled == 0 \
          and ((!vm or vm.active == 'false') or vm.node != node.object_id)
+         # FIXME ensure host is on all networks a vm's assigned to
+         # db_vm.nics.each { |nic| ignore if nic.network ! in host }
         possible_hosts.push(curr)
       end
     end
@@ -211,17 +213,17 @@ class TaskOmatic
       libvirt_pool.connect(@session, node)
 
       # OK, the pool should be all set.  The last thing we need to do is get
-      # the path based on the volume name
+      # the path based on the volume key
 
-      volume_name = db_volume.read_attribute(db_volume.volume_name)
+      volume_key = db_volume.key
       pool = libvirt_pool.remote_pool
 
       @logger.debug "Pool mounted: #{pool.name}; state: #{pool.state}"
 
       volume = @session.object(:class => 'volume',
-                               'name' => volume_name,
+                               'key' => volume_key,
                                'storagePool' => pool.object_id)
-      raise "Unable to find volume #{volume_name} attached to pool #{pool.name}." unless volume
+      raise "Unable to find volume #{volume_key} attached to pool #{pool.name}." unless volume
       @logger.debug "Verified volume of pool #{volume.path}"
 
       storagedevs << volume.path
@@ -258,14 +260,14 @@ class TaskOmatic
       # libvirt-qpid sets parentVolume to the name of the parent volume
       # if this is an LVM pool, else it leaves it empty.
       if pool.parentVolume != ''
-        result = pool.destroy
-        result = pool.undefine
+        result = pool.destroy(:timeout => 60 * 2)
+        result = pool.undefine(:timeout => 60 * 2)
       end
     end
 
     pools.each do |pool|
-      result = pool.destroy
-      result = pool.undefine
+      result = pool.destroy(:timeout => 60 * 2)
+      result = pool.undefine(:timeout => 60 * 2)
     end
   end
 
@@ -360,31 +362,32 @@ class TaskOmatic
     @logger.debug("Connecting volumes: #{volumes}")
     storagedevs = connect_storage_pools(node, volumes)
 
-    # determine if vm has been assigned to physical or
-    # virtual network and assign nic / bonding accordingly
-    # FIXME instead of trying to find a nic or bonding here, given
-    # a specified host and network, we should try earlier on to find a host
-    # that has a nic / bonding on the specified network
-
-    net_device = "breth0"  # FIXME remove this default value at some point, tho net_device can't be nil
-    unless db_vm.network.nil?
-      if db_vm.network.class == PhysicalNetwork
+    # loop through each nic/network assigned to vm,
+    #  finding necessary host devices to bridge
+    net_interfaces = []
+    db_vm.nics.each { |nic|
+       device = net_device = nil
+       if nic.network.class == PhysicalNetwork
          device = Nic.find(:first,
-                           :conditions => ["host_id = ? AND physical_network_id = ?",
-                                           db_host.id, db_vm.network_id ])
-         net_device = "br" + device.interface_name unless device.nil?
-
-      else
+               :conditions => ["host_id = ? AND network_id = ?",
+                                    db_host.id, nic.network_id ])
+       else
          device = Bonding.find(:first,
-                               :conditions => ["host_id = ? AND vlan_id = ?",
-                                               db_host.id, db_vm.network_id])
-         net_device = "br" + device.interface_name unless device.nil?
-      end
-    end
+               :conditions => ["host_id = ? AND vlan_id = ?",
+                                    db_host.id, nic.network_id ])
+       end
+
+       unless device.nil?
+          net_device = "br" + device.interface_name
+       else
+          net_device = "breth0" # FIXME remove this default at some point
+       end
+       net_interfaces.push({ :mac => nic.mac, :interface => net_device })
+    }
 
     xml = create_vm_xml(db_vm.description, db_vm.uuid, db_vm.memory_allocated,
               db_vm.memory_used, db_vm.num_vcpus_allocated, db_vm.boot_device,
-              db_vm.vnic_mac_addr, net_device, storagedevs)
+              net_interfaces, storagedevs)
 
     @logger.debug("XML Domain definition: #{xml}")
 
@@ -534,7 +537,7 @@ class TaskOmatic
       dest_uri = "qemu+tcp://" + dest_node.hostname + "/system"
       @logger.debug("Migrating from #{src_uri} to #{dest_uri}")
 
-      result = vm.migrate(dest_uri, Libvirt::Domain::MIGRATE_LIVE, '', '', 0, :timeout => 60 * 4)
+      result = vm.migrate(dest_uri, Libvirt::Domain::MIGRATE_LIVE, '', '', 0, :timeout => 60 * 10)
       @logger.error "Error migrating VM: #{result.text}" unless result.status == 0
 
       # undefine can fail, for instance, if we live migrated from A -> B, and
@@ -579,7 +582,9 @@ class TaskOmatic
         @logger.info "host #{host.hostname} is disabled"
         next
       end
+      puts "searching for node with hostname #{host.hostname}"
       node = @session.object(:class => 'node', 'hostname' => host.hostname)
+      puts "node returned is #{node}"
       return node if node
     end
 
@@ -592,6 +597,7 @@ class TaskOmatic
     storage_volume.size = volume.capacity / 1024
     storage_volume.storage_pool_id = db_pool.id
     storage_volume.write_attribute(storage_volume.volume_name, volume.name)
+    storage_volume.key = volume.key
     storage_volume.lv_owner_perms = owner
     storage_volume.lv_group_perms = group
     storage_volume.lv_mode_perms = mode
@@ -643,14 +649,15 @@ class TaskOmatic
           storage_volume = StorageVolume.factory(db_pool_phys.get_type_label)
 
           existing_vol = StorageVolume.find(:first, :conditions =>
-                            ["storage_pool_id = ? AND #{storage_volume.volume_name} = ?",
-                            db_pool_phys.id, volume.name])
+                            ["storage_pool_id = ? AND key = ?",
+                            db_pool_phys.id, volume.key])
 
+          puts "Existing volume is #{existing_vol}, searched for storage volume key and #{volume.key}"
           # Only add if it's not already there.
           if not existing_vol
             add_volume_to_db(db_pool_phys, volume);
           else
-            @logger.debug "Scanned volume #{volume.name} already exists in db.."
+            @logger.debug "Scanned volume #{volume.key} already exists in db.."
           end
 
           # Now check for an LVM pool carving up this volume.
@@ -691,12 +698,12 @@ class TaskOmatic
 
             lvm_storage_volume = StorageVolume.factory(lvm_db_pool.get_type_label)
             existing_vol = StorageVolume.find(:first, :conditions =>
-                              ["storage_pool_id = ? AND #{lvm_storage_volume.volume_name} = ?",
-                              lvm_db_pool.id, lvm_volume.name])
+                              ["storage_pool_id = ? AND key = ?",
+                              lvm_db_pool.id, lvm_volume.key])
             if not existing_vol
               add_volume_to_db(lvm_db_pool, lvm_volume, "0744", "0744", "0744");
             else
-              @logger.info "volume #{lvm_volume.name} already exists in db.."
+              @logger.info "volume #{lvm_volume.key} already exists in db.."
             end
           end
         end
@@ -737,9 +744,8 @@ class TaskOmatic
             @logger.debug "    property: #{key}, #{val}"
           end
 
-          # FIXME: Should have this too I think..
-          #db_volume.key = volume.key
           db_volume.reload
+          db_volume.key = volume.key
           db_volume.path = volume.path
           db_volume.state = StorageVolume::STATE_AVAILABLE
           db_volume.save!
@@ -747,6 +753,8 @@ class TaskOmatic
           db_pool.reload
           db_pool.state = StoragePool::STATE_AVAILABLE
           db_pool.save!
+        rescue => ex
+          @logger.error "Error saving new volume: #{ex.class}: #{ex.message}"
         ensure
           libvirt_pool.shutdown
         end
@@ -795,7 +803,7 @@ class TaskOmatic
         begin
           volume = @session.object(:class => 'volume',
                                    'storagePool' => libvirt_pool.remote_pool.object_id,
-                                   'path' => db_volume.path)
+                                   'key' => db_volume.key)
           @logger.error "Unable to find volume to delete" unless volume
 
           # FIXME: we actually probably want to zero out the whole volume
@@ -810,6 +818,8 @@ class TaskOmatic
           # If we don't find the volume we assume there was some error setting
           # it up, so just carry on here..
           volume.delete if volume
+
+          @logger.info "Volume deleted successfully."
 
           # Note: we have to nil out the task_target because when we delete the
           # volume object, that also deletes all dependent tasks (including this
@@ -854,6 +864,7 @@ class TaskOmatic
 
       @logger.info("Reconnected, resuming task checking..") if was_disconnected
       was_disconnected = false
+      @session.object(:class => 'agent')
 
       tasks = Array.new
       begin

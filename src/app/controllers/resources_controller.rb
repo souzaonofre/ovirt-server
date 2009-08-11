@@ -63,7 +63,9 @@ class ResourcesController < PoolController
 
   def vms_json
     svc_show(params[:id])
-    super(:full_items => @pool.vms, :find_opts => {}, :include_pool => :true)
+    super(:full_items => @pool.vms,
+          :find_opts => {:select => Vm.calc_uptime},
+          :include_pool => :true)
   end
 
   def delete

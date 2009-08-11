@@ -12,6 +12,8 @@
   <th>LUN</th>
 <%elsif type == StoragePool::NFS -%>
   <th>export path</th>
+<%elsif type == StoragePool::GLUSTERFS -%>
+  <th>export path</th>
 <% end -%>
   <th>size <span class="unit">(gigs)</span></th>
 </tr>
@@ -30,6 +32,8 @@
   <td><%= storage_volume.lun %></td>
 <%elsif type == StoragePool::NFS -%>
   <td><%= "#{storage_volume.storage_pool.export_path}/#{storage_volume.filename}" if storage_volume[:type] == "NfsStorageVolume" %></td>
+<%elsif type == StoragePool::GLUSTERFS -%>
+  <td><%= "#{storage_volume.storage_pool.export_path}/#{storage_volume.filename}" if storage_volume[:type] == "GlusterfsStorageVolume" %></td>
 <% end -%>
   <td><%= storage_volume.size_in_gb %></td>
 </tr>

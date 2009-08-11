@@ -19,7 +19,10 @@
 
 class Nic < ActiveRecord::Base
   belongs_to :host
-  belongs_to :physical_network
+  belongs_to :vm
+
+  belongs_to :network
+
   has_many :ip_addresses, :dependent => :destroy
 
   # FIXME bondings_nics table should just be replaced with
@@ -33,24 +36,31 @@ class Nic < ActiveRecord::Base
   validates_format_of :mac,
     :with => %r{^([0-9a-fA-F]{2}([:-]|$)){6}$}
 
-  validates_presence_of :host_id,
-    :message => 'A host must be specified.'
+  # nic must be assigned to network if associated w/ a vm
+  validates_presence_of :network_id,
+     :unless => Proc.new { |nic| nic.vm.nil? }
+
+  # nic must be associated w/ a vm if assigned to a vlan
+  validates_presence_of :vm_id,
+    :message => 'A vm must be specified.',
+    :if => Proc.new { |nic| !nic.network.nil? && nic.network.class == Vlan }
+
+  # a vm / host can't have more than one nic on a network
+  validates_uniqueness_of :network_id,
+     :scope => [:host_id, :vm_id],
+     :unless => Proc.new { |nic| nic.network.nil? }
 
   validates_numericality_of :bandwidth,
      :greater_than_or_equal_to => 0
 
-  validates_uniqueness_of :physical_network_id,
-     :scope => :host_id,
-     :unless => Proc.new { |nic| nic.physical_network_id.nil? }
-
   # Returns whether the nic has networking defined.
   def networking?
-    (physical_network != nil)
+    (network != nil)
   end
 
   # Returns the boot protocol for the nic if networking is defined.
   def boot_protocol
-    return physical_network.boot_type.proto if networking?
+     return network.boot_type.proto if networking?
   end
 
   # Returns whether the nic is enslaved by a bonded interface.
@@ -66,30 +76,50 @@ class Nic < ActiveRecord::Base
 
   # Returns the netmask for the nic if networking is defined.
   def netmask
-    return physical_network.ip_addresses.first.netmask if networking? && !physical_network.ip_addresses.empty?
+    return network.ip_addresses.first.netmask if networking? && !network.ip_addresses.empty?
     return nil
   end
 
   # Returns the broadcast address for the nic if networking is defined.
   def broadcast
-    return physical_network.ip_addresses.first.broadcast if networking? && !physical_network.ip_addresses.empty?
+    return network.ip_addresses.first.broadcast if networking? && !network.ip_addresses.empty?
     return nil
   end
 
   # Returns the gateway address fo rthe nic if networking is defined.
   def gateway
-    return physical_network.ip_addresses.first.gateway if networking? && !physical_network.ip_addresses.empty?
+    return network.ip_addresses.first.gateway if networking? && !network.ip_addresses.empty?
     return nil
+  end
+
+  def parent
+    return host if !host.nil? && vm.nil?
+    return vm   if !vm.nil? && host.nil?
+    return nil
+  end
+
+  def parent_pool
+    return host.hardware_pool  if !host.nil? && vm.nil?
+    return vm.vm_resource_pool if !vm.nil? && host.nil?
+    return nil
+  end
+
+  def self.gen_mac
+    [ 0x00, 0x16, 0x3e, rand(0x7f), rand(0xff),
+       rand(0xff) ].collect {|x| "%02x" % x}.join(":")
   end
 
   # validate 'bridge' or 'usage_type' attribute ?
 
   protected
    def validate
-    if ! physical_network.nil? and
-       physical_network.boot_type.proto == 'static' and
+    # nic must be associated with a host or vm, but not both
+    errors.add("one host or one vm must be specified") unless host.nil? ^ vm.nil?
+
+    if ! network.nil? and
+       network.boot_type.proto == 'static' and
        ip_addresses.size == 0
-           errors.add("physical_network_id",
+           errors.add("network_id",
                       "is static. Must create at least one static ip")
      end
    end

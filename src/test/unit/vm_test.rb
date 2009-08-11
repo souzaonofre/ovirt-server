@@ -1,6 +1,7 @@
 #
 # Copyright (C) 2008 Red Hat, Inc.
-# Written by Scott Seago <sseago@redhat.com>
+# Written by Scott Seago <sseago@redhat.com>,
+#            Jason Guiditta <jguiditt@redhat.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +20,7 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class VmTest < Test::Unit::TestCase
+class VmTest < ActiveSupport::TestCase
   fixtures :vms
   fixtures :pools
 
@@ -37,8 +38,7 @@ class VmTest < Test::Unit::TestCase
        :num_vcpus_allocated => 1,
        :boot_device => 'hd',
        :memory_allocated_in_mb => 1,
-       :memory_allocated => 1024,
-       :vnic_mac_addr => '11:22:33:44:55:66')
+       :memory_allocated => 1024}
 
     @vm.vm_resource_pool = pools(:corp_com_production_vmpool)
   end
@@ -73,11 +73,6 @@ class VmTest < Test::Unit::TestCase
   def test_valid_fails_without_memory_allocated_in_mb
        @vm.memory_allocated_in_mb = ''
        flunk 'Vm must specify memory_allocated_in_mb' if @vm.valid?
-  end
-
-  def test_valid_fails_without_vnic_mac_addr
-       @vm.vnic_mac_addr = ''
-       flunk 'Vm must specify vnic_mac_addr' if @vm.valid?
   end
 
   def test_valid_fails_without_vm_resources_pool_id
@@ -173,7 +168,36 @@ class VmTest < Test::Unit::TestCase
     assert_equal 'stopped', vms(:production_httpd_vm).get_pending_state
   end
 
+  def test_get_action_list_with_no_user
+    empty_array = []
+    assert_equal(empty_array, vms(:production_httpd_vm).get_action_list)
+  end
+
+  def test_queue_action_returns_false_with_invalid_action
+    assert_equal(false, vms(:production_httpd_vm).queue_action('ovirtadmin', 'stop_vm'))
+  end
+
+  def test_valid_action_with_invalid_param
+    assert_equal(false, vms(:production_httpd_vm).valid_action?('stop_vm'))
+  end
+
+  # Ensure valid_action? returns true
+  def test_valid_action_with_valid_param
+    assert_equal(true, vms(:production_httpd_vm).valid_action?('shutdown_vm'))
+  end
+
   def test_paginated_results
     assert_equal 5, Vm.paged_with_perms('ovirtadmin', Privilege::VIEW, 1, 'vms.id').size
+  end
+
+  def test_paginated_results_sorting
+    vms = Vm.paged_with_perms('ovirtadmin', Privilege::VIEW, 1, 'calc_uptime')
+    assert_equal(5, vms.size)
+    assert_equal('00:00:00',vms[0].calc_uptime)
+  end
+
+  def test_vm_gen_uuid
+      uuid = Vm::gen_uuid
+      flunk 'invalid generated uuid' unless uuid =~ /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/
   end
 end

@@ -23,7 +23,7 @@ require 'managed_node_configuration'
 
 # Performs unit tests on the +ManagedNodeConfiguration+ class.
 #
-class ManagedNodeConfigurationTest < Test::Unit::TestCase
+class ManagedNodeConfigurationTest < ActiveSupport::TestCase
   fixtures :bonding_types
   fixtures :bondings
   fixtures :bondings_nics

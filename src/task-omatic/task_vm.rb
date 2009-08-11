@@ -35,7 +35,7 @@ end
 
 
 def create_vm_xml(name, uuid, memAllocated, memUsed, vcpus, bootDevice,
-                  macAddr, bridge, diskDevices)
+                  net_interfaces, diskDevices)
   doc = Document.new
 
   doc.add_element("domain", {"type" => "kvm"})
@@ -87,11 +87,13 @@ def create_vm_xml(name, uuid, memAllocated, memUsed, vcpus, bootDevice,
     which_device += 1
   end
 
-  unless macAddr.nil? || bridge.nil? || macAddr == "" || bridge == ""
-    doc.root.elements["devices"].add_element("interface", {"type" => "bridge"})
-    doc.root.elements["devices"].elements["interface"].add_element("mac", {"address" => macAddr})
-    doc.root.elements["devices"].elements["interface"].add_element("source", {"bridge" => bridge})
-  end
+  net_interfaces.each { |nic|
+    interface = Element.new("interface")
+    interface.add_attribute("type", "bridge")
+    interface.add_element("mac", {"address" => nic[:mac]})
+    interface.add_element("source", {"bridge" => nic[:interface]})
+    doc.root.elements["devices"] << interface
+  }
 
   doc.root.elements["devices"].add_element("input", {"type" => "mouse", "bus" => "ps2"})
   doc.root.elements["devices"].add_element("graphics", {"type" => "vnc", "port" => "-1", "listen" => "0.0.0.0"})

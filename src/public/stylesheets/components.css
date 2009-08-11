@@ -339,3 +339,53 @@
   height: 11px;
 }
 
+.vm_form_section {padding-left: 2em;}
+
+#vm_network_config .i {
+  float: left;
+}
+
+.vm_network_config_row {
+   min-width: 500px;
+}
+
+#vm_network_config_header_network,
+#vm_network_config_header_mac,
+#vm_network_config_header_ip{
+  float: left;
+  width: 150px;
+}
+
+.vm_network_config_net,
+.vm_network_config_mac{
+  float: left;
+  width: 150px;
+}
+
+.vm_network_config_ip{
+  float: left;
+  max-width: 150px;
+}
+
+.vm_network_config_net select,
+.vm_network_config_mac input,
+.vm_network_config_ip input {
+  width: 130px;
+}
+
+.vm_network_config_remove {
+  float: left;
+  color: #0033CC;
+  padding-top: 5px;
+  padding-left: 5px;
+}
+.vm_network_config_remove:hover {
+  cursor: pointer;
+}
+
+#vm_network_config_add {
+  color: #0033CC;
+}
+#vm_network_config_add:hover {
+  cursor: pointer;
+}

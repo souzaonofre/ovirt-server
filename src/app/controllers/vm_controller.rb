@@ -26,15 +26,10 @@ class VmController < ApplicationController
          :redirect_to => { :controller => 'dashboard' }
 
   def index
-    @vms = Vm.find(:all,
-                   :include => [{:vm_resource_pool =>
-                                  {:permissions => {:role => :privileges}}}],
-                   :conditions => ["privileges.name=:priv
-                               and permissions.uid=:user",
-                             { :user => get_login_user, :priv => Privilege::VIEW }])
-      respond_to do |format|
-          format.xml  { render :xml => @vms.to_xml(:include => :host) }
-      end
+    svc_list(params)
+    respond_to do |format|
+      format.xml  { render :xml => @vms.to_xml(:include => :host) }
+    end
   end
 
   def terminal
@@ -60,29 +55,31 @@ class VmController < ApplicationController
   def new
     alert = svc_new(params[:vm_resource_pool_id])
     _setup_provisioning_options
+    _setup_network_options
     @storage_tree = VmResourcePool.find(params[:vm_resource_pool_id]).get_hardware_pool.storage_tree.to_json
-    @networks = Network.find(:all).collect{ |net| [net.name, net.id] }
     render :layout => 'popup'
   end
 
   def create
     params[:vm][:forward_vnc] = params[:forward_vnc]
-    alert = svc_create(params[:vm], params[:start_now])
+    _parse_network_params(params)
+    alert = svc_create(params[:vm], params[:start_now], params[:nics])
     render :json => { :object => "vm", :success => true, :alert => alert  }
   end
 
   def edit
     svc_modify(params[:id])
     _setup_provisioning_options
-    @networks = Network.find(:all).collect{ |net| [net.name, net.id] }
+    _setup_network_options
     @storage_tree = @vm.vm_resource_pool.get_hardware_pool.storage_tree(:vm_to_include => @vm).to_json
     render :layout => 'popup'
   end
 
   def update
     params[:vm][:forward_vnc] = params[:forward_vnc]
+    _parse_network_params(params)
     alert = svc_update(params[:id], params[:vm], params[:start_now],
-                       params[:restart_now])
+                       params[:restart_now], params[:nics])
     render :json => { :object => "vm", :success => true, :alert => alert  }
   end
 
@@ -169,4 +166,69 @@ class VmController < ApplicationController
       #if cobbler doesn't respond/is misconfigured/etc just don't add profiles
     end
   end
+
+  # sets up a list of nics for the vm form
+  def _setup_network_options
+    net_conditions = ""
+    @nics = []
+
+    unless @vm.nil?
+      @vm.nics.each { |nic|
+         nnic = Nic.new(:mac => nic.mac,
+                        :vm_id => @vm.id,
+                        :network => nic.network)
+
+         if(nic.network.boot_type.proto == 'static')
+           nnic.ip_addresses << IpAddress.new(:address => nic.ip_address)
+         end
+         @nics.push nnic
+
+         net_conditions += (net_conditions == "" ? "" : " AND ") +
+                           "id != " + nic.network_id.to_s
+      }
+    end
+
+    networks = Network.find(:all, :conditions => net_conditions)
+
+    networks.each{ |net|
+        nnic = Nic.new(:mac => Nic::gen_mac, :network => net)
+        if(net.boot_type.proto == 'static')
+           nnic.ip_addresses << IpAddress.new(:address => '127.0.0.1') # FIXME
+        end
+        @nics.push nnic
+    }
+
+  end
+
+  # merges vm / network parameters as submitted on the vm form
+  def _parse_network_params(params)
+     # 'params' subarrays 'networks', 'macs', and 'ip_addresses' all
+     # correspond to each other such that networks[i] corresponds
+     # to macs[i] and networks.static_networks_subset[j] corresponds
+     # to ip_addresses[j]
+     ip_counter = 0
+     params[:vm][:nics] = []
+     params[:nics] = []
+
+     unless params[:networks].nil?
+       (0...params[:networks].length).each { |i|
+
+          network_id = params[:networks][i]
+          unless network_id.nil? || network_id == ""
+             nic = { :mac => params[:macs][i],
+                     :network_id => network_id, :bandwidth => 0 }
+
+             if(Network.find(network_id).boot_type.proto == 'static')
+                # FIXME make this able to be v4 or v6 address
+                nic[:ip_addresses] = [IpV4Address.new({ :address => params[:ip_addresses][ip_counter] })]
+                ip_counter += 1
+             end
+
+             params[:nics].push(nic)
+          end
+
+       }
+    end
+  end
+
 end

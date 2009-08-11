@@ -1,0 +1,66 @@
+#!/bin/bash
+# control script for oVirt services, use to start/stop/restart services, and mark as on / off
+
+. /etc/init.d/functions
+
+SERVICE_CMD=/sbin/service
+CHKCONFIG_CMD=/sbin/chkconfig
+
+SERVICES=( ovirt-db-omatic ovirt-host-browser ovirt-host-register \
+           ovirt-host-collect ovirt-mongrel-rails \
+           ovirt-taskomatic ovirt-vnc-proxy ovirt-agent )
+
+RUNLEVELS="2345"
+
+start() {
+  for service in ${SERVICES[@]}
+  do
+   $SERVICE_CMD $service start
+  done
+}
+
+stop() {
+  for service in ${SERVICES[@]}
+  do
+   $SERVICE_CMD $service stop
+  done
+}
+
+set_on(){
+  for service in ${SERVICES[@]}
+  do
+   $CHKCONFIG_CMD --levels $RUNLEVELS $service on
+  done
+}
+
+set_off(){
+  for service in ${SERVICES[@]}
+  do
+   $CHKCONFIG_CMD --levels $RUNLEVELS $service off
+  done
+}
+
+case "$1" in
+   start)
+    start
+    ;;
+   stop)
+    stop
+    ;;
+   restart)
+    stop
+    start
+    ;;
+   on)
+    set_on
+    ;;
+   off)
+    set_off
+    ;;
+   *)
+    echo "Usage: ovirt_ctl {start|stop|restart|on|off}"
+    exit 1
+    ;;
+esac
+
+exit $RETVAL

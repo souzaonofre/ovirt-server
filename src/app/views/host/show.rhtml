@@ -64,7 +64,7 @@
 	<%=h @host.status_str %><br/>
 	<%=  @host.nics.collect{ |n|
                 n.interface_name.to_s + " " + n.mac +
-                (n.physical_network.nil? ? "" : " " + n.physical_network.name)
+                (n.network.nil? ? "" : " " + n.network.name)
               }.join("<br/>")
         %><br/>
 	<%=  @host.bondings.collect { |n| n.name }.join("<br/>") %><br/>

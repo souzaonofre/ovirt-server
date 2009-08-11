@@ -66,7 +66,7 @@ class SmartPoolsController < PoolController
   end
 
   def vms_json
-    super(items_json_internal(Vm, :tagged_vms))
+    super(items_json_internal(Vm, :tagged_vms, {:select => Vm.calc_uptime}))
   end
 
   def pools_json
@@ -76,11 +76,10 @@ class SmartPoolsController < PoolController
 
   end
 
-  def items_json_internal(item_class, item_assoc)
+  def items_json_internal(item_class, item_assoc, find_opts = {})
     if params[:id]
       svc_show(params[:id])
       full_items = @pool.send(item_assoc)
-      find_opts = {}
       include_pool = false
     else
       # FIXME: no permissions or usage checks here yet
@@ -93,7 +92,7 @@ class SmartPoolsController < PoolController
       else
         conditions = ["#{item_class.table_name}.id not in (?)", pool_items]
       end
-      find_opts = {:conditions => conditions}
+      find_opts[:conditions] = conditions
       include_pool = true
     end
     { :full_items => full_items, :find_opts => find_opts, :include_pool => include_pool}

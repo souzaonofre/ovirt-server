@@ -29,6 +29,8 @@
           Target:<br/>
         <% elsif @storage_pool[:type] == "NfsStoragePool" %>
           Export path:<br/>
+        <% elsif @storage_pool[:type] == "GlusterfsStoragePool" %>
+          Export volume:<br/>
         <% end %>
         Type:<br/>
         State:<br/>
@@ -39,6 +41,8 @@
           <%=h @storage_pool.port %><br/>
           <%=h @storage_pool.target %><br/>
         <% elsif @storage_pool[:type] == "NfsStoragePool" %>
+          <%=h @storage_pool.export_path %><br/>
+	<% elsif @storage_pool[:type] == "GlusterfsStoragePool" %>
           <%=h @storage_pool.export_path %><br/>
         <% end %>
         <%=h @storage_pool.get_type_label %><br/>

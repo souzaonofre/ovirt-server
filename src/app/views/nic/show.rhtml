@@ -7,6 +7,8 @@
 </p>
 <% end %>
 
+<%# TODO doesn't currently break anything due to where this form is displayed
+    but @nic.host assumption should be removed so thiw template can be included elsewhere %>
 <p><b>Host:</b> <%= link_to @nic.host.hostname, { :controller => "host", :action => "show", :id => @nic.host }, { :class => "show" } %></p>
 </div>
 

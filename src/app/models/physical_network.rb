@@ -17,8 +17,6 @@
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
 class PhysicalNetwork < Network
-   has_many :nics
-
   def is_destroyable?
     nics.empty?
   end

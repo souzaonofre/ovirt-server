@@ -12,6 +12,8 @@
 
 <%= text_field_with_label "Export Path:", 'storage_pool', 'export_path'  if @storage_pool[:type] == "NfsStoragePool"  %>
 
+<%= text_field_with_label "Export Path:", 'storage_pool', 'export_path'  if @storage_pool[:type] == "GlusterfsStoragePool"  %>
+
 
 
 <!--[eoform:storage_pool]-->

@@ -9,18 +9,24 @@
 #
 
 [ -r /etc/sysconfig/ovirt-rails ] && . /etc/sysconfig/ovirt-rails
+[ -r /etc/sysconfig/ovirt-vnc-proxy ] && . /etc/sysconfig/ovirt-vnc-proxy
 
 export RAILS_ENV="${RAILS_ENV:-production}"
+export OVIRT_VNC_PROXY_PORT="${OVIRT_VNC_PROXY_PORT:-5900}"
 
 DAEMON=/usr/share/ovirt-server/vnc-proxy/vnc-proxy.rb
+VNC_PROXY_LOCKFILE="${VNC_PROXY_LOCKFILE:-/var/lock/subsys/ovirt-vnc-proxy }"
 
 . /etc/init.d/functions
 
 start() {
     echo -n "Starting ovirt-vnc-proxy: "
-    daemon $DAEMON
+    daemon $DAEMON --port $OVIRT_VNC_PROXY_PORT
     RETVAL=$?
     echo
+    if [ $RETVAL -eq 0 ]; then
+        touch  $VNC_PROXY_LOCKFILE
+    fi
 }
 
 stop() {
@@ -28,6 +34,9 @@ stop() {
     killproc vnc-proxy.rb
     RETVAL=$?
     echo
+    if [ $RETVAL -eq 0 ]; then
+        rm  $VNC_PROXY_LOCKFILE
+    fi
 }
 
 case "$1" in
@@ -41,6 +50,11 @@ case "$1" in
 	stop
 	start
 	;;
+    reload)
+        ;;
+    force-reload)
+        restart
+        ;;
     status)
 	status $DAEMON
 	RETVAL=$?

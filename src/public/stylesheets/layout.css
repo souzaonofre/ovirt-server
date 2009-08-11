@@ -124,8 +124,14 @@ a { color:#000000; text-decoration: none;}
   font-size: 130%;
 }
 
+ /* ----- General Effects ----- */
+.clickable {cursor:pointer;}
 
+.open {background:url(../images/dir_open.png) left center no-repeat;}
 
+.closed {background:url(../images/dir_closed.png) left center no-repeat;}
+
+.hidden {display:none;}
 
 /*  ----- Right side of Header --------  */
 
@@ -427,9 +433,10 @@ a { color:#000000; text-decoration: none;}
 }
 
 .form_heading {
-  font-size:115%; color:  #666666;
+  font-size:1.15em;
+  color:  #666666;
   border-top:#CCCCCC 1px dotted;
-  padding-top: 10px;
+  padding: 1.2em 0em 1em 1.5em;
 }
 
 .field_title {

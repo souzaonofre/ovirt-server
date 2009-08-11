@@ -23,7 +23,7 @@ require 'host_controller'
 # Re-raise errors caught by the controller.
 class HostController; def rescue_action(e) raise e end; end
 
-class HostControllerTest < Test::Unit::TestCase
+class HostControllerTest < ActionController::TestCase
   fixtures :hosts, :pools, :privileges, :roles, :permissions
 
   def setup

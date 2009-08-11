@@ -37,17 +37,23 @@ class SearchController < ApplicationController
             "NfsStoragePool"     => {:controller => "storage",
                                      :show_action => "show",
                                      :searched => true},
+            "GlusterfsStoragePool" => {:controller => "storage" ,
+                                       :show_action => "show",
+                                       :searched => true},
             "IscsiStorageVolume" => {:controller => "storage_volume",
                                      :show_action => "show",
                                      :searched => false},
             "NfsStorageVolume"   => {:controller => "storage_volume",
                                      :show_action => "show",
                                      :searched => false},
+            "GlusterfsStorageVolume"   => {:controller => "storage_volume",
+                                           :show_action => "show",
+                                           :searched => false},
             "LvmStorageVolume"   => {:controller => "storage_volume",
                                      :show_action => "show",
                                      :searched => false}}
 
-  MULTI_TYPE_MODELS = {"StoragePool" => ["IscsiStoragePool", "NfsStoragePool"]}
+  MULTI_TYPE_MODELS = {"StoragePool" => ["IscsiStoragePool", "NfsStoragePool", "GlusterfsStoragePool"]}
 
 
   def single_result

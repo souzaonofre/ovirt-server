@@ -23,7 +23,7 @@ require 'nic_controller'
 # Re-raise errors caught by the controller.
 class NicController; def rescue_action(e) raise e end; end
 
-class NicControllerTest < Test::Unit::TestCase
+class NicControllerTest < ActionController::TestCase
   fixtures :privileges, :roles, :permissions, :pools, :nics
 
   def setup

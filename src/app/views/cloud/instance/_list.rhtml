@@ -14,6 +14,9 @@
     <th scope="col" class="sortable <%= sort_td_class_helper "state" %>">
       <div><%= sort_link_helper "State", "state" %></div>
     </th>
+    <th scope="col" class="sortable <%= sort_td_class_helper "calc_uptime" %>">
+      <div><%= sort_link_helper "Total Run Time", "calc_uptime" %></div>
+    </th>
     <th scope="col"><div>IP Address</div></th>
     <th scope="col"><div>Load</div></th>
   </thead>
@@ -25,6 +28,7 @@
         <td><div><%= vm.description %></div></td>
         <td><div><%= vm.provisioning %></div></td> <!-- TODO: possibly add default output value for this? -->
         <td><div class="state-container instance-<%= vm.state %>"><%= vm.state.capitalize %></div></td>
+        <td><div><%= number_to_duration(vm.get_calculated_uptime) %></div></td>
         <td><div>N/A</div></td>
         <td><div>N/A</div></td>
       </tr>

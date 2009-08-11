@@ -113,6 +113,15 @@ class DbOmatic < Qpid::Qmf::Console
         end
     end
 
+    def set_vm_stopped(db_vm)
+        db_vm.host_id = nil
+        db_vm.memory_used = nil
+        db_vm.num_vcpus_used = nil
+        db_vm.needs_restart = nil
+        db_vm.vnc_port = nil
+        db_vm.state = Vm::STATE_STOPPED
+    end
+
     def update_domain_state(domain, state_override = nil)
         vm = Vm.find(:first, :conditions => [ "uuid = ?", domain['uuid'] ])
         if vm == nil
@@ -151,7 +160,9 @@ class DbOmatic < Qpid::Qmf::Console
         end
 
         begin
-          # find open vm host history for this vm,
+          # find open vm host history for this vm
+          # NOTE: db-omatic is currently the only user for VmHostHistory, so
+          # using optimistic locking is fine. Someday this might need changing.
           history = VmHostHistory.find(:first, :conditions => ["vm_id = ? AND time_ended is NULL", vm.id])
 
           if state == Vm::STATE_RUNNING
@@ -190,17 +201,32 @@ class DbOmatic < Qpid::Qmf::Console
                 result = qmf_vm.undefine
                 if result.status == 0
                     @logger.info "Delete of VM #{vm.description} successful, syncing DB."
-                    vm.host_id = nil
-                    vm.memory_used = nil
-                    vm.num_vcpus_used = nil
-                    vm.state = Vm::STATE_STOPPED
-                    vm.needs_restart = nil
-                    vm.vnc_port = nil
+                    set_vm_stopped(vm)
                 end
             end
+        # If we are running, update the node that the domain is running on
+        elsif state == Vm::STATE_RUNNING
+            @logger.info "VM is running, determine the node it is running on"
+            qmf_vm = @session.object(:class => "domain", 'uuid' => vm.uuid)
+            if qmf_vm
+                qmf_host = @session.object(:class => "node", :object_id => qmf_vm.node)
+                db_host = Host.find(:first, :conditions => ['hostname = ?', qmf_host.hostname])
+                @logger.info "VM #{vm.description} is running on node #{db_host.hostname}"
+                vm.host_id = db_host.id
+            end
         end
+
         vm.state = state
-        vm.save!
+
+        begin
+            vm.save!
+        rescue ActiveRecord::StaleObjectError => e
+            @logger.error "Optimistic locking failed for VM #{vm.description}, retrying."
+            @logger.error e.backtrace
+            # don't retry now until it's been tested.
+            # return update_domain_state(domain, state_override)
+            return
+        end
 
         domain[:synced] = true
     end
@@ -219,24 +245,51 @@ class DbOmatic < Qpid::Qmf::Console
             #db_host.lock_version = 2
             # XXX: This would just be for init..
             #db_host.is_disabled = 0
-            db_host.save!
+
+            begin
+                db_host.save!
+            rescue ActiveRecord::StaleObjectError => e
+                @logger.error "Optimistic locking failure on host #{host_info['hostname']}, retrying."
+                @logger.error e.backtrace
+                # don't retry now until it's been tested.
+                #return update_host_state(host_info, state)
+                return
+            end
             host_info[:synced] = true
 
             if state == Host::STATE_AVAILABLE
-                # At this point we want to set all domains that are
-                # unreachable to stopped.  If a domain is indeed running
-                # then dbomatic will see that and set it either before
-                # or after.  If the node was rebooted, the VMs will all
-                # be gone and dbomatic won't see them so we need to set
-                # them to stopped.
-                db_vm = Vm.find(:all, :conditions => ["host_id = ? AND state = ?", db_host.id, Vm::STATE_UNREACHABLE])
-                db_vm.each do |vm|
-                    @logger.info "Moving vm #{vm.description} in state #{vm.state} to state stopped."
-                    vm.state = Vm::STATE_STOPPED
-                    vm.save!
+                Thread.new do
+                    @logger.info "#{host_info['hostname']} has moved to available, sleeping for updates to vms."
+                    sleep(20)
+
+                    # At this point we want to set all domains that are
+                    # unreachable to stopped.  We're using a thread here to
+                    # sleep for 10 seconds outside of the main dbomatic loop.
+                    # If after 10 seconds with this host up there are still
+                    # domains set to 'unreachable', then we're going to guess
+                    # the node rebooted and so the domains should be set to
+                    # stopped.
+                    @logger.info "Checking for dead VMs on newly available host #{host_info['hostname']}."
+
+                    # Double check to make sure this host is still up.
+                    begin
+                        qmf_host = @session.object(:class => 'node', 'hostname' => host_info['hostname'])
+                        if !qmf_host
+                            @logger.info "Host #{host_info['hostname']} is not up after waiting 20 seconds, skipping dead VM check."
+                        else
+                            db_vm = Vm.find(:all, :conditions => ["host_id = ? AND state = ?", db_host.id, Vm::STATE_UNREACHABLE])
+                            db_vm.each do |vm|
+                                @logger.info "Moving vm #{vm.description} in state #{vm.state} to state stopped."
+                                set_vm_stopped(vm)
+                                vm.save!
+                            end
+                        end
+                    rescue Exception => e # just log any errors here
+                        @logger.info "Exception checking for dead VMs (could be normal): #{e.message}"
+                        @logger.info e.backtrace
+                    end
                 end
             end
-
         else
             # FIXME: This would be a newly registered host.  We could put it in the database.
             @logger.info "Unknown host #{host_info['hostname']}, probably not registered yet??"
@@ -249,10 +302,10 @@ class DbOmatic < Qpid::Qmf::Console
     end
 
     def object_props(broker, obj)
-        target = obj.klass_key[0]
+        target = obj.schema.klass_key.package
         return if target != "com.redhat.libvirt"
 
-        type = obj.klass_key[1]
+        type = obj.schema.klass_key.klass_name
 
         # I just sync this whole thing because there shouldn't be a lot of contention here..
         synchronize do
@@ -268,7 +321,7 @@ class DbOmatic < Qpid::Qmf::Console
                 values[:broker_bank] = obj.object_id.broker_bank
                 values[:agent_bank] = obj.object_id.agent_bank
                 values[:obj_key] = obj.object_id.to_s
-                values[:class_type] = obj.klass_key[1]
+                values[:class_type] = type
                 values[:timed_out] = false
                 values[:synced] = false
                 @logger.info "New object type #{type}"
@@ -318,9 +371,9 @@ class DbOmatic < Qpid::Qmf::Console
     end
 
     def object_stats(broker, obj)
-        target = obj.klass_key[0]
+        target = obj.schema.klass_key.package
         return if target != "com.redhat.libvirt"
-        type = obj.klass_key[1]
+        type = obj.schema.klass_key.klass_name
 
         synchronize do
             values = @cached_objects[obj.object_id.to_s]
@@ -330,7 +383,7 @@ class DbOmatic < Qpid::Qmf::Console
 
                 values[:broker_bank] = obj.object_id.broker_bank
                 values[:agent_bank] = obj.object_id.agent_bank
-                values[:class_type] = obj.klass_key[1]
+                values[:class_type] = type
                 values[:timed_out] = false
                 values[:synced] = false
             end
@@ -344,6 +397,7 @@ class DbOmatic < Qpid::Qmf::Console
     end
 
     def heartbeat(agent, timestamp)
+        puts "heartbeat from agent #{agent}"
         return if agent == nil
         synchronize do
             bank_key = "#{agent.agent_bank}.#{agent.broker.broker_bank}"
@@ -376,6 +430,8 @@ class DbOmatic < Qpid::Qmf::Console
             values[:timed_out] = true
             end
         end
+        bank_key = "#{agent.agent_bank}.#{agent.broker.broker_bank}"
+        @heartbeats.delete(bank_key)
     end
 
     # The opposite of above, this is called when an agent is alive and well and makes sure
@@ -415,11 +471,30 @@ class DbOmatic < Qpid::Qmf::Console
             @logger.error "Error with closing all VM VNCs operation: #{e.message}"
          end
 
+        # On startup, since we don't know the previous states of anything, we basically
+        # do a big sync up with teh states of all VMs.  We don't worry about hosts since
+        # they are very simple and are either up or down, but it's possible we left
+        # VMs in various states that are no longer applicable to this moment.
         db_vm = Vm.find(:all)
         db_vm.each do |vm|
-            @logger.info "Marking vm #{vm.description} as stopped."
-            vm.state = Vm::STATE_STOPPED
-            vm.save!
+            set_stopped = false
+            # Basically here we are looking for VMs which are not up in some form or another and setting
+            # them to stopped.  VMs that exist as QMF objects will get set appropriately when the objects
+            # appear on the bus.
+            begin
+                qmf_vm = @session.object(:class => 'domain', 'uuid' => db_vm.uuid)
+                if qmf_vm == nil
+                    set_stopped = true
+                end
+            rescue Exception => ex
+                set_stopped = true
+            end
+
+            if set_stopped
+                @logger.info "On startup, VM #{vm.description} is not found, setting to stopped."
+                set_vm_stopped(vm)
+                vm.save!
+            end
         end
     end
 
@@ -444,6 +519,7 @@ class DbOmatic < Qpid::Qmf::Console
                     # Get seconds from the epoch
                     t = Time.new.to_i
 
+                    puts "going through heartbeats.."
                     @heartbeats.keys.each do | key |
                         agent, timestamp = @heartbeats[key]
 
@@ -451,11 +527,11 @@ class DbOmatic < Qpid::Qmf::Console
                         s = timestamp / 1000000000
                         delta = t - s
 
+                        puts "Checking time delta for agent #{agent} - #{delta}"
+
                         if delta > 30
                             # No heartbeat for 30 seconds.. deal with dead/disconnected agent.
                             agent_disconnected(agent)
-
-                            @heartbeats.delete(key)
                         else
                             agent_connected(agent)
                         end
