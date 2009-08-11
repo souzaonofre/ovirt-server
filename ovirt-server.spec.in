@@ -5,7 +5,7 @@
 Summary: The oVirt Server Suite
 Name: ovirt-server
 Version: @VERSION@
-Release: 0%{?dist}%{?extra_release}
+Release: 4%{?dist}%{?extra_release}
 # full source URL will be added with the next oVirt release. This is a pre-release
 # code drop to make sure we get the package approved by f12 feature freeze.
 Source0: %{name}-%{version}.tar.gz
