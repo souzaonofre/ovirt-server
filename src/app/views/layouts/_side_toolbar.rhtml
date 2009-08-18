@@ -1,0 +1,41 @@
+<% pool = @current_pool_id ? Pool.find(@current_pool_id) : nil %>
+<% if pool and pool[:type]=="HardwarePool"
+     delete_url = url_for(:controller => "hardware", :action => "destroy")
+   elsif pool and pool[:type]=="VmResourcePool"
+     delete_url = url_for(:controller => "resources", :action => "destroy")
+   elsif pool and pool[:type]=="SmartPool"
+     delete_url = url_for(:controller => "smart_pools", :action => "destroy")
+   else
+     delete_url = ""
+   end %>
+
+<%if pool -%>
+  <%if pool[:type]=="HardwarePool" and @can_modify -%>
+    <div class="toolbar" style="float:left;">
+      <a href="<%= url_for :controller => :hardware, :action => 'new', :parent_id => pool %>" rel="facebox[.bolder]">
+       <%=image_tag "toolbar_add_hdwarepool.png", :title=>"Add Hardware Pool"  %>
+      </a>
+    </div>
+    <div class="toolbar" style="float:left;">
+      <a href="<%= url_for :controller => 'resources', :action => 'new', :parent_id => pool %>" rel="facebox[.bolder]">
+        <%= image_tag "toolbar_add_vmpool.png", :title=>"Add Virtual Machine Pool" %>
+      </a>
+    </div>
+  <% end -%>
+<% end -%>
+<div class="toolbar" style="float:left;">
+   <a href="<%= url_for :controller => :smart_pools, :action => 'new' %>" rel="facebox[.bolder]">
+     <%=image_tag "toolbar_add_smartpool.png", :title=>"Add Smart Pool"  %>
+   </a>
+</div>
+<%if pool and @can_modify -%>
+  <div class="toolbar" style="float:left;">
+    <a href="#conf_nav_delete_pool" rel="facebox[.bolder]">
+      <%= image_tag "toolbar_delete.png", :title=>"Delete Selected Pool" %>
+    </a>
+  </div>
+  <div class="toolbar" style="display:none;">
+    <%= confirmation_dialog("conf_nav_delete_pool", "Are you sure?", "delete_pool('#{delete_url}', #{pool.id})") %>
+  </div>
+<% end -%>
+<div class="toolbar"></div>
