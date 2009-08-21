@@ -29,12 +29,12 @@ class freeipa::bundled{
 		command => "/bin/hostname $ipa_host",
 	}
 
-        exec {"set_kdc_defaults":
+        single_exec {"set_kdc_defaults":
                 command => "/bin/sed -i '/\[kdcdefaults\]/a \ kdc_ports = 88' /usr/share/ipa/kdc.conf.template",
                 require => Package[ipa-server]
         }
 
-        exec {"replace_line_returns":
+        single_exec {"replace_line_returns":
                 command => "/bin/sed -i -e 's/^/#/' /etc/httpd/conf.d/ipa-rewrite.conf",
                 require => Single_Exec[ipa_server_install]
         }
@@ -43,7 +43,7 @@ class freeipa::bundled{
                file => "/etc/httpd/conf.d/ipa.conf",
                pattern => "^<Proxy \*>",
                replacement => "<ProxyMatch ^.*/ipa/ui.*$>",
-               require => Exec[replace_line_returns]
+               require => Single_exec[replace_line_returns]
         }
 
         file_replacement{"ipa_proxy_config_2":
@@ -61,7 +61,7 @@ class freeipa::bundled{
 
         single_exec {"ipa_server_install":
                 command => "/usr/sbin/ipa-server-install -r $realm_name -p '$freeipa_password' -P '$freeipa_password' -a '$freeipa_password' --hostname $ipa_host -u dirsrv -U",
-                require => [Exec[set_kdc_defaults],Single_exec[dnsmasq_restart]]
+                require => [Single_exec[set_kdc_defaults],Single_exec[dnsmasq_restart]]
         }
 
         exec {"get_krb5_tkt":
