@@ -41,18 +41,18 @@ class postgres::bundled{
         service {"postgresql" :
 		ensure => running,
 		enable => true,
-                require => [Single_exec[initialize_db],Exec[postgres_add_localhost_trust],Exec[postgres_add_all_trust],Exec[postgres_add_ipv6_loopback_trust]],
+                require => [Single_exec[initialize_db],Exec[postgres_add_localhost_trust],Single_exec[postgres_add_all_trust],Exec[postgres_add_ipv6_loopback_trust]],
                 hasstatus => true
         }
 
         single_exec {"create_ovirt_db":
 		command => "/usr/bin/createdb ovirt -U postgres",
-		require => [Exec[postgres_add_all_trust], Service[postgresql]]
+		require => [Single_exec[postgres_add_all_trust], Service[postgresql]]
         }
 
 	single_exec {"create_ovirt_development_db":
                 command => "/usr/bin/createdb ovirt_development -U postgres",
-                require => [Exec[postgres_add_all_trust], Service[postgresql]]
+                require => [Single_exec[postgres_add_all_trust], Service[postgresql]]
         }
 
 	postgres_execute_command {"ovirt_db_create_role":
@@ -67,7 +67,7 @@ class postgres::bundled{
                 require => Postgres_execute_command[ovirt_db_create_role]
         }
 
-	exec {"postgres_add_all_trust":
+	single_exec {"postgres_add_all_trust":
                 command => "/bin/echo 'local all all trust' > /var/lib/pgsql/data/pg_hba.conf",
 		require => Single_exec[initialize_db],
 		notify => Service[postgresql]
@@ -75,13 +75,13 @@ class postgres::bundled{
 
 	exec {"postgres_add_localhost_trust":
 		command => "/bin/echo 'host all all 127.0.0.1 255.255.255.0 trust' >> /var/lib/pgsql/data/pg_hba.conf",
-		require => Exec[postgres_add_all_trust],
+		require => Single_exec[postgres_add_all_trust],
                 notify => Service[postgresql]
         }
 
         exec {"postgres_add_ipv6_loopback_trust":
                 command => "/bin/echo 'host all all ::1/128 trust' >> /var/lib/pgsql/data/pg_hba.conf",
-                require => Exec[postgres_add_all_trust],
+                require => Single_exec[postgres_add_all_trust],
                 notify => Service[postgresql]
         }
 
