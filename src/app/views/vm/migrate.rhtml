@@ -44,6 +44,7 @@
              :hwpool => @vm.get_hardware_pool,
              :exclude_pool => nil,
              :exclude_host => @vm.host_id,
+             :is_popup => true,
              :checkboxes => false,
              :on_select => "migrate_vm_select",
              :on_deselect => "migrate_vm_deselect",

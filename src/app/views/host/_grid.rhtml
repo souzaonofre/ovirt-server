@@ -1,7 +1,7 @@
 <%= render :partial => 'graph/load_graph.rhtml' %>
 <% pool_controller = 'hardware' unless (defined? pool_controller) and !(pool_controller.nil?) %>
 
-<% hosts_per_page.nil? ? hosts_per_page = 40: hosts_per_page = hosts_per_page %>
+<% hosts_per_page = 40 if !defined?(hosts_per_page) or hosts_per_page.nil? %>
 <% if (hwpool.nil? or
        ((hwpool.is_a? HardwarePool) and (hwpool.hosts.size > hosts_per_page)) or
        ((hwpool.is_a? SmartPool) and (hwpool.tagged_hosts.size > hosts_per_page)))
