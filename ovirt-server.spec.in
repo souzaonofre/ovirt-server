@@ -86,7 +86,6 @@ mkdir %{buildroot}
 %{__install} -d -m0755 %{buildroot}%{_sbindir}
 %{__install} -d -m0755 %{buildroot}%{_initrddir}
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/sysconfig
-%{__install} -d -m0755 %{buildroot}%{_sysconfdir}/httpd/conf.d
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/%{name}
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/%{name}/db
 %{__install} -d -m0755 %{buildroot}%{_sysconfdir}/logrotate.d
@@ -105,7 +104,6 @@ touch %{buildroot}%{_localstatedir}/log/%{name}/mongrel.log
 touch %{buildroot}%{_localstatedir}/log/%{name}/rails.log
 touch %{buildroot}%{_localstatedir}/log/%{name}/taskomatic.log
 touch %{buildroot}%{_localstatedir}/log/%{name}/db-omatic.log
-%{__install} -p -m0644 %{pbuild}/conf/%{name}.conf %{buildroot}%{_sysconfdir}/httpd/conf.d
 %{__install} -p -m0644 %{pbuild}/conf/%{name}.crontab %{buildroot}%{_sysconfdir}/cron.d/%{name}
 %{__install} -p -m0644 %{pbuild}/conf/%{name}.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/%{name}
 
@@ -240,7 +238,6 @@ fi
 %config(noreplace) %{_sysconfdir}/sysconfig/ovirt-mongrel-rails
 %config(noreplace) %{_sysconfdir}/sysconfig/ovirt-rails
 %config(noreplace) %{_sysconfdir}/sysconfig/ovirt-vnc-proxy
-%config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %doc README AUTHORS COPYING
 %attr(-, ovirt, ovirt) %{_localstatedir}/lib/%{name}
 %attr(-, ovirt, ovirt) %{_localstatedir}/run/%{name}
