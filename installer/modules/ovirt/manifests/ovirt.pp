@@ -20,26 +20,15 @@
 
 class ovirt::setup {
 
-	file_replacement{"ovirt_httpd_config_change_guest_net":
-	        file => "/etc/httpd/conf.d/ovirt-server.conf",
-	        pattern => "GuestNetIpAddress",
-	        replacement => "$guest_httpd_ipaddr",
-		require => Package[ovirt-server]
-        }
-
-	file_replacement{"ovirt_httpd_config_change_admin_net":
-	        file => "/etc/httpd/conf.d/ovirt-server.conf",
-	        pattern => "AdminNetIpAddress",
-	        replacement => "$admin_ipaddr",
-		require => Package[ovirt-server]
-        }
-
-	file_replacement{"ovirt_httpd_config_change_server_fqdn":
-	        file => "/etc/httpd/conf.d/ovirt-server.conf",
-	        pattern => "AdminNodeFQDN",
-	        replacement => "$ovirt_host",
-		require => Package[ovirt-server]
-        }
+	file {"/etc/httpd/conf.d/ovirt-server.conf":
+		content => $seperate_networks ? {
+                    y => template("ovirt/ovirt-httpd-seperate.conf.erb"),
+                    n => template("ovirt/ovirt-httpd-single.conf.erb")
+                },
+                mode    => 644,
+		notify  => Service[httpd],
+                require => [Package[ovirt-server], Package[httpd]]
+	}
 
         package {"ovirt-server":
 		ensure => installed,

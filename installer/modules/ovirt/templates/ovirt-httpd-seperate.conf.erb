@@ -1,15 +1,15 @@
-NameVirtualHost GuestNetIpAddress:80
-<VirtualHost GuestNetIpAddress:80>
+NameVirtualHost <%= guest_ipaddr %>:80
+<VirtualHost <%= guest_ipaddr %>:80>
   <Location /ovirt>
     RewriteEngine on
     RewriteRule ^.*$ https://%{SERVER_NAME}%{REQUEST_URI} [R,L]
   </Location>
 </VirtualHost>
 
-NameVirtualHost GuestNetIpAddress:443
-NameVirtualHost AdminNetIpAddress:80
+NameVirtualHost <%= guest_ipaddr %>:443
+NameVirtualHost <%= admin_ipaddr %>:80
 
-<VirtualHost GuestNetIpAddress:443>
+<VirtualHost <%= guest_ipaddr %>:443>
 
   NSSEngine on
   NSSCipherSuite +rsa_rc4_128_md5,+rsa_rc4_128_sha,+rsa_3des_sha,-rsa_des_sha,-rsa_rc4_40_md5,-rsa_rc2_40_md5,-rsa_null_md5,-rsa_null_sha,+fips_3des_sha,-fips_des_sha,-fortezza,-fortezza_rc4_128_sha,-fortezza_null,-rsa_des_56_sha,-rsa_rc4_56_sha,+rsa_aes_128_sha,+rsa_aes_256_sha
@@ -26,14 +26,14 @@ NameVirtualHost AdminNetIpAddress:80
   RewriteRule ^/terminal/(.+)/anyterm-module$ http://${vmnodes:$1}:81/anyterm-module [P]
   RewriteRule ^/terminal/(.+)/(.*\.(html|js|css|gif))*$ http://127.0.0.1/terminal/$2 [P,NE]
 
-  ProxyPass /ovirt http://AdminNodeFQDN/ovirt retry=3
-  ProxyPassReverse /ovirt http://AdminNodeFQDN/ovirt
+  ProxyPass /ovirt http://<%= ovirt_host %>/ovirt retry=3
+  ProxyPassReverse /ovirt http://<%= ovirt_host %>/ovirt
 </VirtualHost>
 
-<VirtualHost AdminNetIpAddress:80>
+<VirtualHost <%= admin_ipaddr %>:80>
 
-  ServerAlias AdminNodeFQDN
-  ServerName AdminNodeFQDN:80
+  ServerAlias <%= ovirt_host %>
+  ServerName <%= ovirt_host %>:80
 
   ErrorLog /etc/httpd/logs/error_log
   TransferLog /etc/httpd/logs/access_log
