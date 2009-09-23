@@ -1,6 +1,5 @@
-#
 # Copyright (C) 2008 Red Hat, Inc.
-# Written by Darryl L. Pierce <dpierce@redhat.com>
+# Written by Mohammed Morsi <mmorsi@redhat.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,10 +16,13 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
-class BootType < ActiveRecord::Base
-  validates_presence_of :label
-  validates_uniqueness_of :label,
-    :message => 'Label must be unique'
-  validates_inclusion_of :proto,
-    :in => %w( static dhcp bootp none )
+# introduce networks and ip_addresses tables, refactor relationships
+class AddBootprotoNone < ActiveRecord::Migration
+  def self.up
+    BootType.create(:label => 'None', :proto => 'none')
+  end
+
+  def self.down
+    BootType.destroy_all(:proto => 'none')
+  end
 end
