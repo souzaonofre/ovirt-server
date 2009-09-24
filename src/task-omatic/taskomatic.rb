@@ -223,7 +223,13 @@ class TaskOmatic
       volume = @session.object(:class => 'volume',
                                'key' => volume_key,
                                'storagePool' => pool.object_id)
-      raise "Unable to find volume #{volume_key} attached to pool #{pool.name}." unless volume
+      if volume == nil
+        @logger.info "Unable to find volume by key #{volume_key} attached to pool #{pool.name}, trying by filename..."
+        volume = @session.object(:class => 'volume',
+                                 'name' => db_volume.filename,
+                                 'storagePool' => pool.object_id)
+	raise "Unable to find volume by key (#{volume_key}) or filename (#{db_volume.filename}), giving up." unless volume
+      end
       @logger.debug "Verified volume of pool #{volume.path}"
 
       storagedevs << volume.path
