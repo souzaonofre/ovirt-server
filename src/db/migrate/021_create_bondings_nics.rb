@@ -21,17 +21,14 @@ class CreateBondingsNics < ActiveRecord::Migration
   def self.up
     create_table :bondings_nics do |t|
       t.integer :bonding_id, :null => false
+      t.foreign_key :bondings, :name => 'fk_bondings_nics_bonding'
       t.integer :nic_id,     :null => false
+      t.foreign_key :nics, :name => 'fk_bondings_nics_nic'
 
       t.timestamps
     end
 
     add_index :bondings_nics, [:bonding_id, :nic_id], :unique => true
-
-    execute 'alter table bondings_nics add constraint fk_bondings_nics_bonding
-             foreign key (bonding_id) references bondings(id)'
-    execute 'alter table bondings_nics add constraint fk_bondings_nics_nic
-             foreign key (nic_id) references nics(id)'
   end
 
   def self.down

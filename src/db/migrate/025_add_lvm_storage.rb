@@ -37,8 +37,8 @@ class AddLvmStorage < ActiveRecord::Migration
 
     # VG pool ID
     add_column :storage_volumes, :lvm_pool_id, :integer
-    execute "alter table storage_volumes add constraint fk_storage_volumes_lvm_pools
-             foreign key (lvm_pool_id) references storage_pools(id)"
+    add_foreign_key :storage_volumes, :storage_pools, :column => 'lvm_pool_id',
+                    :name => 'fk_storage_volumes_lvm_pools'
 
     # use polymorphic tasks association
     add_column :tasks, :task_target_id, :integer

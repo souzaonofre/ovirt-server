@@ -23,6 +23,8 @@ class CreateStorageVolumes < ActiveRecord::Migration
       t.string :ip_addr
       t.string :type
       t.integer :hardware_pool_id, :null => false
+      t.foreign_key :pools, :column => 'hardware_pool_id',
+                            :name => 'fk_storage_pool_pools'
       t.integer :lock_version,     :default => 0
 
       # for IscsiStoragePool
@@ -37,6 +39,7 @@ class CreateStorageVolumes < ActiveRecord::Migration
       t.string :path
       t.integer :size
       t.integer :storage_pool_id,  :null => false
+      t.foreign_key :storage_pools, :name => 'fk_storage_volume_st_pools'
       t.string :type
       t.integer :lock_version,     :default => 0
 
@@ -46,12 +49,6 @@ class CreateStorageVolumes < ActiveRecord::Migration
       # for IscsiStorageVolume
       t.string :filename
     end
-
-    execute "alter table storage_pools add constraint fk_storage_pool_pools
-             foreign key (hardware_pool_id) references pools(id)"
-    execute "alter table storage_volumes add constraint fk_storage_volume_st_pools
-             foreign key (storage_pool_id) references storage_pools(id)"
-
   end
 
   def self.down

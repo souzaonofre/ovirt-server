@@ -24,7 +24,9 @@ class VmHostHistory < ActiveRecord::Migration
     create_table :vm_host_histories do |t|
        # vm / host association
        t.integer :vm_id
+       t.foreign_key :vms, :name => 'fk_vm_host_histories_vms'
        t.integer :host_id
+       t.foreign_key :hosts, :name => 'fk_vm_host_histories_hosts'
 
        # records operating info of vm
        #  (most likey we will want to add a
@@ -37,13 +39,6 @@ class VmHostHistory < ActiveRecord::Migration
        t.timestamp :time_started
        t.timestamp :time_ended
     end
-
-    execute "alter table vm_host_histories add constraint
-             fk_vm_host_histories_vms foreign key (vm_id) references vms(id)"
-
-    execute "alter table vm_host_histories add constraint
-             fk_vm_host_histories_hosts foreign key (host_id) references
-             hosts(id)"
   end
 
   def self.down

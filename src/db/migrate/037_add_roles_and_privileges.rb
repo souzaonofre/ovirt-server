@@ -30,18 +30,13 @@ class AddRolesAndPrivileges < ActiveRecord::Migration
 
     create_table :privileges_roles, :id => false do |t|
       t.integer :privilege_id,             :null => false
+      t.foreign_key :privileges, :name => 'fk_priv_roles_priv_id'
       t.integer :role_id, :null => false
+      t.foreign_key :roles, :name => 'fk_priv_roles_role_id'
     end
-    execute "alter table privileges_roles add constraint
-             fk_priv_roles_role_id
-             foreign key (role_id) references roles(id)"
-    execute "alter table privileges_roles add constraint
-             fk_priv_roles_priv_id
-             foreign key (privilege_id) references privileges(id)"
 
     add_column :permissions, :role_id, :integer
-    execute "alter table permissions add constraint fk_perm_roles
-             foreign key (role_id) references roles(id)"
+    add_foreign_key :permissions, :roles, :name => 'fk_perm_roles'
 
     #create default roles and privileges
     Role.transaction do

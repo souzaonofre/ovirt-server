@@ -30,6 +30,7 @@ class RefactorNetworkingModel < ActiveRecord::Migration
       t.string  :type, :null => false
       t.string  :name, :null => false
       t.integer :boot_type_id, :null => false
+      t.foreign_key :boot_types, :name => 'fk_network_boot_types'
 
       # attributes for Vlan (type=Vlan)
       t.integer :number
@@ -42,7 +43,9 @@ class RefactorNetworkingModel < ActiveRecord::Migration
 
     create_table :networks_usages, :id => false do |t|
       t.integer :network_id, :null => false
+      t.foreign_key :networks, :name => 'fk_networks_usages_network_id'
       t.integer :usage_id, :null => false
+      t.foreign_key :networks, :name => 'fk_networks_usages_usage_id'
     end
 
     add_index :networks_usages, [:network_id, :usage_id], :unique => true
@@ -52,33 +55,13 @@ class RefactorNetworkingModel < ActiveRecord::Migration
     Usage.create(:label => 'Management', :usage => 'management')
     Usage.create(:label => 'Storage', :usage => 'storage')
 
-    # referential integrity for networks tables
-    execute "alter table networks add constraint
-             fk_network_boot_types
-             foreign key (boot_type_id) references
-             boot_types(id)"
-    execute "alter table networks_usages add constraint
-             fk_networks_usages_network_id
-             foreign key (network_id) references
-             networks(id)"
-    execute "alter table networks_usages add constraint
-             fk_networks_usages_usage_id
-             foreign key (usage_id) references
-             usages(id)"
-
     # add foreign keys to nics / bondings table
     add_column :nics, :physical_network_id, :integer
+    add_foreign_key :nics, :networks, :column => 'physical_network_id',
+                                      :name => 'fk_nic_networks'
     add_column :bondings, :vlan_id, :integer
-
-    # referential integrity for nic/bondings network ids
-    execute "alter table nics add constraint
-             fk_nic_networks
-             foreign key (physical_network_id) references
-             networks(id)"
-    execute "alter table bondings add constraint
-             fk_bonding_networks
-             foreign key (vlan_id) references
-             networks(id)"
+    add_foreign_key :bondings, :networks, :column => 'vlan_id',
+                                          :name => 'fk_bonding_networks'
 
     ####################################################
     # create ip_addresses table
@@ -87,8 +70,11 @@ class RefactorNetworkingModel < ActiveRecord::Migration
 
       # foreign keys to associated entities
       t.integer :nic_id
+      t.foreign_key :nics, :name => 'fk_nic_ip_addresses'
       t.integer :bonding_id
+      t.foreign_key :bondings, :name => 'fk_bonding_ip_addresses'
       t.integer :network_id
+      t.foreign_key :networks, :name => 'fk_network_ip_addresses'
 
       # common attributes
       t.string :address,   :limit => 39, :null => false
@@ -102,17 +88,6 @@ class RefactorNetworkingModel < ActiveRecord::Migration
       t.string :prefix,    :limit => 39
       t.timestamps
     end
-
-    # referential integrity for ip_addresses table
-    execute "alter table ip_addresses add constraint
-             fk_nic_ip_addresses
-             foreign key (nic_id) references nics(id)"
-    execute "alter table ip_addresses add constraint
-             fk_bonding_ip_addresses
-             foreign key (bonding_id) references bondings(id)"
-    execute "alter table ip_addresses add constraint
-             fk_network_ip_addresses
-             foreign key (network_id) references networks(id)"
 
     ###################################################################
     static_boot_type_id =
@@ -176,10 +151,12 @@ class RefactorNetworkingModel < ActiveRecord::Migration
     remove_column :nics,     :ip_addr
     remove_column :nics,     :netmask
     remove_column :nics,     :broadcast
+    remove_foreign_key :nics, :name => 'fk_nic_boot_type'
     remove_column :nics,     :boot_type_id
     remove_column :bondings, :ip_addr
     remove_column :bondings, :netmask
     remove_column :bondings, :broadcast
+    remove_foreign_key :bondings, :name => 'fk_bondings_boot_type'
     remove_column :bondings, :boot_type_id
 
 
@@ -197,14 +174,8 @@ class RefactorNetworkingModel < ActiveRecord::Migration
     add_column :bondings, :broadcast, :string, :limit => 16
     add_column :bondings, :boot_type_id, :integer
 
-    execute "alter table nics add constraint
-             fk_nic_boot_types
-             foreign key (boot_type_id) references
-             boot_types(id)"
-    execute "alter table bondings add constraint
-             fk_bonding_boot_types
-             foreign key (boot_type_id) references
-             boot_types(id)"
+    add_foreign_key :nics, :boot_types, :name => 'fk_nic_boot_type'
+    add_foreign_key :bondings, :boot_types, :name => 'fk_bondings_boot_type'
 
     ##############################################################
     # attempt to migrate ip information back into nics table.

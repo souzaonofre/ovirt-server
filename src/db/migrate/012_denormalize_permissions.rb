@@ -1,8 +1,8 @@
 class DenormalizePermissions < ActiveRecord::Migration
   def self.up
     add_column :permissions, :inherited_from_id, :integer
-    execute "alter table permissions add constraint fk_perm_parent
-             foreign key (inherited_from_id) references permissions(id)"
+    add_foreign_key :permissions, :permissions, :column => 'inherited_from_id',
+                                                :name => 'fk_perm_parent'
 
     Permission.transaction do
       Permission.find(:all,

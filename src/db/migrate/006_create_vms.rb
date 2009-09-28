@@ -29,27 +29,22 @@ class CreateVms < ActiveRecord::Migration
       t.string  :vnic_mac_addr
       t.string  :state
       t.integer :host_id
+      t.foreign_key :hosts, :name => 'fk_vms_hosts'
       t.integer :vm_resource_pool_id
+      t.foreign_key :pools, :column => 'vm_resource_pool_id',
+                            :name => 'fk_vms_vm_pools'
       t.integer :needs_restart
       t.string  :boot_device,    :null => false
       t.integer :vnc_port
       t.integer :lock_version,   :default => 0
     end
-    execute "alter table vms add constraint fk_vms_hosts
-             foreign key (host_id) references hosts(id)"
-    execute "alter table vms add constraint fk_vms_vm_pools
-             foreign key (vm_resource_pool_id) references pools(id)"
 
     create_table :storage_volumes_vms, :id => false do |t|
       t.integer :vm_id,             :null => false
+      t.foreign_key :vms, :name => 'fk_stor_vol_vms_vm_id'
       t.integer :storage_volume_id, :null => false
+      t.foreign_key :storage_volumes, :name => 'fk_stor_vol_vms_stor_vol_id'
     end
-    execute "alter table storage_volumes_vms add constraint
-             fk_stor_vol_vms_vm_id
-             foreign key (vm_id) references vms(id)"
-    execute "alter table storage_volumes_vms add constraint
-             fk_stor_vol_vms_stor_vol_id
-             foreign key (storage_volume_id) references storage_volumes(id)"
   end
 
   def self.down

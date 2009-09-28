@@ -33,18 +33,11 @@ class NetworksNicsBondingsAdditions < ActiveRecord::Migration
     execute 'update nics set physical_network_id = NULL'
     execute 'update bondings set vlan_id = NULL'
 
-    execute "alter table nics add constraint
-             host_physical_network_unique unique
-             (host_id, physical_network_id)"
-
-    execute "alter table bondings add constraint
-             host_vlan_unique unique
-             (host_id, vlan_id)"
-
-    execute "alter table vms add constraint
-             fk_vm_network_id
-             foreign key (network_id) references
-             networks(id)"
+    add_index :nics, [:host_id, :physical_network_id], :unique => true,
+              :name => 'host_physical_network_unique'
+    add_index :bondings, [:host_id, :vlan_id], :unique => true,
+              :name => 'host_vlan_unique'
+    add_foreign_key :vms, :networks, :name => 'fk_vm_network_id'
   end
 
   def self.down
@@ -52,4 +45,3 @@ class NetworksNicsBondingsAdditions < ActiveRecord::Migration
     remove_column :vms,  :network_id
   end
 end
-

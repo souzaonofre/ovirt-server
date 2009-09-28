@@ -21,15 +21,13 @@ class AddSmartPools < ActiveRecord::Migration
   def self.up
     create_table :smart_pool_tags  do |t|
       t.integer :smart_pool_id, :null => false
+      t.foreign_key :pools, :column => 'smart_pool_id',
+                            :name => 'fk_smart_pool_tags_pool_id'
       t.integer :tagged_id,     :null => false
       t.string :tagged_type,    :null => false
     end
-    execute "alter table smart_pool_tags add constraint
-             fk_smart_pool_tags_pool_id
-             foreign key (smart_pool_id) references pools(id)"
-    execute "alter table smart_pool_tags add constraint
-             unique_smart_pool_tags
-             unique (smart_pool_id, tagged_id, tagged_type)"
+    add_index :smart_pool_tags, [:smart_pool_id, :tagged_id, :tagged_type],
+              :unique => true, :name => 'unique_smart_pool_tags'
 
     begin
       dir_root = DirectoryPool.get_directory_root

@@ -23,7 +23,9 @@ class CreateBondings < ActiveRecord::Migration
       t.string  :name,            :null => false, :limit => 50
       t.string  :interface_name,  :null => false, :limit => 20
       t.integer :bonding_type_id, :null => false
+      t.foreign_key :bonding_types, :name => 'fk_bonding_bonding_type'
       t.integer :host_id,         :null => false
+      t.foreign_key :hosts, :name => 'fk_bonding_host'
       t.string  :ip_addr,         :null => true, :limit => 15
       t.string  :netmask,         :null => true, :limit => 15
       t.string  :broadcast,       :null => true, :limit => 15
@@ -34,11 +36,6 @@ class CreateBondings < ActiveRecord::Migration
     end
 
     add_index :bondings, [:interface_name, :host_id], :unique => true
-
-    execute 'alter table bondings add constraint fk_bonding_bonding_type
-             foreign key (bonding_type_id) references bonding_types(id)'
-    execute 'alter table bondings add constraint fk_bonding_host
-             foreign key (host_id) references hosts(id)'
   end
 
   def self.down
