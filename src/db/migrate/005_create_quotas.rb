@@ -26,11 +26,9 @@ class CreateQuotas < ActiveRecord::Migration
       t.integer :total_storage
       t.integer :total_vms
       t.integer :pool_id
+      t.foreign_key :pools, :name => 'fk_quotas_pools'
       t.integer :lock_version, :default => 0
     end
-
-    execute "alter table quotas add constraint fk_quotas_pools
-             foreign key (pool_id) references pools(id)"
   end
 
   def self.down

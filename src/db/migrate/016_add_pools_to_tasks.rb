@@ -20,11 +20,11 @@
 class AddPoolsToTasks < ActiveRecord::Migration
   def self.up
     add_column :tasks, :vm_resource_pool_id, :integer
+    add_foreign_key :tasks, :pools, :column => 'vm_resource_pool_id',
+                                    :name => 'fk_tasks_vm_pools'
     add_column :tasks, :hardware_pool_id, :integer
-    execute "alter table tasks add constraint fk_tasks_vm_pools
-             foreign key (vm_resource_pool_id) references pools(id)"
-    execute "alter table tasks add constraint fk_tasks_hw_pools
-             foreign key (hardware_pool_id) references pools(id)"
+    add_foreign_key :tasks, :pools, :column => 'hardware_pool_id',
+                                    :name => 'fk_tasks_hw_pools'
     Task.transaction do
       VmTask.find(:all).each do |task|
         vm = task.vm

@@ -26,11 +26,9 @@ class CreateNics < ActiveRecord::Migration
       t.string  :usage_type
       t.integer :bandwidth
       t.integer :host_id,       :null => false
+      t.foreign_key :hosts, :name => 'fk_nic_hosts'
       t.integer :lock_version,  :default => 0
     end
-
-    execute "alter table nics add constraint fk_nic_hosts
-             foreign key (host_id) references hosts(id)"
 
   end
 

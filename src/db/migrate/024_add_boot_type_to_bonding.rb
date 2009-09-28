@@ -20,9 +20,7 @@
 class AddBootTypeToBonding < ActiveRecord::Migration
   def self.up
     add_column :bondings, :boot_type_id, :integer, :null => true
-
-    execute 'alter table bondings add constraint fk_bondings_boot_type
-             foreign key (boot_type_id) references boot_types(id)'
+    add_foreign_key :bondings, :boot_types, :name => 'fk_bondings_boot_type'
   end
 
   def self.down

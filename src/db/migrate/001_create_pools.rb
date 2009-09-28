@@ -23,14 +23,12 @@ class CreatePools < ActiveRecord::Migration
       t.string :name
       t.string :type
       t.integer :parent_id
+      t.foreign_key :pools, :column => 'parent_id', :name => 'fk_pool_parent'
       t.integer :lft
       t.integer :rgt
       t.integer :lock_version, :default => 0
       t.timestamps
     end
-
-    execute "alter table pools add constraint fk_pool_parent
-             foreign key (parent_id) references pools(id)"
   end
 
   def self.down

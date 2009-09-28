@@ -35,8 +35,7 @@ class CreateBootTypes < ActiveRecord::Migration
 
     add_column :nics, :boot_type_id, :integer, :null => true
 
-    execute 'alter table nics add constraint fk_nic_boot_type
-             foreign key (boot_type_id) references boot_types(id)'
+    add_foreign_key :nics, :boot_types, :name => 'fk_nic_boot_type'
 
     boot_type = BootType.find_by_proto('static')
 

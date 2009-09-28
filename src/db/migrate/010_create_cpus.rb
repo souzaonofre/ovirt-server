@@ -2,6 +2,7 @@ class CreateCpus < ActiveRecord::Migration
   def self.up
     create_table :cpus do |t|
         t.integer :host_id
+        t.foreign_key :hosts, :name => 'fk_host_cpus'
         t.integer :cpu_number
         t.integer :core_number
         t.integer :number_of_cores
@@ -15,9 +16,6 @@ class CreateCpus < ActiveRecord::Migration
 
         t.timestamps
     end
-
-    execute "alter table cpus add constraint fk_host_cpus
-             foreign key (host_id) references hosts(id)"
 
     remove_column :hosts, :cpu_speed
     remove_column :hosts, :num_cpus
