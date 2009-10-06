@@ -62,18 +62,16 @@ class SmartPool < Pool
     if nested_pools
       nested_pools.each do |pool_element|
         pool = pool_element[:obj]
-        if pool.hasChildren
+        if pool.hasChildren and pool_element.has_key?(:children)
           if pool.name == user
             pool_element[:children].each do |child_element|
               child_pool = child_element[:obj]
               user_pools <<[child_pool.name, child_pool.id]
             end
           else
-            if pool_element.has_key?(:children)
-              pool_element[:children].each do |child_element|
-                child_pool = child_element[:obj]
-                other_pools << [pool.name + " > " + child_pool.name, child_pool.id]
-              end
+            pool_element[:children].each do |child_element|
+              child_pool = child_element[:obj]
+              other_pools << [pool.name + " > " + child_pool.name, child_pool.id]
             end
           end
         end
