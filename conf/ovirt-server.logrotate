@@ -4,9 +4,6 @@ compress
 missingok
 notifempty
 
-/etc/init.d/ovirt-host-register
-/etc/init.d/ovirt-host-collect
-
 /var/log/ovirt-server/taskomatic.log {
   postrotate
       /etc/init.d/ovirt-taskomatic restart
