@@ -430,7 +430,7 @@ module SymetrieCom
           return unless reloaded
           dif = self[right_col_name] - self[left_col_name] + 1
           if acts_as_nested_set_options[:dependent] == :delete_all
-            base_set_class.delete_all( "#{scope_condition} AND (#{prefixed_left_col_name} BETWEEN #{self[left_col_name]} AND #{self[right_col_name]})" )
+            #base_set_class.delete_all( "#{scope_condition} AND (#{prefixed_left_col_name} BETWEEN #{self[left_col_name]} AND #{self[right_col_name]})" )
           else
             set = base_set_class.find(:all, :conditions => "#{scope_condition} AND (#{prefixed_left_col_name} BETWEEN #{self[left_col_name]} AND #{self[right_col_name]})", :order => "#{prefixed_right_col_name} DESC")
             set.each { |child| child.skip_before_destroy = true; remove_descendant(child) }
