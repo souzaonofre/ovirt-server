@@ -18,7 +18,7 @@ module Foreigner
     module TableDefinition
       class ForeignKey < Struct.new(:base, :to_table, :options)
         def to_sql
-          base.foreign_key_definition(to_table, options)
+          base.foreign_key_definition(@table_name, to_table, options)
         end
         alias to_s :to_sql
       end
