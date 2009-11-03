@@ -38,7 +38,7 @@ class VmTest < ActiveSupport::TestCase
        :num_vcpus_allocated => 1,
        :boot_device => 'hd',
        :memory_allocated_in_mb => 1,
-       :memory_allocated => 1024}
+       :memory_allocated => 1024)
 
     @vm.vm_resource_pool = pools(:corp_com_production_vmpool)
   end
