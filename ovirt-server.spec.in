@@ -41,9 +41,8 @@ Requires: rrdtool-ruby
 Requires: iscsi-initiator-utils
 Requires: cyrus-sasl-gssapi
 Requires: qpidd
-Requires: ruby-qpid >= 0.5.776856
 Requires: qpidc
-Requires: qmf
+Requires: qmf >= 0.5.829175-2
 Requires: ruby-qmf
 Requires(post):  /sbin/chkconfig
 Requires(preun): /sbin/chkconfig
