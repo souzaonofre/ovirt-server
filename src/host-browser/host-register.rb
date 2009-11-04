@@ -134,24 +134,19 @@ class HostRegister < Qmf::ConsoleHandler
     def agent_heartbeat(agent, timestamp)
         return if agent == nil
         synchronize do
-            bank_key = "#{agent.agent_bank}.#{agent.broker_bank}"
-            @heartbeats[bank_key] = [agent, timestamp]
+            @heartbeats[agent.key] = [agent, timestamp]
         end
     end
 
     def agent_added(agent)
-        agent_bank = agent.agent_bank
-        broker_bank = agent.broker_bank
-        key = "#{agent_bank}.#{broker_bank}"
 
-	puts "AGENT ADDED: #{key}"
-        debugputs "Agent #{agent_bank}.#{broker_bank} connected!"
-        agent_connected(agent_bank, broker_bank)
+        debugputs "Agent #{agent.key}.connected!"
+        agent_connected(agent)
 
         host_list = @qmfc.objects(:package => 'com.redhat.matahari', :class => 'host')
 	puts "host_list length is #{host_list.length}"
         host_list.each do |host|
-            if host.object_id.agent_bank == agent_bank
+            if host.object_id.agent_key == agent.key
                 # Grab the cpus and nics associated before we take any locks
                 cpu_info = @qmfc.objects(:package => 'com.redhat.matahari', :class => 'cpu', 'host' => host.object_id)
                 nic_info = @qmfc.objects(:package => 'com.redhat.matahari', :class => 'nic', 'host' => host.object_id)
@@ -163,13 +158,9 @@ class HostRegister < Qmf::ConsoleHandler
     end
 
     def agent_deleted(agent)
-        agent_bank = agent.agent_bank
-        broker_bank = agent.broker_bank
-        key = "#{agent_bank}.#{broker_bank}"
-
-        debugputs "Agent #{key} disconnected!"
-        @heartbeats.delete(key)
-        agent_disconnected(agent_bank, broker_bank)
+        debugputs "Agent #{agent.key} disconnected!"
+        @heartbeats.delete(agent.key)
+        agent_disconnected(agent)
     end
 
     def object_update(obj, hasProps, hasStats)
@@ -180,17 +171,15 @@ class HostRegister < Qmf::ConsoleHandler
         # Fix a race where the properties of an object are published by a reconnecting
         # host (thus marking it active) right before the heartbeat timer considers it dead
         # (and marks it inactive)
-        @heartbeats.delete("#{obj.object_id.agent_bank}.#{obj.object_id.broker_bank}")
+        @heartbeats.delete("#{obj.object_id.agent_key}")
     end # def object_props
 
     ###### Handlers for QMF Callbacks ######
-    def agent_disconnected(agent_bank, broker_bank)
+    def agent_disconnected(agent)
         synchronize do
-            debugputs "Marking objects for agent #{broker_bank}.#{agent_bank} inactive"
+            debugputs "Marking objects for agent #{agent.key} inactive"
             @cached_hosts.keys.each do |objkey|
-                if @cached_hosts[objkey][:broker_bank] == broker_bank and
-                   @cached_hosts[objkey][:agent_bank] == agent_bank
-
+                if @cached_hosts[objkey][:agent_key] == agent.key
                     cached_host = @cached_hosts[objkey]
                     cached_host[:active] = false
                     @logger.info "Host #{cached_host['hostname']} marked inactive"
@@ -199,13 +188,11 @@ class HostRegister < Qmf::ConsoleHandler
         end # synchronize do
     end
 
-    def agent_connected(agent_bank, broker_bank)
+    def agent_connected(agent)
         synchronize do
-            debugputs "Marking objects for agent #{broker_bank}.#{agent_bank} active"
+            debugputs "Marking objects for agent #{agent.key} active"
             @cached_hosts.keys.each do |objkey|
-                if @cached_hosts[objkey][:broker_bank] == broker_bank and
-                   @cached_hosts[objkey][:agent_bank] == agent_bank
-
+                if @cached_hosts[objkey][:agent_key] == agent.key
                     cached_host = @cached_hosts[objkey]
                     cached_host[:active] = true
                     @logger.info "Host #{cached_host['hostname']} marked active"
@@ -331,8 +318,7 @@ class HostRegister < Qmf::ConsoleHandler
                 # By now, we either rekeyed a stale entry or started a new one.
                 # Update the bookkeeping parts of the data.
                 cached_host[:obj_key] = obj.object_id.to_s
-                cached_host[:broker_bank] = obj.object_id.broker_bank
-                cached_host[:agent_bank] = obj.object_id.agent_bank
+                cached_host[:agent_key] = obj.object_id.agent_key
             end # not already_cache
 
             # For now, only cache identity information (leave CPU/NIC/etc. to db only)
@@ -464,9 +450,7 @@ class HostRegister < Qmf::ConsoleHandler
                             debugputs "Agent #{key} timed out!"
                             @heartbeats.delete(key)
 
-                            agent_bank = agent.agent_bank
-                            broker_bank = agent.broker_bank
-                            agent_disconnected(agent_bank, broker_bank)
+                            agent_disconnected(agent)
                         end
                     end
 
