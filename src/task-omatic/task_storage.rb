@@ -73,7 +73,7 @@ def task_storage_cobbler_setup(db_vm)
     unless found
       # Create a new transient NFS storage volume
       # This volume is *not* persisted.
-      image_volume = StorageVolume.factory("NFS", :filename => filename)
+      image_volume = StorageVolume.factory("NFS", :filename => filename, :key => filename)
 
       image_volume.storage_pool
       image_pool = StoragePool.factory(StoragePool::NFS)
@@ -116,13 +116,14 @@ class LibvirtPool
     @xml.root.elements["target"].add_element("path")
   end
 
-  def connect(session, node)
-    pools = session.objects(:class => 'pool', 'node' => node.object_id)
+  def connect(qmfc, node)
+    pools = qmfc.objects(:class => 'pool', 'node' => node.object_id)
     pools.each do |pool|
       result = pool.getXMLDesc
       raise "Error getting xml description of pool: #{result.text}" unless result.status == 0
 
       xml_desc = result.description
+
       if self.xmlequal?(Document.new(xml_desc).root)
         @remote_pool = pool
         @logger.debug("Found existing storage pool #{pool.name} on host: #{node.hostname}")
@@ -134,7 +135,8 @@ class LibvirtPool
       @logger.debug("Defining new storage pool: #{@xml.to_s} on host: #{node.hostname}")
       result = node.storagePoolDefineXML(@xml.to_s, :timeout => 60 * 10)
       raise "Error creating pool: #{result.text}" unless result.status == 0
-      @remote_pool = session.object(:object_id => result.pool)
+      @remote_pool = qmfc.object(:object_id => result.pool)
+      obj_list = qmfc.objects(:object_id => result.pool)
       raise "Error finding newly created remote pool." unless @remote_pool
 
       # we need this because we don't want to "build" LVM pools, which would
