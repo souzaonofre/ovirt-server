@@ -23,7 +23,7 @@ $: << File.join(File.dirname(__FILE__), "../dutils")
 $: << File.join(File.dirname(__FILE__), ".")
 
 require 'rubygems'
-require 'qpid'
+require 'qmf'
 require 'monitor'
 require 'dutils'
 require 'optparse'
@@ -115,10 +115,15 @@ class TaskOmatic
       sleepy *= 2 if sleepy < 120
     end
 
-    @session = Qpid::Qmf::Session.new(:manage_connections => true)
-    @logger.info "Connecting to amqp://#{server}:#{port}"
-    @broker = @session.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
+    settings = Qmf::ConnectionSettings.new
+    settings.host = server
+    settings.port = port
+    settings.sendUserId = false
 
+    @connection = Qmf::Connection.new(settings)
+    @qmfc = Qmf::Console.new
+    @broker = @qmfc.add_connection(@connection)
+    @broker.wait_for_stable
   end
 
   def ensure_credentials()
@@ -141,13 +146,13 @@ class TaskOmatic
     # vm won't be returned.  I think that's supposed to be for migration
     # but it could break creation of VMs in certain conditions..
 
-    vm = @session.object(:class => "domain", 'uuid' => db_vm.uuid)
+    vm = @qmfc.object(:class => "domain", 'uuid' => db_vm.uuid)
 
     db_vm.vm_resource_pool.get_hardware_pool.hosts.each do |curr|
       # Now each of 'curr' is in the right hardware pool..
       # now we check them out.
 
-      node = @session.object(:class => "node", 'hostname' => curr.hostname)
+      node = @qmfc.object(:class => "node", 'hostname' => curr.hostname)
       next unless node
 
       # So now we expect if the node was found it's alive and well, then
@@ -205,12 +210,12 @@ class TaskOmatic
       # activate the underlying physical device, and then do the logical one
       if db_volume[:type] == "LvmStorageVolume"
         phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume, @logger)
-        phys_libvirt_pool.connect(@session, node)
+        phys_libvirt_pool.connect(@qmfc, node)
       end
 
       @logger.debug "Verifying mount of pool #{db_pool.ip_addr}:#{db_pool.type}:#{db_pool.target}:#{db_pool.export_path}"
       libvirt_pool = LibvirtPool.factory(db_pool, @logger)
-      libvirt_pool.connect(@session, node)
+      libvirt_pool.connect(@qmfc, node)
 
       # OK, the pool should be all set.  The last thing we need to do is get
       # the path based on the volume key
@@ -220,14 +225,14 @@ class TaskOmatic
 
       @logger.debug "Pool mounted: #{pool.name}; state: #{pool.state}"
 
-      volume = @session.object(:class => 'volume',
-                               'key' => volume_key,
-                               'storagePool' => pool.object_id)
+      volume = @qmfc.object(:class => 'volume',
+                            'key' => volume_key,
+                            'storagePool' => pool.object_id)
       if volume == nil
         @logger.info "Unable to find volume by key #{volume_key} attached to pool #{pool.name}, trying by filename..."
-        volume = @session.object(:class => 'volume',
-                                 'name' => db_volume.filename,
-                                 'storagePool' => pool.object_id)
+        volume = @qmfc.object(:class => 'volume',
+                              'name' => db_volume.filename,
+                              'storagePool' => pool.object_id)
 	raise "Unable to find volume by key (#{volume_key}) or filename (#{db_volume.filename}), giving up." unless volume
       end
       @logger.debug "Verified volume of pool #{volume.path}"
@@ -254,11 +259,11 @@ class TaskOmatic
     # This is rather silly because we only destroy pools if there are no
     # more vms on the node.  We should be reference counting the pools
     # somehow so we know when they are no longer in use.
-    vms = @session.objects(:class => 'domain', 'node' => node.object_id)
+    vms = @qmfc.objects(:class => 'domain', 'node' => node.object_id)
     if vms.length > 0
       return
     end
-    pools = @session.objects(:class => 'pool', 'node' => node.object_id)
+    pools = @qmfc.objects(:class => 'pool', 'node' => node.object_id)
 
     # We do this in two passes, first undefine/destroys LVM pools, then
     # we do physical pools.
@@ -281,13 +286,13 @@ class TaskOmatic
   def task_shutdown_or_destroy_vm(task, action)
     @logger.info "starting task_shutdown_or_destroy_vm"
     db_vm = task.vm
-    vm = @session.object(:class => 'domain', 'uuid' => db_vm.uuid)
+    vm = @qmfc.object(:class => 'domain', 'uuid' => db_vm.uuid)
     if !vm
       @logger.error "VM already shut down?"
       return
     end
 
-    node = @session.object(:object_id => vm.node)
+    node = @qmfc.object(:object_id => vm.node)
     raise "Unable to get node that vm is on??" unless node
 
     if vm.state == "shutdown" or vm.state == "shutoff"
@@ -337,7 +342,7 @@ class TaskOmatic
     @logger.info "starting task_start_vm"
     db_vm = find_vm(task, false)
 
-    vm = @session.object(:class => "domain", 'uuid' => db_vm.uuid)
+    vm = @qmfc.object(:class => "domain", 'uuid' => db_vm.uuid)
 
     if vm
       case vm.state
@@ -351,7 +356,7 @@ class TaskOmatic
     end
     db_host = find_capable_host(db_vm)
 
-    node = @session.object(:class => "node", 'hostname' => db_host.hostname)
+    node = @qmfc.object(:class => "node", 'hostname' => db_host.hostname)
 
     raise "Unable to find host #{db_host.hostname} to create VM on." unless node
     @logger.info("VM will be started on node #{node.hostname}")
@@ -400,7 +405,7 @@ class TaskOmatic
     result = node.domainDefineXML(xml.to_s)
     raise "Error defining virtual machine: #{result.text}" unless result.status == 0
 
-    domain = @session.object(:object_id => result.domain)
+    domain = @qmfc.object(:object_id => result.domain)
     raise "Cannot find domain on host #{db_host.hostname}, cannot start virtual machine." unless domain
 
     result = domain.create
@@ -432,7 +437,7 @@ class TaskOmatic
   def task_suspend_vm(task)
     @logger.info "starting task_suspend_vm"
     db_vm = task.vm
-    dom = @session.object(:class => 'domain', 'uuid' => db_vm.uuid)
+    dom = @qmfc.object(:class => 'domain', 'uuid' => db_vm.uuid)
     raise "Unable to locate VM to suspend" unless dom
 
     if dom.state != "running" and dom.state != "blocked"
@@ -450,7 +455,7 @@ class TaskOmatic
   def task_resume_vm(task)
     @logger.info "starting task_resume_vm"
     db_vm = task.vm
-    dom = @session.object(:class => 'domain', 'uuid' => db_vm.uuid)
+    dom = @qmfc.object(:class => 'domain', 'uuid' => db_vm.uuid)
     raise "Unable to locate VM to resume" unless dom
 
     if dom.state == "running"
@@ -478,7 +483,7 @@ class TaskOmatic
     # need to put it on the storage server and mark it in the database
     # where the image is stored.
     db_vm = task.vm
-    dom = @session.object(:class => 'domain', 'uuid' => db_vm.uuid)
+    dom = @qmfc.object(:class => 'domain', 'uuid' => db_vm.uuid)
     raise "Unable to locate VM to save" unless dom
 
     filename = "/tmp/#{dom.uuid}.save"
@@ -495,7 +500,7 @@ class TaskOmatic
 
     # FIXME: This is also broken, see task_save_vm FIXME.
     db_vm = task.vm
-    dom = @session.object(:class => 'domain', 'uuid' => db_vm.uuid)
+    dom = @qmfc.object(:class => 'domain', 'uuid' => db_vm.uuid)
     raise "Unable to locate VM to restore" unless dom
 
     filename = "/tmp/#{dom.uuid}.save"
@@ -508,9 +513,9 @@ class TaskOmatic
 
   def migrate(db_vm, dest = nil)
 
-    vm = @session.object(:class => "domain", 'uuid' => db_vm.uuid)
+    vm = @qmfc.object(:class => "domain", 'uuid' => db_vm.uuid)
     raise "Unable to find VM to migrate" unless vm
-    src_node = @session.object(:object_id => vm.node)
+    src_node = @qmfc.object(:object_id => vm.node)
     raise "Unable to find node that VM is on??" unless src_node
 
     @logger.info "Migrating domain lookup complete, domain is #{vm}"
@@ -528,7 +533,7 @@ class TaskOmatic
         db_dst_host = find_capable_host(db_vm)
       end
 
-      dest_node = @session.object(:class => 'node', 'hostname' => db_dst_host.hostname)
+      dest_node = @qmfc.object(:class => 'node', 'hostname' => db_dst_host.hostname)
       raise "Unable to find host #{db_dst_host.hostname} to migrate to." unless dest_node
 
       volumes = []
@@ -589,7 +594,7 @@ class TaskOmatic
         next
       end
       puts "searching for node with hostname #{host.hostname}"
-      node = @session.object(:class => 'node', 'hostname' => host.hostname)
+      node = @qmfc.object(:class => 'node', 'hostname' => host.hostname)
       puts "node returned is #{node}"
       return node if node
     end
@@ -643,13 +648,13 @@ class TaskOmatic
       @logger.info("refresh being done on node #{node.hostname}")
 
       phys_libvirt_pool = LibvirtPool.factory(db_pool_phys, @logger)
-      phys_libvirt_pool.connect(@session, node)
+      phys_libvirt_pool.connect(@qmfc, node)
       db_pool_phys.state = StoragePool::STATE_AVAILABLE
       db_pool_phys.save!
 
       begin
         # First we do the physical volumes.
-        volumes = @session.objects(:class => 'volume',
+        volumes = @qmfc.objects(:class => 'volume',
                                    'storagePool' => phys_libvirt_pool.remote_pool.object_id)
         volumes.each do |volume|
           storage_volume = StorageVolume.factory(db_pool_phys.get_type_label)
@@ -696,9 +701,9 @@ class TaskOmatic
           physical_vol.save!
 
           lvm_libvirt_pool = LibvirtPool.factory(lvm_db_pool, @logger)
-          lvm_libvirt_pool.connect(@session, node)
+          lvm_libvirt_pool.connect(@qmfc, node)
 
-          lvm_volumes = @session.objects(:class => 'volume',
+          lvm_volumes = @qmfc.objects(:class => 'volume',
                                    'storagePool' => lvm_libvirt_pool.remote_pool.object_id)
           lvm_volumes.each do |lvm_volume|
 
@@ -733,16 +738,16 @@ class TaskOmatic
     begin
       if db_volume[:type] == "LvmStorageVolume"
         phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume, @logger)
-        phys_libvirt_pool.connect(@session, node)
+        phys_libvirt_pool.connect(@qmfc, node)
       end
 
       begin
         libvirt_pool = LibvirtPool.factory(db_pool, @logger)
 
         begin
-          libvirt_pool.connect(@session, node)
+          libvirt_pool.connect(@qmfc, node)
           volume_id = libvirt_pool.create_vol(*db_volume.volume_create_params)
-          volume = @session.object(:object_id => volume_id)
+          volume = @qmfc.object(:object_id => volume_id)
           raise "Unable to find newly created volume" unless volume
 
           @logger.debug "  volume:"
@@ -776,7 +781,7 @@ class TaskOmatic
     # I currently refresh ALL storage pools at this time as it
     # shouldn't be a long operation and it doesn't hurt to refresh
     # them once in a while.
-    pools = @session.objects(:class => 'pool')
+    pools = @qmfc.objects(:class => 'pool')
     pools.each do |pool|
       result = pool.refresh
       @logger.info "Problem refreshing pool (you can probably ignore this): #{result.text}" unless result.status == 0
@@ -798,16 +803,16 @@ class TaskOmatic
     begin
       if db_volume[:type] == "LvmStorageVolume"
         phys_libvirt_pool = get_libvirt_lvm_pool_from_volume(db_volume, @logger)
-        phys_libvirt_pool.connect(@session, node)
+        phys_libvirt_pool.connect(@qmfc, node)
         @logger.info "connected to lvm pool.."
       end
 
       begin
         libvirt_pool = LibvirtPool.factory(db_pool, @logger)
-        libvirt_pool.connect(@session, node)
+        libvirt_pool.connect(@qmfc, node)
 
         begin
-          volume = @session.object(:class => 'volume',
+          volume = @qmfc.object(:class => 'volume',
                                    'storagePool' => libvirt_pool.remote_pool.object_id,
                                    'key' => db_volume.key)
           @logger.error "Unable to find volume to delete" unless volume
@@ -861,7 +866,7 @@ class TaskOmatic
     was_disconnected = false
     loop do
 
-      if not @broker.connected?
+      if not @connection.connected?
         @logger.info("Cannot implement tasks, not connected to broker.  Sleeping.")
         sleep(@sleeptime * 3)
         was_disconnected = true
@@ -870,7 +875,7 @@ class TaskOmatic
 
       @logger.info("Reconnected, resuming task checking..") if was_disconnected
       was_disconnected = false
-      @session.object(:class => 'agent')
+      @qmfc.object(:class => 'agent')
 
       tasks = Array.new
       begin

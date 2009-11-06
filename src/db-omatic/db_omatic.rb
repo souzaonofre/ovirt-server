@@ -3,17 +3,17 @@
 $: << File.join(File.dirname(__FILE__), "../dutils")
 $: << File.join(File.dirname(__FILE__), ".")
 
-require "rubygems"
-require "qpid"
+require 'rubygems'
 require 'monitor'
 require 'dutils'
 require 'daemons'
 require 'optparse'
 require 'logger'
 require 'vnc'
+require 'qmf'
+require 'socket'
 
 include Daemonize
-
 
 # This sad and pathetic readjustment to ruby logger class is
 # required to fix the formatting because rails does the same
@@ -29,12 +29,9 @@ end
 
 $logfile = '/var/log/ovirt-server/db-omatic.log'
 
-
-class DbOmatic < Qpid::Qmf::Console
-
+class DbOmatic < Qmf::ConsoleHandler
     # Use monitor mixin for mutual exclusion around checks to heartbeats
     # and updates to objects/heartbeats.
-
     include MonitorMixin
 
     def initialize()
@@ -77,7 +74,6 @@ class DbOmatic < Qpid::Qmf::Console
 
         begin
             ensure_credentials
-
             database_connect
 
             server, port = nil
@@ -91,8 +87,17 @@ class DbOmatic < Qpid::Qmf::Console
             end
 
             @logger.info "Connecting to amqp://#{server}:#{port}"
-            @session = Qpid::Qmf::Session.new(:console => self, :manage_connections => true)
-            @broker = @session.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
+            @settings = Qmf::ConnectionSettings.new
+            @settings.host = server
+            @settings.port = port
+#            @settings.mechanism = 'GSSAPI'
+#            @settings.service = 'qpidd'
+            @settings.sendUserId = false
+
+            @connection = Qmf::Connection.new(@settings)
+            @qmfc = Qmf::Console.new(self)
+            @broker = @qmfc.add_connection(@connection)
+            @broker.wait_for_stable
 
             db_init_cleanup
         rescue Exception => ex
@@ -101,10 +106,8 @@ class DbOmatic < Qpid::Qmf::Console
         end
     end
 
-
     def ensure_credentials()
         get_credentials('qpidd')
-
         Thread.new do
             while true do
                 sleep(3600)
@@ -195,7 +198,7 @@ class DbOmatic < Qpid::Qmf::Console
 
         if state == Vm::STATE_STOPPED
             @logger.info "VM has moved to stopped, clearing VM attributes."
-            qmf_vm = @session.object(:class => "domain", 'uuid' => vm.uuid)
+            qmf_vm = @qmfc.object(Qmf::Query.new(:class => "domain", 'uuid' => vm.uuid))
             if qmf_vm
                 @logger.info "Deleting VM #{vm.description}."
                 result = qmf_vm.undefine
@@ -207,9 +210,9 @@ class DbOmatic < Qpid::Qmf::Console
         # If we are running, update the node that the domain is running on
         elsif state == Vm::STATE_RUNNING
             @logger.info "VM is running, determine the node it is running on"
-            qmf_vm = @session.object(:class => "domain", 'uuid' => vm.uuid)
+            qmf_vm = @qmfc.object(Qmf::Query.new(:class => "domain", 'uuid' => vm.uuid))
             if qmf_vm
-                qmf_host = @session.object(:class => "node", :object_id => qmf_vm.node)
+                qmf_host = @qmfc.object(Qmf::Query.new(:class => "node", :object_id => qmf_vm.node))
                 db_host = Host.find(:first, :conditions => ['hostname = ?', qmf_host.hostname])
                 @logger.info "VM #{vm.description} is running on node #{db_host.hostname}"
                 vm.host_id = db_host.id
@@ -273,7 +276,7 @@ class DbOmatic < Qpid::Qmf::Console
 
                     # Double check to make sure this host is still up.
                     begin
-                        qmf_host = @session.object(:class => 'node', 'hostname' => host_info['hostname'])
+                        qmf_host = @qmfc.objects(Qmf::Query.new(:class => "node", 'hostname' => host_info['hostname']))
                         if !qmf_host
                             @logger.info "Host #{host_info['hostname']} is not up after waiting 20 seconds, skipping dead VM check."
                         else
@@ -301,16 +304,23 @@ class DbOmatic < Qpid::Qmf::Console
         end
     end
 
-    def object_props(broker, obj)
-        target = obj.schema.klass_key.package
+    def object_update(obj, hasProps, hasStats)
+        target = obj.object_class.package_name
+        type = obj.object_class.class_name
         return if target != "com.redhat.libvirt"
 
-        type = obj.schema.klass_key.klass_name
+        if hasProps
+            update_props(obj, type)
+        end
+        if hasStats
+            update_stats(obj, type)
+	end
+    end
 
+    def update_props(obj, type)
         # I just sync this whole thing because there shouldn't be a lot of contention here..
         synchronize do
             values = @cached_objects[obj.object_id.to_s]
-
             new_object = false
 
             if values == nil
@@ -318,8 +328,7 @@ class DbOmatic < Qpid::Qmf::Console
 
                 # Save the agent and broker bank so that we can tell what objects
                 # are expired when the heartbeat for them stops.
-                values[:broker_bank] = obj.object_id.broker_bank
-                values[:agent_bank] = obj.object_id.agent_bank
+                values[:agent_key] = obj.object_id.agent_key
                 values[:obj_key] = obj.object_id.to_s
                 values[:class_type] = type
                 values[:timed_out] = false
@@ -370,53 +379,48 @@ class DbOmatic < Qpid::Qmf::Console
         end
     end
 
-    def object_stats(broker, obj)
-        target = obj.schema.klass_key.package
-        return if target != "com.redhat.libvirt"
-        type = obj.schema.klass_key.klass_name
-
+   def update_stats(obj, type)
         synchronize do
             values = @cached_objects[obj.object_id.to_s]
-            if !values
+            if values == nil
                 values = {}
                 @cached_objects[obj.object_id.to_s] = values
-
-                values[:broker_bank] = obj.object_id.broker_bank
-                values[:agent_bank] = obj.object_id.agent_bank
+                values[:agent_key] = obj.object_id.agent_key
                 values[:class_type] = type
                 values[:timed_out] = false
                 values[:synced] = false
             end
+
             obj.statistics.each do |key, newval|
                 if values[key.to_s] != newval
                     values[key.to_s] = newval
-                    #puts "new value for statistic #{key} : #{newval}"
                 end
             end
         end
     end
 
-    def heartbeat(agent, timestamp)
-        puts "heartbeat from agent #{agent}"
+    def agent_heartbeat(agent, timestamp)
+        puts "heartbeat from agent #{agent.key}"
         return if agent == nil
         synchronize do
-            bank_key = "#{agent.agent_bank}.#{agent.broker.broker_bank}"
-            @heartbeats[bank_key] = [agent, timestamp]
+            @heartbeats[agent.key] = [agent, timestamp]
         end
     end
 
+    def agent_added(agent)
+        @logger.info("Agent connected: #{agent.key}")
+    end
 
-    def del_agent(agent)
+    def agent_deleted(agent)
         agent_disconnected(agent)
     end
 
     # This method marks objects associated with the given agent as timed out/invalid.  Called either
     # when the agent heartbeats out, or we get a del_agent callback.
     def agent_disconnected(agent)
+	puts "agent_disconnected: #{agent.key}"
         @cached_objects.keys.each do |objkey|
-            if @cached_objects[objkey][:broker_bank] == agent.broker.broker_bank and
-               @cached_objects[objkey][:agent_bank] == agent.agent_bank
-
+            if @cached_objects[objkey][:agent_key] == agent.key
                 values = @cached_objects[objkey]
                 if values[:timed_out] == false
                     @logger.info "Marking object of type #{values[:class_type]} with key #{objkey} as timed out."
@@ -430,8 +434,7 @@ class DbOmatic < Qpid::Qmf::Console
             values[:timed_out] = true
             end
         end
-        bank_key = "#{agent.agent_bank}.#{agent.broker.broker_bank}"
-        @heartbeats.delete(bank_key)
+        @heartbeats.delete(agent.key)
     end
 
     # The opposite of above, this is called when an agent is alive and well and makes sure
@@ -439,9 +442,7 @@ class DbOmatic < Qpid::Qmf::Console
     def agent_connected(agent)
 
         @cached_objects.keys.each do |objkey|
-            if @cached_objects[objkey][:broker_bank] == agent.broker.broker_bank and
-               @cached_objects[objkey][:agent_bank] == agent.agent_bank
-
+            if @cached_objects[objkey][:agent_key] == agent.key
                 values = @cached_objects[objkey]
                 if values[:timed_out] == true or values[:synced] == false
                     if values[:class_type] == 'node'
@@ -482,7 +483,7 @@ class DbOmatic < Qpid::Qmf::Console
             # them to stopped.  VMs that exist as QMF objects will get set appropriately when the objects
             # appear on the bus.
             begin
-                qmf_vm = @session.object(:class => 'domain', 'uuid' => db_vm.uuid)
+                qmf_vm = @qmfc.object(Qmf::Query.new(:class => "domain", 'uuid' => db_vm.uuid))
                 if qmf_vm == nil
                     set_stopped = true
                 end
@@ -497,15 +498,6 @@ class DbOmatic < Qpid::Qmf::Console
             end
         end
     end
-
-    def broker_connected(broker)
-        @logger.info "Connected to broker."
-    end
-
-    def broker_disconnected(broker)
-        @logger.error "Broker disconnected."
-    end
-
 
     # This is the mainloop that is called into as a separate thread.  This just loops through
     # and makes sure all the agents are still reporting.  If they aren't they get marked as
@@ -527,7 +519,7 @@ class DbOmatic < Qpid::Qmf::Console
                         s = timestamp / 1000000000
                         delta = t - s
 
-                        puts "Checking time delta for agent #{agent} - #{delta}"
+                        puts "Checking time delta for agent #{agent.key} - #{delta}"
 
                         if delta > 30
                             # No heartbeat for 30 seconds.. deal with dead/disconnected agent.
@@ -545,15 +537,10 @@ class DbOmatic < Qpid::Qmf::Console
     end
 end
 
-
 def main()
-
+    Thread.abort_on_exception = true
     dbsync = DbOmatic.new()
-
-    # Call into mainloop..
     dbsync.check_heartbeats()
-
 end
 
 main()
-

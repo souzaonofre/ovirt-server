@@ -2,21 +2,30 @@
 
 $: << File.join(File.dirname(__FILE__), "./dutils")
 
-require "rubygems"
-require "qpid"
-require "dutils"
+require 'rubygems'
+require 'dutils'
+require 'qmf'
+require 'socket'
 
 get_credentials('qpidd')
 
 server, port = get_srv('qpidd', 'tcp')
 raise "Unable to determine qpid server from DNS SRV record" if not server
 
-srv = "amqp://#{server}:#{port}"
-puts "Connecting to #{srv}.."
-s = Qpid::Qmf::Session.new()
-b = s.add_broker(srv, :mechanism => 'GSSAPI')
+puts "Connecting to #{server}, #{port}"
 
-nodes = s.objects(:class => "node")
+settings = Qmf::ConnectionSettings.new
+settings.host = server
+settings.port = port
+# settings.mechanism = 'GSSAPI'
+# settings.service = 'qpidd'
+
+connection = Qmf::Connection.new(settings)
+qmfc = Qmf::Console.new
+broker = qmfc.add_connection(connection)
+broker.wait_for_stable
+
+nodes = qmfc.objects(Qmf::Query.new(:class => "node"))
 nodes.each do |node|
     puts "node: #{node.hostname}"
     for (key, val) in node.properties
@@ -24,7 +33,7 @@ nodes.each do |node|
     end
 
     # Find any domains that on the current node.
-    domains = s.objects(:class => "domain", 'node' => node.object_id)
+    domains = qmfc.objects(Qmf::Query.new(:class => "domain", 'node' => node.object_id))
     domains.each do |domain|
         r = domain.getXMLDesc()
         puts "getXMLDesc() status: #{r.status}"
@@ -39,7 +48,7 @@ nodes.each do |node|
         end
     end
 
-    pools = s.objects(:class => "pool", 'node' => node.object_id)
+    pools = qmfc.objects(Qmf::Query.new(:class => "pool", 'node' => node.object_id))
     pools.each do |pool|
         puts "  pool: #{pool.name}"
         for (key, val) in pool.properties
@@ -54,7 +63,7 @@ nodes.each do |node|
         end
 
         # Find volumes that are part of the pool.
-        volumes = s.objects(:class => "volume", 'pool' => pool.object_id)
+        volumes = qmfc.objects(Qmf::Query.new(:class => "volume", 'pool' => pool.object_id))
         volumes.each do |volume|
             puts "    volume: #{volume.name}"
             for (key, val) in volume.properties

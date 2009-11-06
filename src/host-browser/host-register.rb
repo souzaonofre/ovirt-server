@@ -4,12 +4,13 @@ $: << File.join(File.dirname(__FILE__), "../dutils")
 $: << File.join(File.dirname(__FILE__), ".")
 
 require 'rubygems'
-require 'qpid'
 require 'monitor'
 require 'dutils'
 require 'daemons'
 require 'optparse'
 require 'logger'
+require 'qmf'
+require 'socket'
 
 include Daemonize
 
@@ -27,13 +28,17 @@ end
 
 $logfile = '/var/log/ovirt-server/host-register.log'
 
-class HostRegister < Qpid::Qmf::Console
+class HostRegister < Qmf::ConsoleHandler
 
     # Use monitor mixin for mutual exclusion around checks to heartbeats
     # and updates to objects/heartbeats.
 
     include MonitorMixin
 
+    # def initialize: Takes no parameters
+    # On initialize, we get a connection to the database.
+    # We then query the name and address of the qpidd server
+    # using dnsmasq records, and connect to qpidd.
     def initialize()
         super()
         @cached_hosts = {}
@@ -78,7 +83,6 @@ class HostRegister < Qpid::Qmf::Console
 
         begin
             ensure_credentials
-
             database_connect
 
             server, port = nil
@@ -92,8 +96,17 @@ class HostRegister < Qpid::Qmf::Console
             end
 
             @logger.info "Connecting to amqp://#{server}:#{port}"
-            @session = Qpid::Qmf::Session.new(:console => self, :manage_connections => true)
-            @broker = @session.add_broker("amqp://#{server}:#{port}", :mechanism => 'GSSAPI')
+            @settings = Qmf::ConnectionSettings.new
+            @settings.host = server
+            @settings.port = port
+            # @settings.mechanism = 'GSSAPI'
+            # @settings.service = 'qpidd'
+            @settings.sendUserId = false
+
+            @connection = Qmf::Connection.new(@settings)
+            @qmfc = Qmf::Console.new(self)
+            @broker = @qmfc.add_connection(@connection)
+            @broker.wait_for_stable
 
          rescue Exception => ex
             @logger.error "Error in hostregister: #{ex}"
@@ -101,6 +114,7 @@ class HostRegister < Qpid::Qmf::Console
         end
     end
 
+    ###### Utility Methods ######
     def debugputs(msg)
         puts msg if @debug == true and @do_daemon == false
     end
@@ -116,20 +130,66 @@ class HostRegister < Qpid::Qmf::Console
         end
     end
 
-    def broker_connected(broker)
-        @logger.info 'Connected to broker.'
-    end
-
-    def broker_disconnected(broker)
-        @logger.error 'Broker disconnected.'
-    end
-
-    def agent_disconnected(agent)
+    ###### QMF Callbacks ######
+    def agent_heartbeat(agent, timestamp)
+        return if agent == nil
         synchronize do
-            debugputs "Marking objects for agent #{agent.broker.broker_bank}.#{agent.agent_bank} inactive"
+            bank_key = "#{agent.agent_bank}.#{agent.broker_bank}"
+            @heartbeats[bank_key] = [agent, timestamp]
+        end
+    end
+
+    def agent_added(agent)
+        agent_bank = agent.agent_bank
+        broker_bank = agent.broker_bank
+        key = "#{agent_bank}.#{broker_bank}"
+
+	puts "AGENT ADDED: #{key}"
+        debugputs "Agent #{agent_bank}.#{broker_bank} connected!"
+        agent_connected(agent_bank, broker_bank)
+
+        host_list = @qmfc.objects(:package => 'com.redhat.matahari', :class => 'host')
+	puts "host_list length is #{host_list.length}"
+        host_list.each do |host|
+            if host.object_id.agent_bank == agent_bank
+                # Grab the cpus and nics associated before we take any locks
+                cpu_info = @qmfc.objects(:package => 'com.redhat.matahari', :class => 'cpu', 'host' => host.object_id)
+                nic_info = @qmfc.objects(:package => 'com.redhat.matahari', :class => 'nic', 'host' => host.object_id)
+
+                # And pass it on to the real handler
+                update_host(host, cpu_info, nic_info)
+            end
+        end
+    end
+
+    def agent_deleted(agent)
+        agent_bank = agent.agent_bank
+        broker_bank = agent.broker_bank
+        key = "#{agent_bank}.#{broker_bank}"
+
+        debugputs "Agent #{key} disconnected!"
+        @heartbeats.delete(key)
+        agent_disconnected(agent_bank, broker_bank)
+    end
+
+    def object_update(obj, hasProps, hasStats)
+        target = obj.object_class.package_name
+        type = obj.object_class.class_name
+        return if target != 'com.redhat.matahari' or type != 'host' or hasProps == false
+
+        # Fix a race where the properties of an object are published by a reconnecting
+        # host (thus marking it active) right before the heartbeat timer considers it dead
+        # (and marks it inactive)
+        @heartbeats.delete("#{obj.object_id.agent_bank}.#{obj.object_id.broker_bank}")
+    end # def object_props
+
+    ###### Handlers for QMF Callbacks ######
+    def agent_disconnected(agent_bank, broker_bank)
+        synchronize do
+            debugputs "Marking objects for agent #{broker_bank}.#{agent_bank} inactive"
             @cached_hosts.keys.each do |objkey|
-                if @cached_hosts[objkey][:broker_bank] == agent.broker.broker_bank and
-                   @cached_hosts[objkey][:agent_bank] == agent.agent_bank
+                if @cached_hosts[objkey][:broker_bank] == broker_bank and
+                   @cached_hosts[objkey][:agent_bank] == agent_bank
 
                     cached_host = @cached_hosts[objkey]
                     cached_host[:active] = false
@@ -139,12 +199,12 @@ class HostRegister < Qpid::Qmf::Console
         end # synchronize do
     end
 
-    def agent_connected(agent)
+    def agent_connected(agent_bank, broker_bank)
         synchronize do
-            debugputs "Marking objects for agent #{agent.broker.broker_bank}.#{agent.agent_bank} active"
+            debugputs "Marking objects for agent #{broker_bank}.#{agent_bank} active"
             @cached_hosts.keys.each do |objkey|
-                if @cached_hosts[objkey][:broker_bank] == agent.broker.broker_bank and
-                   @cached_hosts[objkey][:agent_bank] == agent.agent_bank
+                if @cached_hosts[objkey][:broker_bank] == broker_bank and
+                   @cached_hosts[objkey][:agent_bank] == agent_bank
 
                     cached_host = @cached_hosts[objkey]
                     cached_host[:active] = true
@@ -153,6 +213,136 @@ class HostRegister < Qpid::Qmf::Console
             end # @objects.keys.each
         end # synchronize do
     end
+
+    def update_host(obj, cpu_info, nic_info)
+        already_cache = false
+        already_in_db = false
+
+        synchronize do
+            cached_host = @cached_hosts[obj.object_id.to_s]
+            host = Host.find(:first, :conditions => ['hostname = ?', obj.hostname])
+
+            already_cache = true if cached_host != nil
+            already_in_db = true if host != nil
+
+            @logger.info "Node #{obj.hostname} with UUID #{obj.uuid} detected, already exists in db? is #{already_in_db}"
+
+            # Four cases apply here:
+            # 1. Not in db, but is cached:
+            #    Impossible, since we don't cache unless we could add to db.
+            #    Throw an exception here.
+            #
+            # 2. Not in db or cache:
+            #    Seeing host for the first time. Put in db and cache.
+            #
+            # 3. In db, not in cache:
+            #    Have not seen host since last invocation of daemon. Update
+            #    db entry, and add to cache.
+            #
+            # 4. In db, in cache:
+            #    Property updated; update in db and cache.
+
+            # Case 1:
+            if already_cache and not already_in_db
+                error = "Error: Found host in cache that is not present in db!"
+                @logger.error error
+                throw error
+            end
+
+            # All other cases collapse to add-or-update db and cache
+
+            # Add to db if necessary
+            if not already_in_db
+                debugputs "Didn't find host #{obj.hostname} in db!"
+                begin
+                    @logger.info "Creating a new record for #{obj.hostname}..."
+
+                    host = Host.create(
+                               'uuid'            => obj.uuid,
+                               'hostname'        => obj.hostname,
+                               'hypervisor_type' => obj.hypervisor,
+                               'arch'            => obj.arch,
+                               'memory'          => obj.memory,
+                               'is_disabled'     => 0,
+                               'hardware_pool'   => HardwarePool.get_default_pool,
+                              # Let db-omatic mark it available when it
+                              # successfully connects to it via libvirt.
+                               'state'           => Host::STATE_UNAVAILABLE)
+
+                    debugputs 'Added new host:'
+                    debugputs "uuid: #{obj.uuid}"
+                    debugputs "hostname: #{obj.hostname}"
+                    debugputs "hypervisor: #{obj.hypervisor}"
+                    debugputs "arch: #{obj.arch}"
+                    debugputs "memory: #{obj.memory}"
+
+                rescue Exception => error
+                    @logger.error "Error when creating record: #{error.message}"
+                    @logger.error "Restart matahari on host #{obj.hostname}"
+                    # We haven't added the host to the db, and it isn't cached,
+                    # so we just return without having done anything. To retry,
+                    # the host will have to restart its agent.
+                    return
+                end
+            else
+                @logger.info "Updating record for #{obj.hostname}..."
+                host.uuid            = obj.uuid
+                host.hostname        = obj.hostname
+                host.hypervisor_type = obj.hypervisor
+                host.arch            = obj.arch
+                host.memory          = obj.memory
+
+                debugputs 'Updated host #{obj.hostname} with new details:'
+                debugputs "uuid: #{obj.uuid}"
+                debugputs "hypervisor: #{obj.hypervisor}"
+                debugputs "arch: #{obj.arch}"
+                debugputs "memory: #{obj.memory}"
+            end # not already_in_db
+
+            update_cpus(obj, host, cpu_info)
+            update_nics(obj, host, nic_info)
+
+            host.save!
+            debugputs "Finished flushing host #{obj.hostname} to db"
+
+            # Add to cache if necessary
+            if not already_cache
+                debugputs "Did not find host #{obj.hostname} in cache!"
+                # Check if there is a stale entry for host that we can refresh.
+                # We iterate over each host in the cache. If we find an entry
+                # that matches hostname, we rekey it in hash.
+                @cached_hosts.each do |objkey, h|
+                    if h['hostname'] == obj.hostname
+                        debugputs "Found stale entry for #{obj.hostname} with key #{objkey}"
+                        debugputs "Refreshing with key #{obj.object_id.to_s}"
+                        @cached_hosts.delete(objkey)
+                        @cached_hosts[obj.object_id.to_s] = h
+                        cached_host = h
+                        break
+                    end
+                end # @cached_hosts.each
+
+                if cached_host == nil
+                    debugputs "Creating new entry for #{obj.hostname} with key #{obj.object_id.to_s}"
+                    cached_host = {}
+                    @cached_hosts[obj.object_id.to_s] = cached_host
+                end
+
+                # By now, we either rekeyed a stale entry or started a new one.
+                # Update the bookkeeping parts of the data.
+                cached_host[:obj_key] = obj.object_id.to_s
+                cached_host[:broker_bank] = obj.object_id.broker_bank
+                cached_host[:agent_bank] = obj.object_id.agent_bank
+            end # not already_cache
+
+            # For now, only cache identity information (leave CPU/NIC/etc. to db only)
+            cached_host[:active] = true
+            cached_host['hostname'] = obj.hostname
+            cached_host['uuid'] = obj.uuid
+            cached_host['hypervisor'] = obj.hypervisor
+            cached_host['arch'] = obj.arch
+        end # synchronize do
+    end # end update_host
 
     def update_cpus(host_qmf, host_db, cpu_info)
 
@@ -254,169 +444,6 @@ class HostRegister < Qpid::Qmf::Console
         end
     end
 
-    def object_props(broker, obj)
-        target = obj.schema.klass_key.package
-        type = obj.schema.klass_key.klass_name
-        return if target != 'com.redhat.matahari' or type != 'host'
-
-        # Fix a race where the properties of an object are published by a reconnecting
-        # host (thus marking it active) right before the heartbeat timer considers it dead
-        # (and marks it inactive)
-        @heartbeats.delete("#{obj.object_id.agent_bank}.#{obj.object_id.broker_bank}")
-
-        already_cache = false
-        already_in_db = false
-
-	# Grab the cpus and nics associated before we take any locks
-	cpu_info = @session.objects(:class => 'cpu', 'host' => obj.object_id)
-	nic_info = @session.objects(:class => 'nic', 'host' => obj.object_id)
-
-        synchronize do
-            cached_host = @cached_hosts[obj.object_id.to_s]
-            host = Host.find(:first, :conditions => ['hostname = ?', obj.hostname])
-
-            already_cache = true if cached_host != nil
-            already_in_db = true if host != nil
-
-            @logger.info "Node #{obj.hostname} with UUID #{obj.uuid} detected, already exists in db? is #{already_in_db}"
-
-            # Four cases apply here:
-            # 1. Not in db, but is cached:
-            #    Impossible, since we don't cache unless we could add to db.
-            #    Throw an exception here.
-            #
-            # 2. Not in db or cache:
-            #    Seeing host for the first time. Put in db and cache.
-            #
-            # 3. In db, not in cache:
-            #    Have not seen host since last invocation of daemon. Update
-            #    db entry, and add to cache.
-            #
-            # 4. In db, in cache:
-            #    Property updated; update in db and cache.
-
-            # Case 1:
-            if already_cache and not already_in_db
-                error = "Error: Found host in cache that is not present in db!"
-                @logger.error error
-                throw error
-            end
-
-            # All other cases collapse to add-or-update db and cache
-
-            # Add to db if necessary
-            if not already_in_db
-                debugputs "Didn't find host #{obj.hostname} in db!"
-                begin
-                    @logger.info "Creating a new record for #{obj.hostname}..."
-
-                    host = Host.create(
-                               'uuid'            => obj.uuid,
-                               'hostname'        => obj.hostname,
-                               'hypervisor_type' => obj.hypervisor,
-                               'arch'            => obj.arch,
-                               'memory'          => obj.memory,
-                               'is_disabled'     => 0,
-                               'hardware_pool'   => HardwarePool.get_default_pool,
-                              # Let host-status mark it available when it
-                              # successfully connects to it via libvirt.
-                               'state'           => Host::STATE_UNAVAILABLE)
-
-                    debugputs 'Added new host:'
-                    debugputs "uuid: #{obj.uuid}"
-                    debugputs "hostname: #{obj.hostname}"
-                    debugputs "hypervisor: #{obj.hypervisor}"
-                    debugputs "arch: #{obj.arch}"
-                    debugputs "memory: #{obj.memory}"
-
-                rescue Exception => error
-                    @logger.error "Error while creating record: #{error.message}"
-                   # We haven't added the host to the db, and it isn't cached, so we just
-                   # return without having done anything. To retry, the host will have to
-                   # restart its agent.
-                    return
-                end
-            else
-                @logger.info "Updating record for #{obj.hostname}..."
-                host.uuid            = obj.uuid
-                host.hostname        = obj.hostname
-                host.hypervisor_type = obj.hypervisor
-                host.arch            = obj.arch
-                host.memory          = obj.memory
-
-                debugputs 'Updated host #{obj.hostname} with new details:'
-                debugputs "uuid: #{obj.uuid}"
-                debugputs "hypervisor: #{obj.hypervisor}"
-                debugputs "arch: #{obj.arch}"
-                debugputs "memory: #{obj.memory}"
-            end # not already_in_db
-
-            update_cpus(obj, host, cpu_info)
-            update_nics(obj, host, nic_info)
-
-            host.save!
-            debugputs "Finished flushing host #{obj.hostname} to db"
-
-            # Add to cache if necessary
-            if not already_cache
-                debugputs "Did not find host #{obj.hostname} in cache!"
-                # Check if there is a stale entry for host that we can refresh.
-                # We iterate over each host in the cache. If we find an entry
-                # that matches hostname, we rekey it in hash.
-                @cached_hosts.each do |objkey, h|
-                    if h['hostname'] == obj.hostname
-                        debugputs "Found stale entry for #{obj.hostname} with key #{objkey}"
-                        debugputs "Refreshing with key #{obj.object_id.to_s}"
-                        @cached_hosts.delete(objkey)
-                        @cached_hosts[obj.object_id.to_s] = h
-                        cached_host = h
-                        break
-                    end
-                end # @cached_hosts.each
-
-                if cached_host == nil
-                    debugputs "Creating new entry for #{obj.hostname} with key #{obj.object_id.to_s}"
-                    cached_host = {}
-                    @cached_hosts[obj.object_id.to_s] = cached_host
-                end
-
-                # By now, we either rekeyed a stale entry or started a new one.
-                # Update the bookkeeping parts of the data.
-                cached_host[:obj_key] = obj.object_id.to_s
-                cached_host[:broker_bank] = obj.object_id.broker_bank
-                cached_host[:agent_bank] = obj.object_id.agent_bank
-            end # not already_cache
-
-            # For now, only cache identity information (leave CPU/NIC/etc. to db only)
-            cached_host[:active] = true
-            cached_host['hostname'] = obj.hostname
-            cached_host['uuid'] = obj.uuid
-            cached_host['hypervisor'] = obj.hypervisor
-            cached_host['arch'] = obj.arch
-        end # synchronize do
-    end # def object_props
-
-    def heartbeat(agent, timestamp)
-        return if agent == nil
-        synchronize do
-            bank_key = "#{agent.agent_bank}.#{agent.broker.broker_bank}"
-            @heartbeats[bank_key] = [agent, timestamp]
-        end
-    end
-
-    def new_agent(agent)
-        key = "#{agent.agent_bank}.#{agent.broker.broker_bank}"
-        debugputs "Agent #{key} connected!"
-        agent_connected(agent)
-    end
-
-    def del_agent(agent)
-        key = "#{agent.agent_bank}.#{agent.broker.broker_bank}"
-        debugputs "Agent #{key} disconnected!"
-        @heartbeats.delete(key)
-        agent_disconnected(agent)
-    end
-
     def check_heartbeats()
         begin
             while true
@@ -436,7 +463,10 @@ class HostRegister < Qpid::Qmf::Console
                             # No heartbeat for 30 seconds.. deal with dead/disconnected agent.
                             debugputs "Agent #{key} timed out!"
                             @heartbeats.delete(key)
-                            agent_disconnected(agent)
+
+                            agent_bank = agent.agent_bank
+                            broker_bank = agent.broker_bank
+                            agent_disconnected(agent_bank, broker_bank)
                         end
                     end
 
@@ -461,6 +491,7 @@ class HostRegister < Qpid::Qmf::Console
 end # Class HostRegister
 
 def main()
+    Thread.abort_on_exception = true
     hostreg = HostRegister.new()
     hostreg.check_heartbeats()
 end
