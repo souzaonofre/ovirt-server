@@ -198,7 +198,7 @@ class DbOmatic < Qmf::ConsoleHandler
 
         if state == Vm::STATE_STOPPED
             @logger.info "VM has moved to stopped, clearing VM attributes."
-            qmf_vm = @qmfc.object(Qmf::Query.new(:class => "domain", 'uuid' => vm.uuid))
+            qmf_vm = @qmfc.object(Qmf::Query.new(:class => "domain"), 'uuid' => vm.uuid)
             if qmf_vm
                 @logger.info "Deleting VM #{vm.description}."
                 result = qmf_vm.undefine
@@ -210,12 +210,14 @@ class DbOmatic < Qmf::ConsoleHandler
         # If we are running, update the node that the domain is running on
         elsif state == Vm::STATE_RUNNING
             @logger.info "VM is running, determine the node it is running on"
-            qmf_vm = @qmfc.object(Qmf::Query.new(:class => "domain", 'uuid' => vm.uuid))
+            qmf_vm = @qmfc.object(Qmf::Query.new(:class => "domain"), 'uuid' => vm.uuid)
             if qmf_vm
                 qmf_host = @qmfc.object(Qmf::Query.new(:class => "node", :object_id => qmf_vm.node))
                 db_host = Host.find(:first, :conditions => ['hostname = ?', qmf_host.hostname])
                 @logger.info "VM #{vm.description} is running on node #{db_host.hostname}"
                 vm.host_id = db_host.id
+            elsif
+              @logger.info "Cannot find in QMF the node corresponding to #{domain['name']} "
             end
         end
 
@@ -276,7 +278,7 @@ class DbOmatic < Qmf::ConsoleHandler
 
                     # Double check to make sure this host is still up.
                     begin
-                        qmf_host = @qmfc.objects(Qmf::Query.new(:class => "node", 'hostname' => host_info['hostname']))
+                        qmf_host = @qmfc.objects(Qmf::Query.new(:class => "node"), 'hostname' => host_info['hostname'])
                         if !qmf_host
                             @logger.info "Host #{host_info['hostname']} is not up after waiting 20 seconds, skipping dead VM check."
                         else
@@ -483,7 +485,7 @@ class DbOmatic < Qmf::ConsoleHandler
             # them to stopped.  VMs that exist as QMF objects will get set appropriately when the objects
             # appear on the bus.
             begin
-                qmf_vm = @qmfc.object(Qmf::Query.new(:class => "domain", 'uuid' => db_vm.uuid))
+                qmf_vm = @qmfc.object(Qmf::Query.new(:class => "domain"), 'uuid' => db_vm.uuid)
                 if qmf_vm == nil
                     set_stopped = true
                 end
