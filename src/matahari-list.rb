@@ -33,7 +33,7 @@ hosts.each do |host|
     end
 
     # List cpus for current host
-    cpus = qmfc.objects(Qmf::Query.new(:class => 'cpu', 'host' => host.object_id))
+    cpus = qmfc.objects(Qmf::Query.new(:class => 'cpu'), 'host' => host.object_id)
     cpus.each do |cpu|
         puts '  CPU:'
         for (key, val) in cpu.properties
@@ -42,7 +42,7 @@ hosts.each do |host|
     end # cpus.each
 
     # List nics for current host
-    nics = qmfc.objects(Qmf::Query.new(:class => 'nic', 'host' => host.object_id))
+    nics = qmfc.objects(Qmf::Query.new(:class => 'nic'), 'host' => host.object_id)
     nics.each do |nic|
         puts '  NIC: '
         for (key, val) in nic.properties

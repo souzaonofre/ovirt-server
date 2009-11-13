@@ -33,7 +33,7 @@ nodes.each do |node|
     end
 
     # Find any domains that on the current node.
-    domains = qmfc.objects(Qmf::Query.new(:class => "domain", 'node' => node.object_id))
+    domains = qmfc.objects(Qmf::Query.new(:class => "domain"), 'node' => node.object_id)
     domains.each do |domain|
         r = domain.getXMLDesc()
         puts "getXMLDesc() status: #{r.status}"
@@ -48,7 +48,7 @@ nodes.each do |node|
         end
     end
 
-    pools = qmfc.objects(Qmf::Query.new(:class => "pool", 'node' => node.object_id))
+    pools = qmfc.objects(Qmf::Query.new(:class => "pool"), 'node' => node.object_id)
     pools.each do |pool|
         puts "  pool: #{pool.name}"
         for (key, val) in pool.properties
@@ -63,7 +63,7 @@ nodes.each do |node|
         end
 
         # Find volumes that are part of the pool.
-        volumes = qmfc.objects(Qmf::Query.new(:class => "volume", 'pool' => pool.object_id))
+        volumes = qmfc.objects(Qmf::Query.new(:class => "volume"), 'pool' => pool.object_id)
         volumes.each do |volume|
             puts "    volume: #{volume.name}"
             for (key, val) in volume.properties
