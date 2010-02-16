@@ -548,7 +548,7 @@ class TaskOmatic
       dest_uri = "qemu+tcp://" + dest_node.hostname + "/system"
       @logger.debug("Migrating from #{src_uri} to #{dest_uri}")
 
-      result = vm.migrate(dest_uri, Libvirt::Domain::MIGRATE_LIVE, '', '', 0, :timeout => 60 * 10)
+      result = vm.migrate(dest_uri, Libvirt::Domain::MIGRATE_LIVE, '', '', 0, :timeout => 60 * 50)
       @logger.error "Error migrating VM: #{result.text}" unless result.status == 0
 
       # undefine can fail, for instance, if we live migrated from A -> B, and
