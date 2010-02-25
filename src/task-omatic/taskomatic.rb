@@ -608,7 +608,7 @@ class TaskOmatic
     storage_volume.size = volume.capacity / 1024
     storage_volume.storage_pool_id = db_pool.id
     storage_volume.write_attribute(storage_volume.volume_name, volume.name)
-    storage_volume.key = volume.key
+    storage_volume.key = volume.get_attr('key')
     storage_volume.lv_owner_perms = owner
     storage_volume.lv_group_perms = group
     storage_volume.lv_mode_perms = mode
@@ -661,14 +661,14 @@ class TaskOmatic
 
           existing_vol = StorageVolume.find(:first, :conditions =>
                             ["storage_pool_id = ? AND key = ?",
-                            db_pool_phys.id, volume.key])
+                            db_pool_phys.id, volume.get_attr('key')])
 
-          puts "Existing volume is #{existing_vol}, searched for storage volume key and #{volume.key}"
+          puts "Existing volume is #{existing_vol}, searched for storage volume key and #{volume.get_attr('key')}"
           # Only add if it's not already there.
           if not existing_vol
             add_volume_to_db(db_pool_phys, volume);
           else
-            @logger.debug "Scanned volume #{volume.key} already exists in db.."
+            @logger.debug "Scanned volume #{volume.get_attr('key')} already exists in db.."
           end
 
           # Now check for an LVM pool carving up this volume.
@@ -710,11 +710,11 @@ class TaskOmatic
             lvm_storage_volume = StorageVolume.factory(lvm_db_pool.get_type_label)
             existing_vol = StorageVolume.find(:first, :conditions =>
                               ["storage_pool_id = ? AND key = ?",
-                              lvm_db_pool.id, lvm_volume.key])
+                              lvm_db_pool.id, lvm_volume.get_attr('key')])
             if not existing_vol
               add_volume_to_db(lvm_db_pool, lvm_volume, "0744", "0744", "0744");
             else
-              @logger.info "volume #{lvm_volume.key} already exists in db.."
+              @logger.info "volume #{lvm_volume.get_attr('key')} already exists in db.."
             end
           end
         end
@@ -756,7 +756,7 @@ class TaskOmatic
           end
 
           db_volume.reload
-          db_volume.key = volume.key
+          db_volume.key = volume.get_attr('key')
           db_volume.path = volume.path
           db_volume.state = StorageVolume::STATE_AVAILABLE
           db_volume.save!
@@ -966,4 +966,3 @@ end
 
 taskomatic = TaskOmatic.new()
 taskomatic.mainloop()
-
