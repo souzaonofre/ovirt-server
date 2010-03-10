@@ -46,7 +46,7 @@ node_dir=/usr/share/ovirt-node-image
 
 cobbler distro add --name="oVirt-Node-$node_arch" --arch=$node_arch \
     --initrd=$node_dir/tftpboot/initrd0.img --kernel=$node_dir/tftpboot/vmlinuz0 \
-    --kopts="rootflags=loop root=/ovirt-node-image.iso rootfstype=iso9660 ro console=tty0 console=ttyS0,115200n8"
+    --kopts="rootflags=loop root=live:/ovirt-node-image.iso rootfstype=iso9660 ro console=tty0 console=ttyS0,115200n8"
 
 cobbler profile add --name=oVirt-Node-$node_arch --distro=oVirt-Node-$node_arch
 cobbler system add --netboot-enabled=1 --profile=oVirt-Node-$node_arch \
