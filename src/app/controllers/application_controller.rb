@@ -25,7 +25,7 @@ class ApplicationController < ActionController::Base
   # FIXME: once all controller classes include this, remove here
   include ApplicationService
 
-  init_gettext "ovirt"
+#  init_gettext "ovirt"
   layout :choose_layout
 
   before_filter :is_logged_in, :get_help_section
