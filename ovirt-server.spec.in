@@ -5,7 +5,7 @@
 Summary: The oVirt Server Suite
 Name: ovirt-server
 Version: @VERSION@
-Release: 0%{?dist}%{?extra_release}
+Release: 1%{?dist}%{?extra_release}
 # full source URL will be added with the next oVirt release. This is a pre-release
 # code drop to make sure we get the package approved by f12 feature freeze.
 Source0: %{name}-%{version}.tar.gz
@@ -260,6 +260,9 @@ fi
 
 
 %changelog
+* Tue Apr  6 2010 Darryl L. Pierce <dpierce@redhat.com> - 1.9.1-1
+- Release 1.9.1 of the package.
+
 * Fri Jul 17 2009 Scott Seago <sseago@redhat.com> - 0.100-1
 - rpmlint fixes for Fedora 12 inclusion
 
