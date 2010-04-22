@@ -7,5 +7,13 @@ AC_CONFIG_HEADERS([config.h])
 test x"$ac_ct_CC:$CFLAGS" = 'xgcc:-g -O2' \
   && CFLAGS="$CFLAGS -Wshadow -Wall -Werror"
 
+AC_CHECK_PROGS(RUBY, ruby rake gem)
+
+if test x"$RUBY" = x ; then
+   AC_MSG_ERROR([Missing ruby development programs.])
+fi
+
+AC_CHECK_LIB(ruby, main, , AC_MSG_ERROR([Cannot find development libraries.]))
+
 AC_CONFIG_FILES([Makefile ovirt-server.spec])
 AC_OUTPUT
