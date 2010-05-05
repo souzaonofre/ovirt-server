@@ -43,7 +43,7 @@ class ovirt::setup {
 		ensure => installed;
 	}
 
-	package {"qpidd":
+	package {"qpid-cpp-server":
 	        ensure => installed;
 	}
 
@@ -176,7 +176,7 @@ class ovirt::setup {
         service {"qpidd" :
                 enable => true,
                 ensure => running,
-                require => Package[qpidd]
+                require => Package[qpid-cpp-server]
                 }
 
         service {"collectd" :

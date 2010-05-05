@@ -1,0 +1,4 @@
+ChangeLog:
+
+Version 1.9.3:
+ * Changed qpidd to qpid-cpp-server in recipe.
