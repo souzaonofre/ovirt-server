@@ -20,12 +20,13 @@
 # Filters added to this controller apply to all controllers in the application.
 # Likewise, all the methods added will be available for all controllers.
 
+require 'gettext_rails'
 
 class ApplicationController < ActionController::Base
   # FIXME: once all controller classes include this, remove here
   include ApplicationService
 
-#  init_gettext "ovirt"
+  init_gettext "ovirt"
   layout :choose_layout
 
   before_filter :is_logged_in, :get_help_section
