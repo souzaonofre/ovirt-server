@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 #
-# Copyright (C) 2008 Red Hat, Inc.
-# Written by Ian Main <imain@redhat.com>
+#1;2000;0c Copyright (C) 2008 Red Hat, Inc.
+#1;2000;0c Written by Ian Main <imain@redhat.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -55,14 +55,17 @@ if do_daemon
   daemonize
 end
 
-f = UNIXSocket.new("/var/lib/collectd/unixsock")
 
 database_connect
 
 loop do
+  f = UNIXSocket.new("/var/lib/collectd/unixsock")
+
   f.write("LISTVAL\n")
+  puts("****** SOCKET asked ******")
 
   count = f.gets
+  puts("****** SOCKET return #{count} ******")
   count = count.to_i
 
   vals = []
@@ -71,39 +74,49 @@ loop do
     vals.push(value)
     count = count - 1
   end
+  
+  if (vals.length > 0)
+    for val in vals do
+      timestamp, keystring = val.split(" ")
 
-  for val in vals do
-    timestamp, keystring = val.split(" ")
+      hostname,plugin,type = keystring.split("/")
 
-    hostname,plugin,type = keystring.split("/")
+      if plugin == "load" and type == "load"
+        puts("KEYSTRING -> #{keystring}")
+        f.write("GETVAL #{keystring}\n")
+        valuestring = f.gets
+        3.times {
+          valuestring += f.gets
+        }
 
-    if plugin == "load" and type == "load"
-      f.write("GETVAL #{keystring}\n")
-      valuestring = f.gets
+        puts(" ------------------- VALUESTRING:: #{valuestring}")
+        values = valuestring.split("=")
+        if values.length != 4
+          puts("GACK! Should have 4 values for load")
+          next
+        end
+        short = values[1].to_f
+        med = values[2].to_f
+        long = values[3].to_f
 
-      values = valuestring.split("=")
-      if values.length != 4
-        puts("GACK! Should have 4 values for load")
-        next
-      end
-      short = values[1].to_f
-      med = values[2].to_f
-      long = values[3].to_f
+        # You only see this in non-daemon mode..
+        puts("hostname: #{hostname} --> short: #{short}, med: #{med}, long: #{long}")
 
-      # You only see this in non-daemon mode..
-      puts("hostname: #{hostname} --> short: #{short}, med: #{med}, long: #{long}")
+        # We have our values now, just need to update the db.
+        host = Host.find(:first, :conditions => [ "hostname = ?", hostname])
+        if host == nil
+          puts("GACK! No such host in database: #{hostname}")
+        else
+          host.load_average = short
+          host.save
 
-      # We have our values now, just need to update the db.
-      host = Host.find(:first, :conditions => [ "hostname = ?", hostname])
-      if host == nil
-        puts("GACK! No such host in database: #{hostname}")
-      else
-        host.load_average = med
-        host.save
+        end
       end
     end
   end
-
+  
+  puts("****** SLEEP ******")
+  f.close
   sleep sleeptime
 
 end
