@@ -95,6 +95,21 @@ class ManagedNodeConfiguration
                      nic.netmask, nic.broadcast,
                      nic.gateway)
           add_nic(result, nic.mac, iface_name)
+	
+	  # process the vlan tagging
+
+          nic.network.usages.map do |usage|
+	    usage.networks.map do |net|
+	      if net.type == "Vlan"
+	        eth_vlan_name = "#{nic.interface_name}.#{net.number}" 
+                 add_bridge(result, 'none', eth_vlan_name,
+                     nic.boot_protocol, nic.ip_address,
+                     nic.netmask, nic.broadcast,
+                     nic.gateway)
+                 add_vlan(result, eth_vlan_name)
+	      end
+	    end # end of : usage.networks.map do |net|
+	  end # end of : nic.network.usages.map do |usage|
         end
       end
     end
@@ -121,4 +136,9 @@ class ManagedNodeConfiguration
   def self.add_slave(result, mac, iface_name, master)
     result.puts "ifcfg=#{mac}|#{iface_name}|MASTER=#{master}|SLAVE=yes|ONBOOT=yes"
   end
+
+  def self.add_vlan(result, iface_name)
+    result.puts "ifcfg=none|#{iface_name}|BRIDGE=br#{iface_name}|ONBOOT=yes|VLAN=yes"
+  end
+
 end
