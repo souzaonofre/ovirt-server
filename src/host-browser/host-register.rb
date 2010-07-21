@@ -178,6 +178,7 @@ class HostRegister < Qmf::ConsoleHandler
     def agent_disconnected(agent)
         synchronize do
             debugputs "Marking objects for agent #{agent.key} inactive"
+            @logger.info "Marking objects for agent #{agent.key} inactive"
             @cached_hosts.keys.each do |objkey|
                 if @cached_hosts[objkey][:agent_key] == agent.key
                     cached_host = @cached_hosts[objkey]
@@ -435,10 +436,10 @@ class HostRegister < Qmf::ConsoleHandler
             while true
                 sleep(5)
                 synchronize do
-                    # Get seconds from the epoch
-                    t = Time.new.to_i
 
                     @heartbeats.keys.each do | key |
+                        # Get seconds from the epoch
+                        t = Time.new.to_i
                         agent, timestamp = @heartbeats[key]
 
                         # Heartbeats from qpid are in microseconds, we just need seconds..
@@ -447,7 +448,7 @@ class HostRegister < Qmf::ConsoleHandler
 
                         if delta > 30
                             # No heartbeat for 30 seconds.. deal with dead/disconnected agent.
-                            debugputs "Agent #{key} timed out!"
+                            @logger.info "Agent #{key} timed out! Check NTP || with delta #{delta} = t #{t} - s #{s}"
                             @heartbeats.delete(key)
 
                             agent_disconnected(agent)
