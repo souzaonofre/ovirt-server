@@ -376,20 +376,36 @@ class TaskOmatic
     # loop through each nic/network assigned to vm,
     #  finding necessary host devices to bridge
     net_interfaces = []
+    device_interface_name = nil
     db_vm.nics.each { |nic|
        device = net_device = nil
        if nic.network.class == PhysicalNetwork
          device = Nic.find(:first,
                :conditions => ["host_id = ? AND network_id = ?",
                                     db_host.id, nic.network_id ])
+         device_interface_name = device.interface_name
        else
          device = Bonding.find(:first,
                :conditions => ["host_id = ? AND vlan_id = ?",
                                     db_host.id, nic.network_id ])
+	 # here we should check if in usage group associate to this lan
+	 # we can find a lan that match ...
+	 if device
+           device_interface_name = device.interface_name
+         else
+            # tag du vlan = nic.netwoerk.number
+            usage = nic.network.usages.first
+            db_host.nics.map do |n|
+              if n.network and n.network.usages.first == usage
+                device_interface_name = "#{n.interface_name}.#{nic.network.number}"
+                break
+              end
+            end
+	 end
        end
 
-       unless device.nil?
-          net_device = "br" + device.interface_name
+       if device_interface_name
+          net_device = "br" + device_interface_name
        else
           net_device = "breth0" # FIXME remove this default at some point
        end
