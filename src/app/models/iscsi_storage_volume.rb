@@ -19,7 +19,12 @@
 
 class IscsiStorageVolume < StorageVolume
   def label_components
-    "#{storage_pool[:target]}:#{lun}"
+    available = self.size_in_gb - self.lvm_storage_pool.storage_volumes.total_size_in_gb if self.lvm_storage_pool
+    if self.lvm_storage_pool
+      "#{storage_pool[:target]}:#{lun} #{available}GB available"
+    else
+      "#{storage_pool[:target]}:#{lun}"
+    end
   end
 
   def volume_name
