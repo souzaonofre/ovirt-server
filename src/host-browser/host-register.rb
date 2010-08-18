@@ -393,13 +393,18 @@ class HostRegister < Qmf::ConsoleHandler
                 # if we have a match, then update the database and remove
                 # the received data to avoid creating a dupe later
                 @logger.info "Searching for existing record for: #{detail.macaddr.upcase} in host #{host_qmf.hostname}"
-                if detail.macaddr.upcase == nic.mac
+		# if detail.interface ~ /eth.*\..*/ || detail.interface ~ /vnet.*/
+		if detail.interface =~ /eth\d+\.\d+/ ||  detail.interface =~ /vnet\d+/
+		  @logger.info "Don't manage #{detail.interface.inspect}"
+		else 
+                  if detail.macaddr.upcase == nic.mac
                     @logger.info "Updating details for: #{detail.interface} [#{nic.mac}]}"
                     nic.bandwidth = detail.bandwidth
                     nic.interface_name = detail.interface
                     nic.save!
                     found = true
                     nic_info.delete(detail)
+                  end
                 end
             end
 
@@ -425,9 +430,12 @@ class HostRegister < Qmf::ConsoleHandler
             'interface_name' => nic.interface,
             'usage_type'     => 1)
 
-            host_db.nics << detail
-
-            @logger.info "Added NIC #{nic.interface} with MAC #{nic.macaddr} to host #{host_qmf.hostname}"
+	    if detail.interface =~ /eth\d+\.\d+/ ||  detail.interface =~ /vnet\d+/
+               @logger.info "Don't Add #{detail.interface.inspect}"
+            else
+               host_db.nics << detail
+               @logger.info "Added NIC #{nic.interface} with MAC #{nic.macaddr} to host #{host_qmf.hostname}"
+            end
         end
     end
 
