@@ -35,7 +35,7 @@ end
 
 
 def create_vm_xml(name, uuid, memAllocated, memUsed, vcpus, bootDevice,
-                  net_interfaces, diskDevices)
+                  virtio, net_interfaces, diskDevices)
   doc = Document.new
 
   doc.add_element("domain", {"type" => "kvm"})
@@ -78,6 +78,10 @@ def create_vm_xml(name, uuid, memAllocated, memUsed, vcpus, bootDevice,
       diskdev.add_element("readonly")
       diskdev.add_element("source", {"file" => disk})
       diskdev.add_element("target", {"dev" => devs[which_device], "bus" => "ide"})
+    elsif virtio
+      diskdev.add_element("driver", {"name" => "qemu", "type" => "raw"})
+      diskdev.add_element("source", {"dev" => disk})
+      diskdev.add_element("target", {"dev" => "vda", "bus" => "virtio"})
     else
       diskdev.add_element("source", {"dev" => disk})
       diskdev.add_element("target", {"dev" => devs[which_device]})
@@ -92,6 +96,10 @@ def create_vm_xml(name, uuid, memAllocated, memUsed, vcpus, bootDevice,
     interface.add_attribute("type", "bridge")
     interface.add_element("mac", {"address" => nic[:mac]})
     interface.add_element("source", {"bridge" => nic[:interface]})
+
+    if nic[:virtio]
+      interface.add_element("model", {"type" => "virtio"})
+    end
     doc.root.elements["devices"] << interface
   }
 

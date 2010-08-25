@@ -367,6 +367,11 @@
   max-width: 150px;
 }
 
+.vm_network_config_virtio {
+  float: left;
+  width: 80px;
+}
+
 .vm_network_config_net select,
 .vm_network_config_mac input,
 .vm_network_config_ip input {

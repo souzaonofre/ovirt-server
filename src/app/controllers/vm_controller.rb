@@ -176,7 +176,8 @@ class VmController < ApplicationController
       @vm.nics.each { |nic|
          nnic = Nic.new(:mac => nic.mac,
                         :vm_id => @vm.id,
-                        :network => nic.network)
+                        :network => nic.network,
+                        :virtio => nic.virtio)
 
          if(nic.network.boot_type.proto == 'static')
            nnic.ip_addresses << IpAddress.new(:address => nic.ip_address)
@@ -216,7 +217,9 @@ class VmController < ApplicationController
           network_id = params[:networks][i]
           unless network_id.nil? || network_id == ""
              nic = { :mac => params[:macs][i],
-                     :network_id => network_id, :bandwidth => 0 }
+                     :network_id => network_id,
+                     :bandwidth => 0,
+                     :virtio => params[:virtio][i.to_s] }
 
              if(Network.find(network_id).boot_type.proto == 'static')
                 # FIXME make this able to be v4 or v6 address

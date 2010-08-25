@@ -409,12 +409,12 @@ class TaskOmatic
        else
           net_device = "breth0" # FIXME remove this default at some point
        end
-       net_interfaces.push({ :mac => nic.mac, :interface => net_device })
+       net_interfaces.push({ :mac => nic.mac, :interface => net_device, :virtio => nic.virtio })
     }
 
     xml = create_vm_xml(db_vm.description, db_vm.uuid, db_vm.memory_allocated,
               db_vm.memory_used, db_vm.num_vcpus_allocated, db_vm.boot_device,
-              net_interfaces, storagedevs)
+              db_vm.virtio, net_interfaces, storagedevs)
 
     @logger.debug("XML Domain definition: #{xml}")
 

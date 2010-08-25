@@ -44,6 +44,11 @@
     <!-- FIXME: fill in total here -->
     <div style="background:#F3F3F3; padding:6px; border-left:#CCCCCC solid 1px; border-right:#CCCCCC solid 1px; border-bottom:#CCCCCC solid 1px; ">Total:</div>
     <div class="clear_row" style="height:15px;"></div>
+
+    <div class="form_field">
+      <%= check_box "vm", "virtio" %>
+      <%= label "vm", "virtio", "Use virtio" %>
+    </div>
   </div>
   <div class="clear_row"></div>
 
@@ -87,6 +92,12 @@
                 &nbsp;
               </div>
 
+              <div class="vm_network_config_virtio">
+                <%= hidden_field_tag "virtio[#{i}]", "0" %>
+                <%= check_box_tag "virtio[#{i}]", "1", @nics[i].virtio, :id => "vm_network_config_virtio_#{i}" %>
+		<%= label_tag "vm_network_config_virtio_#{i}", "Use virtio" %>
+              </div>
+
               <% if i != 0 %>
                 <div id="vm_network_config_remove_<%= i %>" class="vm_network_config_remove">
                   Remove
@@ -113,10 +124,11 @@
   </div>
   <div class="clear_row"></div>
 
-   <div class="form_heading"/>
-   <%= check_box_tag_with_label "Start VM Now? (pending current resource availability)", "start_now", nil if create or @vm.state == Vm::STATE_STOPPED %>
-   <%= check_box_tag_with_label "Restart VM Now? (pending current resource availability)", "restart_now", nil if @vm.state == Vm::STATE_RUNNING %>
-
+   <div class="form_heading clickable closed">Restart</div>
+   <div class="vm_form_section" style="display:none;">
+    <%= check_box_tag_with_label "Start VM Now? (pending current resource availability)", "start_now", nil if create or @vm.state == Vm::STATE_STOPPED %>
+    <%= check_box_tag_with_label "Restart VM Now? (pending current resource availability)", "restart_now", nil if @vm.state == Vm::STATE_RUNNING %>
+   </div>
 <!--[eoform:vm]-->
 
 <textarea id="storage_volumes_template" style="display:none;">
@@ -180,6 +192,7 @@ ${htmlList(pools, id)}
        jnic.name        = "<%= rnic.network.name %>";
        jnic.mac         = "<%= rnic.mac %>";
        jnic.ip          = "<%= rnic.ip_address %>";
+       jnic.virtio      = <%= rnic.virtio ? 'true' : 'false' %>;
        jnic.static_ip   = <%= rnic.network.boot_type.proto == 'static' %>;
        jnic.selected    = false;
        jnic.row         = null;
@@ -260,6 +273,9 @@ ${htmlList(pools, id)}
                ip_div.html('&nbsp;');
 	         }
 
+             // set virtio if checked
+             $('#vm_network_config_virtio_'+row).attr('checked', nic.virtio ? 'checked' : '');
+
              // show new row only if last row's select box was
              // previously empty, and if all are not shown
 	         displayed_rows = $('.vm_network_config_row:visible').size();
@@ -282,6 +298,7 @@ ${htmlList(pools, id)}
             // clear row mac and ip addresses
             $('#vm_network_config_mac_'+row).attr('value', '');
             $('#vm_network_config_mac_'+row).parent().next().html('&nbsp;');
+            $('#vm_network_config_virtio_'+row).attr('checked', '');
 
             // hide row if not the first
 	        if(row != 0){
