@@ -27,16 +27,17 @@
     <% end %>
     colModel : [
         {display: '', name : 'id', width : 20, sortable : false, align: 'left', process: <%= table_id %>checkbox},
-        {display: 'Description', name : 'description', width : 180, sortable : true, align: 'left'},
-        {display: 'UUID', name : 'uuid', width : 180, sortable : true, align: 'left'},
+        {display: 'Name', name : 'description', width : 180, sortable : true, align: 'left'},
         <% if (pool.is_a? VmResourcePool) and pool.get_hardware_pool.can_view(@user) %>
             {display: 'Host', name : 'host', width: 180, sortable : true, align: 'left' },
         <% end %>
         {display: 'CPUs', name : 'num_vcpus_allocated', width : 40, sortable : true, align: 'left'},
         {display: 'Memory (MB)', name : 'memory_allocated', width : 60, sortable : true, align: 'right'},
         {display: 'State', name : 'state', width : 50, sortable : true, align: 'right'},
-        {display: 'Total Run Time', name : 'calc_uptime', width : 50, align: 'right'},
-        {display: 'Load', name : 'load', width: 180, sortable : false, align: 'left', process: <%= table_id %>_load_widget }
+        {display: 'Contact', name : 'contact', width : 100, align: 'left'},
+        {display: 'OS', name : 'os', width : 60, sortable : true, align: 'left'},
+        {display: 'EOL', name : 'eol', width : 60, sortable : true, align: 'right'},
+        {display: 'Comment', name : 'comment', width : 100, sortable : true, align: 'right'}
         ],
     sortname: "description",
     sortorder: "asc",

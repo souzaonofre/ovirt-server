@@ -8,10 +8,14 @@
 
   <div class="form_heading clickable open">General</div>
   <div class="vm_form_section">
-    <%= text_field_with_label "Name:", "vm", "description", {:style=>"width:250px;"}  %>
-    <%= text_field_with_label "UUID:", "vm", "uuid",  {:style=>"width:250px;"} %>
-    <%= select_with_label "Operating System:", 'vm', 'provisioning_and_boot_settings', @provisioning_options, :style=>"width:250px;" %>
+    <%= text_field_with_label "Name:", "vm", "description"  %>
+    <%= text_field_with_label "UUID:", "vm", "uuid" %>
+    <%= select_with_label "Provisioning:", 'vm', 'provisioning_and_boot_settings', @provisioning_options  %>
     <% if controller.action_name == "edit" %><b style="color: #FF0000">*Warning* Editing provision could overwrite vm</b><% end %>
+    <%= text_field_with_label "Contact:", "vm", "contact" %>
+    <%= text_field_with_label "Operating System:", "vm", "os" %>
+    <%= text_field_with_label "End Of Life:", "vm", "eol" %>
+    <%= text_field_with_label "Comment:", "vm", "comment" %>
 
     <div class="clear_row" style="height:15px;"></div>
   </div>
