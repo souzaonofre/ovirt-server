@@ -130,6 +130,11 @@ class VmController < ApplicationController
     render :json => { :object => "vm", :success => true, :alert => alert  }
   end
 
+  def start
+    @vm = Vm.find(params[:id])
+    render :layout => 'popup'
+  end
+
   def migrate
     svc_get_for_migrate(params[:id])
     render :layout => 'popup'

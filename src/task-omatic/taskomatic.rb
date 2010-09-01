@@ -354,7 +354,12 @@ class TaskOmatic
           raise "Virtual machine is currently paused, cannot start, must resume."
       end
     end
-    db_host = find_capable_host(db_vm)
+
+    if task.args
+      db_host = db_vm.vm_resource_pool.get_hardware_pool.hosts.find(task.args)
+    else
+      db_host = find_capable_host(db_vm)
+    end
 
     node = @qmfc.object(:class => "node", 'hostname' => db_host.hostname)
 

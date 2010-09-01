@@ -56,7 +56,9 @@ class VmTask < Task
                                       :success => Vm::STATE_RUNNING,
                                       :failure => Vm::STATE_STOPPED,
                                       :privilege => [Privilege::VM_CONTROL,
-                                                     PRIV_OBJECT_VM_POOL]},
+                                                     PRIV_OBJECT_VM_POOL],
+                                      :popup_action => 'start'},
+
               ACTION_SHUTDOWN_VM => { :label => "Shutdown",
                                       :icon  => "icon_stop_11px.png",
                                       :start => Vm::STATE_RUNNING,
