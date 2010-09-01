@@ -355,11 +355,10 @@ class TaskOmatic
       end
     end
 
-    if task.args
+    if task.args && !task.args.blank?
       db_host = db_vm.vm_resource_pool.get_hardware_pool.hosts.find(task.args)
-    else
-      db_host = find_capable_host(db_vm)
     end
+    db_host ||= find_capable_host(db_vm)
 
     node = @qmfc.object(:class => "node", 'hostname' => db_host.hostname)
 
