@@ -66,7 +66,9 @@ def create_vm_xml(name, uuid, memAllocated, memUsed, vcpus, bootDevice,
   doc.root.elements["devices"].add_element("emulator").add_text("/usr/bin/qemu-kvm")
 
   devs = ['hda', 'hdb', 'hdc', 'hdd']
+  virtual_devs = ['vda', 'vdb', 'vdc', 'vdd']
   which_device = 0
+  which_virtual_device = 0
   diskDevices.each do |disk|
     is_cdrom = (disk =~ /\.iso/) ? true : false
 
@@ -78,17 +80,18 @@ def create_vm_xml(name, uuid, memAllocated, memUsed, vcpus, bootDevice,
       diskdev.add_element("readonly")
       diskdev.add_element("source", {"file" => disk})
       diskdev.add_element("target", {"dev" => devs[which_device], "bus" => "ide"})
+      which_device += 1
     elsif virtio
       diskdev.add_element("driver", {"name" => "qemu", "type" => "raw"})
       diskdev.add_element("source", {"dev" => disk})
-      diskdev.add_element("target", {"dev" => "vda", "bus" => "virtio"})
+      diskdev.add_element("target", {"dev" => virtual_devs[which_virtual_device], "bus" => "virtio"})
+      which_virtual_device += 1
     else
       diskdev.add_element("source", {"dev" => disk})
       diskdev.add_element("target", {"dev" => devs[which_device]})
+      which_device += 1
     end
-
     doc.root.elements["devices"] << diskdev
-    which_device += 1
   end
 
   net_interfaces.each { |nic|
