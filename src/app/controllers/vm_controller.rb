@@ -154,6 +154,7 @@ class VmController < ApplicationController
   protected
   def _setup_provisioning_options
     @provisioning_options = [[Vm::PXE_OPTION_LABEL, Vm::PXE_OPTION_VALUE],
+                             [Vm::PXE_ALWAYS_OPTION_LABEL, Vm::PXE_ALWAYS_OPTION_VALUE],
                              [Vm::HD_OPTION_LABEL, Vm::HD_OPTION_VALUE]]
 
     begin

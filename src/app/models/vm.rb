@@ -101,8 +101,9 @@ class Vm < ActiveRecord::Base
 
   BOOT_DEV_HD            = "hd"
   BOOT_DEV_NETWORK       = "network"
+  BOOT_DEV_NETWORK_ALWAYS= "network_always"
   BOOT_DEV_CDROM         = "cdrom"
-  BOOT_DEV_FIELDS        = [ BOOT_DEV_HD, BOOT_DEV_NETWORK, BOOT_DEV_CDROM ]
+  BOOT_DEV_FIELDS        = [ BOOT_DEV_HD, BOOT_DEV_NETWORK, BOOT_DEV_NETWORK_ALWAYS, BOOT_DEV_CDROM ]
 
   PROVISIONING_DELIMITER = ":"
   COBBLER_PREFIX         = "cobbler"
@@ -111,8 +112,10 @@ class Vm < ActiveRecord::Base
   COBBLER_PROFILE_SUFFIX = " (Cobbler Profile)"
   COBBLER_IMAGE_SUFFIX   = " (Cobbler Image)"
 
-  PXE_OPTION_LABEL       = "PXE Boot"
+  PXE_OPTION_LABEL       = "PXE Boot (once)"
   PXE_OPTION_VALUE       = "pxe"
+  PXE_ALWAYS_OPTION_LABEL = "PXE Boot (always)"
+  PXE_ALWAYS_OPTION_VALUE = "pxe_always"
   HD_OPTION_LABEL        = "Boot from HD"
   HD_OPTION_VALUE        = "hd"
 
@@ -264,7 +267,9 @@ class Vm < ActiveRecord::Base
   end
   def provisioning_and_boot_settings
     if provisioning == nil
-      if boot_device==BOOT_DEV_NETWORK
+      if boot_device==BOOT_DEV_NETWORK_ALWAYS
+        PXE_ALWAYS_OPTION_VALUE
+      elsif boot_device==BOOT_DEV_NETWORK
         PXE_OPTION_VALUE
       elsif boot_device==BOOT_DEV_HD
         HD_OPTION_VALUE
@@ -464,7 +469,9 @@ class Vm < ActiveRecord::Base
       self.storage_volumes=@storage_volumes_pending
       @storage_volumes_pending = []
     end
-    errors.add("nics", "must specify at least one network if pxe booting off a network") unless boot_device != BOOT_DEV_NETWORK || nics.size > 0
+    #errors.add("nics", "must specify at least one network if pxe booting off a network") unless boot_device != BOOT_DEV_NETWORK || nics.size > 0
+    errors.add("nics", "must specify at least one network if pxe booting off a network") unless boot_device != BOOT_DEV_NETWORK  || boot_device != BOOT_DEV_NETWORK_ALWAYS || nics.size > 0
+
 
   end
 

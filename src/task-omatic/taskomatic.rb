@@ -415,9 +415,17 @@ class TaskOmatic
        end
        net_interfaces.push({ :mac => nic.mac, :interface => net_device, :virtio => nic.virtio })
     }
+    # network_always indicates that the boot device is "network" and will not change
+    # upon reboot.
+    if db_vm.boot_device == "network_always"
+       boot_device = "network"
+    else
+       boot_device = db_vm.boot_device
+    end
+
 
     xml = create_vm_xml(db_vm.description, db_vm.uuid, db_vm.memory_allocated,
-              db_vm.memory_used, db_vm.num_vcpus_allocated, db_vm.boot_device,
+              db_vm.memory_used, db_vm.num_vcpus_allocated, boot_device,
               db_vm.virtio, net_interfaces, storagedevs)
 
     @logger.debug("XML Domain definition: #{xml}")
@@ -443,7 +451,8 @@ class TaskOmatic
 
     # This information is not available via the libvirt interface.
     db_vm.memory_used = db_vm.memory_allocated
-    db_vm.boot_device = Vm::BOOT_DEV_HD
+    # Revert to HD booting unless we have selected to always boot from the network.
+    db_vm.boot_device = Vm::BOOT_DEV_HD unless db_vm.boot_device == Vm::BOOT_DEV_NETWORK_ALWAYS
     db_vm.host_id = db_host.id
     db_vm.save!
 

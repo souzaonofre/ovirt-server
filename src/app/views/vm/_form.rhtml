@@ -351,7 +351,7 @@ ${htmlList(pools, id)}
          // only set value if we have a network to set it to and we've
          // selected a provision type requiring a net
          if(nics.length > 0 &&
-           (e.target.value == "<%= Vm::PXE_OPTION_VALUE %>" ||
+           (e.target.value == "<%= Vm::PXE_OPTION_VALUE %>" ||e.target.value == "<%= Vm::PXE_ALWAYS_OPTION_VALUE %>" ||
             e.target.value.indexOf("<%= Vm::PROFILE_PREFIX %>@<%= Vm::COBBLER_PREFIX %>") == 0)){
               $('#vm_network_config_select_0').val(nics[0].network_id).trigger('change');
          }
