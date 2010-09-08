@@ -58,4 +58,5 @@ ActionController::Routing::Routes.draw do |map|
     hardware_pools.resources :storage_pools, :controller => 'storage'
   end
   map.resources :vms, :controller => 'vm'
+  map.resources :usages, :only => [ :create ], :collection => { :remove => :delete }
 end

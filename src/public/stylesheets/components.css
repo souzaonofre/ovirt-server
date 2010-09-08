@@ -394,3 +394,21 @@
 #vm_network_config_add:hover {
   cursor: pointer;
 }
+
+#network_usages_infos {
+  overflow: hidden;
+  width: 100%;
+}
+
+#network_usages_infos select {
+  float: left;
+}
+
+#network_usages_infos .usage_buttons {
+  float: left;
+  margin-left: 1em;
+}
+
+#network_usages_infos .usage_buttons p {
+  margin-top: 0;
+}

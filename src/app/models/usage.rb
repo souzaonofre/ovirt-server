@@ -22,6 +22,6 @@ class Usage < ActiveRecord::Base
   validates_presence_of :label
   validates_presence_of :usage
 
-  validates_uniqueness_of :usage
+  # validates_uniqueness_of :usage
 
 end

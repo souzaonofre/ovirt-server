@@ -1,0 +1,36 @@
+<%- content_for :title do -%>
+  Change VM Pool
+<%- end -%>
+<%- content_for :description do -%>
+  Please choose pool destination.
+<%- end -%>
+
+<form method="POST" id="change_vmpool_form" action="<%= url_for :action => 'update_vmpool' %>">
+  <div class="dialog_form">
+    <%= error_messages_for 'change_vmpool' %>
+
+    <% form_tag do %>
+      <!--[form:change_vmpool]-->
+      <%= hidden_field_tag 'id', @vm.id, :id => 'vm_id' %>
+      <%= label "vm", "vm_resource_pool_id", "Select the pool to migrate to" %>
+      <%= select "vm", "vm_resource_pool_id", @vm_pools.map { |pool| [pool.name, pool.id] } %>
+    <% end %>
+
+  </div>
+  <%= popup_footer("$('#change_vmpool_form').submit()", "Change VM Pool") %>
+</form>
+<script type="text/javascript">
+  $(function() {
+
+    $('#change_vmpool_form').ajaxForm({
+      dataType: 'json',
+      success: function(data, status) {
+        afterVm(data, status);
+        if (data.alert) {
+          $.jGrowl(data.alert);
+        }
+      }
+    });
+
+  });
+</script>

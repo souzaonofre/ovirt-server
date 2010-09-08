@@ -18,11 +18,20 @@
 
 
 <div class="field_title">Usage:</div>
-<div class="form_field">
+<div id="network_usages_infos" class="form_field">
  <select id="network_usages_ids" name="network[usage_ids][]" multiple="true">
  <%= options_from_collection_for_select @usage_types, "id", "label",
           @network ? @network.usages.collect{ |x| x.id.to_i } : [] %>
  </select>
+ <div class="usage_buttons">
+  <p>
+    <%= text_field_tag 'network_usage_label', nil, :class => 'textfield_effect' %>
+    <button id="add_usage">Add usage</button>
+  </p>
+  <p>
+    <button id="delete_usages">Remove selected usages</button>
+  </p>
+ </div>
 </div>
 
 <div id="vlan_options"
@@ -43,4 +52,49 @@ $("#network_type").change(function () {
     $("#vlan_options").hide();
   }
 }).trigger('change');
+
+$('#add_usage').click(function() {
+  var label = $('#network_usage_label').val();
+  if (label.length > 0) {
+    $.post(
+      "<%= usages_path :format => 'json' %>",
+      {
+        "usage[label]": label,
+        "usage[usage]": 'management'
+      },
+      function(data, status) {
+        if (data.success) {
+          var usage = data.data.usage;
+          $('#network_usages_ids')
+            .append('<option value="'+usage.id+'">'+usage.label+'</option>');
+        }
+      },
+      'json'
+    );
+  }
+  return false;
+});
+
+$('#delete_usages').click(function() {
+  var selected_ids = $('#network_usages_ids').val();
+
+  $.post(
+    "<%= remove_usages_path :format => 'json' %>",
+    {
+      '_method':  'delete',
+      'ids[]':      selected_ids
+    },
+    function(data, status) {
+      if (data.success) {
+        for (id in data.removed) {
+          $('#network_usages_ids')
+            .find('option:selected[value='+data.removed[id]+']')
+              .remove();
+        }
+      }
+    },
+    'json'
+  );
+  return false;
+});
 </script>
