@@ -151,6 +151,22 @@ class VmController < ApplicationController
     render :layout => false
   end
 
+  def edit_vmpool
+    svc_modify(params[:id])
+    @vm = Vm.find(params[:id])
+    @vm_pools = VmResourcePool.find_all_by_parent_id(@vm.vm_resource_pool.parent.id)
+    render :layout => 'popup'
+  end
+
+  def update_vmpool
+    svc_modify(params[:id])
+    @vm = Vm.find(params[:id])
+    @vm_pool = VmResourcePool.find(params[:vm][:vm_resource_pool_id])
+    @vm.update_attribute(:vm_resource_pool, @vm_pool)
+    render :json => { :object => "vm", :success => true,
+                      :alert => "VM Pool changed for this Virtual Machine" }
+  end
+
   protected
   def _setup_provisioning_options
     @provisioning_options = [[Vm::PXE_OPTION_LABEL, Vm::PXE_OPTION_VALUE],

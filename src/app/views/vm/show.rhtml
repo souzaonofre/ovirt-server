@@ -33,6 +33,9 @@
         </a>
       <% end -%>
     <% end %>
+    <%= link_to image_tag("icon_vmpool_11px.png") + " Change VM Pool",
+                          {:controller => 'vm', :action => 'edit_vmpool', :id => @vm},
+                         :rel=>"facebox[.bolder]", :class=>"selection_facebox" %>
     <a href="#confirm_cancel"  rel="facebox[.bolder]">
       <%= image_tag "icon_cancel_11px.png" %> Cancel queued tasks
     </a> 
