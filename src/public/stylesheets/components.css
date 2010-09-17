@@ -349,41 +349,66 @@
    min-width: 500px;
 }
 
-#vm_network_config_header_network,
-#vm_network_config_header_mac,
 #vm_network_config_header_ip{
   float: left;
-  width: 150px;
+  width: 102px;
 }
 
-.vm_network_config_net,
+#vm_network_config_header_network{
+  float: left;
+  width:92px;
+}
+
+#vm_network_config_header_mac{
+  float: left;
+  width: 132px;
+}
+
+#vm_network_config_header_model{
+  float: left;
+  width: 76px;
+}
+
+.vm_network_config_net{
+  float: left;
+  width: 92px;
+}
+
 .vm_network_config_mac{
   float: left;
-  width: 150px;
+  width: 132px;
 }
-
 .vm_network_config_ip{
   float: left;
-  max-width: 150px;
+  width: 100px;
 }
 
-.vm_network_config_virtio {
+.vm_network_config_model {
   float: left;
-  width: 80px;
+  width: 76px;
 }
 
-.vm_network_config_net select,
-.vm_network_config_mac input,
-.vm_network_config_ip input {
-  width: 130px;
+.vm_network_config_ip input{
+  width: 100px;
 }
 
+.vm_network_config_net select{
+  width: 90px;
+}
+
+.vm_network_config_model select {
+  width: 74px;
+}
+.vm_network_config_mac input{
+  width:125px;
+}
 .vm_network_config_remove {
   float: left;
   color: #0033CC;
   padding-top: 5px;
   padding-left: 5px;
 }
+
 .vm_network_config_remove:hover {
   cursor: pointer;
 }

@@ -53,6 +53,8 @@ class Nic < ActiveRecord::Base
   validates_numericality_of :bandwidth,
      :greater_than_or_equal_to => 0
 
+  NIC_MODELS = ["default","ne2k_pci","i82551","i82557b","i82559er","rtl8139","e1000","pcnet","virtio"]
+
   # Returns whether the nic has networking defined.
   def networking?
     (network != nil)

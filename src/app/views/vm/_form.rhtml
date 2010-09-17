@@ -67,6 +67,7 @@
       <div id="vm_network_config_header">
         <div id="vm_network_config_header_network">Network:</div>
         <div id="vm_network_config_header_mac">MAC Address:</div>
+        <div id="vm_network_config_header_model">Model:</div>
 
         <%# this column is only populated if a static ip network is selected: %>
         <div id="vm_network_config_header_ip" style="display: none;">IP Address:</div>
@@ -92,14 +93,16 @@
                 <input name="macs[]" id="vm_network_config_mac_<%= i %>" ></input>
               </div>
 
-              <div class="vm_network_config_ip">
-                &nbsp;
+              <div class="vm_network_config_model">
+                <select name="models[]" id="vm_network_config_model_<%= i %>" class="vm_network_config_select">
+	           <% @nic_models.each { |model| %>
+                     <option value="<%= model %>"><%= model %></option>
+	           <% } %>
+                </select>
               </div>
 
-              <div class="vm_network_config_virtio">
-                <%= hidden_field_tag "virtio[#{i}]", "0" %>
-                <%= check_box_tag "virtio[#{i}]", "1", @nics[i].virtio, :id => "vm_network_config_virtio_#{i}" %>
-		<%= label_tag "vm_network_config_virtio_#{i}", "Use virtio" %>
+              <div class="vm_network_config_ip">
+                &nbsp;
               </div>
 
               <% if i != 0 %>
@@ -196,7 +199,7 @@ ${htmlList(pools, id)}
        jnic.name        = "<%= rnic.network.name %>";
        jnic.mac         = "<%= rnic.mac %>";
        jnic.ip          = "<%= rnic.ip_address %>";
-       jnic.virtio      = <%= rnic.virtio ? 'true' : 'false' %>;
+       jnic.model      = "<%= rnic.model %>"
        jnic.static_ip   = <%= rnic.network.boot_type.proto == 'static' %>;
        jnic.selected    = false;
        jnic.row         = null;
@@ -270,15 +273,15 @@ ${htmlList(pools, id)}
              $('#vm_network_config_mac_'+row).attr('value', nic.mac);
 
              // show / hide ip address textbox
-             ip_div = $('#vm_network_config_mac_'+row).parent().next();
+             ip_div = $('#vm_network_config_model_'+row).parent().next();
              if(nic.static_ip){
 	           ip_div.html('<input name="ip_addresses[]" id="#vm_network_config_ip_'+row+'" value="'+nic.ip+'" />');
              }else{
                ip_div.html('&nbsp;');
 	         }
 
-             // set virtio if checked
-             $('#vm_network_config_virtio_'+row).attr('checked', nic.virtio ? 'checked' : '');
+             // set model
+             $('#vm_network_config_model_'+row).attr('value', nic.model);
 
              // show new row only if last row's select box was
              // previously empty, and if all are not shown
@@ -302,7 +305,7 @@ ${htmlList(pools, id)}
             // clear row mac and ip addresses
             $('#vm_network_config_mac_'+row).attr('value', '');
             $('#vm_network_config_mac_'+row).parent().next().html('&nbsp;');
-            $('#vm_network_config_virtio_'+row).attr('checked', '');
+            //$('#vm_network_config_virtio_'+row).attr('checked', '');
 
             // hide row if not the first
 	        if(row != 0){

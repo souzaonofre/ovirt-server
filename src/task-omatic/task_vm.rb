@@ -99,10 +99,7 @@ def create_vm_xml(name, uuid, memAllocated, memUsed, vcpus, bootDevice,
     interface.add_attribute("type", "bridge")
     interface.add_element("mac", {"address" => nic[:mac]})
     interface.add_element("source", {"bridge" => nic[:interface]})
-
-    if nic[:virtio]
-      interface.add_element("model", {"type" => "virtio"})
-    end
+    interface.add_element("model", {"type" => nic[:model]}) unless nic[:model]=="default"
     doc.root.elements["devices"] << interface
   }
 

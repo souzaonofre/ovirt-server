@@ -413,7 +413,7 @@ class TaskOmatic
        else
           net_device = "breth0" # FIXME remove this default at some point
        end
-       net_interfaces.push({ :mac => nic.mac, :interface => net_device, :virtio => nic.virtio })
+       net_interfaces.push({ :mac => nic.mac, :interface => net_device, :model => nic.model })
     }
     # network_always indicates that the boot device is "network" and will not change
     # upon reboot.
