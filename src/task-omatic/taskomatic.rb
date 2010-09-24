@@ -156,7 +156,7 @@ class TaskOmatic
       next unless node
 
       # So now we expect if the node was found it's alive and well, then
-      # we check to make sure there's enough real cores for the number of
+      # we check to make sure there's enough cpus for the number of
       # vcpus, the node memory is adequate, the node is not disabled in the
       # database, and if the node id is nil or if it is already running
       # (has a node id set) then it is probably looking to migrate so we
@@ -169,7 +169,7 @@ class TaskOmatic
       #puts "and not #{curr.is_disabled.nil?} and #{curr.is_disabled == 0}"
       #puts "and #{vm ? vm : 'nil'} or #{vm ? vm.active : 'nil'}) or #{vm ? vm.node : 'nil'} != #{node.object_id}"
 
-      if node and node.cores >= db_vm.num_vcpus_allocated \
+      if node and node.cpus >= db_vm.num_vcpus_allocated \
          and node.memory >= db_vm.memory_allocated \
          and not curr.is_disabled.nil? and curr.is_disabled == 0 \
          and ((!vm or vm.active == 'false') or vm.node != node.object_id)
