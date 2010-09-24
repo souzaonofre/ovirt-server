@@ -40,8 +40,8 @@ Requires: ruby-libvirt >= 0.0.2
 Requires: rrdtool-ruby
 Requires: iscsi-initiator-utils
 Requires: cyrus-sasl-gssapi
-Requires: qpidd
-Requires: qpidc
+Requires: qpid-cpp-server
+Requires: qpid-cpp-client
 Requires: qmf >= 0.5.829175-2
 Requires: ruby-qmf
 Requires(post):  /sbin/chkconfig
