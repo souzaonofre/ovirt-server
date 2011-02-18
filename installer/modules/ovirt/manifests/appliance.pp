@@ -62,7 +62,8 @@ service {"nfslock":
 
 service {"network":
     ensure => "running",
-    enable => true
+    enable => true,
+    start => "restart"
 }
 
 file{"/mnt/data/ovirtiscsi":
