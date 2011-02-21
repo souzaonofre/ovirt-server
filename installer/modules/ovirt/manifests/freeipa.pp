@@ -65,7 +65,7 @@ class freeipa::bundled{
         }
 
         exec {"get_krb5_tkt":
-                command => "/bin/echo '$freeipa_password'|/usr/kerberos/bin/kinit admin",
+                command => "/bin/echo '$freeipa_password'|/usr/bin/kinit admin",
                 require => Single_Exec[ipa_server_install]
         }
 
